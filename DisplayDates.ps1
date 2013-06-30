@@ -22,14 +22,15 @@ None. No .NET Framework types of objects are used as input.
 
 Sample output.
 
-PS> ./DisplayDates.ps1
+PS 22:59:20==> ././DisplayDates.ps1
 
-Today is Sunday, 30 June 2013 21:09
-ISO 8601 date/time is 2013-06-30T21:09:05
 
-DayNumber   WeekNumber
----------   ----------
-181         26
+Today is Sunday, 30 June 2013 22:59
+ISO 8601 date/time is 2013-06-30T22:59:36
+
+DayNumber    WeekNumber   JulianDate   LeapYear
+---------    ----------   ----------   --------
+181          26           2456473.5    False
 
 .NOTES
 
