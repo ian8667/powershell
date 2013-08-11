@@ -18,7 +18,7 @@ It doesn't aim to do anything else.
 ./StreamInputOutput.ps1
 
 No parameters are required or used. The files used for input
-and output are hard coded within the program.
+and output are hard coded within the program. Change accordingly.
 
 .INPUTS
 
@@ -31,7 +31,7 @@ System.IO.FileInfo
 
 File Name    : StreamInputOutput.ps1
 Author       : Ian Molloy
-Last updated : 2013-08-10
+Last updated : 2013-08-11
 
 For information regarding this subject (comment-based help),
 execute the command:
