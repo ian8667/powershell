@@ -1,4 +1,25 @@
-﻿# PowerShell script to obtain currency rates from
+﻿<#
+<item rdf:about="http://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-gbp.en.html?date=2016-09-02&amp;rate=0.84260">
+<title xml:lang="en">0.84260 GBP = 1 EUR 2016-09-02 ECB Reference rate</title>
+<link>http://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-gbp.en.html?date=2016-09-02&amp;rate=0.84260</link>
+<description xml:lang="en">1 EUR buys 0.84260 Pound sterling (GBP) - The reference exchange rates are published both by electronic market information providers and on the ECB's website shortly after the concertation procedure has been completed. Reference rates are published according to the same  calendar as the TARGET system.</description>
+<dc:date>2016-09-02T14:15:00+01:00</dc:date>
+<dc:language>en</dc:language>
+<cb:statistics>
+<cb:country>U2</cb:country>
+<cb:institutionAbbrev>ECB</cb:institutionAbbrev>
+<cb:exchangeRate>
+<cb:value frequency="daily" decimals="5">0.84260</cb:value>
+<cb:baseCurrency unit_mult="0">EUR</cb:baseCurrency>
+<cb:targetCurrency>GBP</cb:targetCurrency>
+<cb:rateType>Reference rate</cb:rateType>
+</cb:exchangeRate>
+</cb:statistics>
+</item>
+
+#>
+
+# PowerShell script to obtain currency rates from
 # the European Central Bank.
 #
 # XmlDocument Class
