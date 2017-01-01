@@ -17,6 +17,12 @@
 </cb:statistics>
 </item>
 
+
+See also
+Hey, Scripting Guy! Blog
+Calling XMLDocument Methods in PowerShell
+https://blogs.technet.microsoft.com/heyscriptingguy/2014/06/13/calling-xmldocument-methods-in-powershell/
+
 #>
 
 # PowerShell script to obtain currency rates from
