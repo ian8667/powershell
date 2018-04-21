@@ -22,45 +22,47 @@ Param (
                   Mandatory=$true)]
        [AllowEmptyString()]
        [ValidateNotNull()]
-       [String]$DataLine
+       [String]$DataLine,
+
+       [parameter(Position=1,
+                  Mandatory=$true)]
+       [ValidateNotNullOrEmpty()]
+       [Int32]$LineNumber
       ) #end param
 
   BEGIN {
-    [UInt16]$pos = 0;
+    [Int32]$pos = 0;
     $myEnum = $DataLine.GetEnumerator();
     [Int32]$val = 0;
     $snag = $false;
-    $marker = "";
-    $bits = New-Object -TypeName System.Collections.BitArray -ArgumentList $DataLine.Length;
+    $bob = New-Object -TypeName System.Text.StringBuilder -ArgumentList $DataLine.Length;
+
   }
 
   PROCESS {
+    # Initialise our StringBuilder object with spaces.
+    $bob = $bob.Insert(0, ' ', $DataLine.Length);
 
     # The statement '$myEnum.MoveNext()' will return False if
     # variable $DataLine happens to be an empty string. Thus
-    # the WHILE loop will not be executed.
+    # the WHILE loop will not be executed. The source file being
+    # examined may well have blank lines in it. This is
+    # expected behaviour and how we cater for these blank
+    # (empty) lines.
     while ($myEnum.MoveNext()) {
         $val = [Int32]$myEnum.Current;
-        $pos++;
         if ($val -notin (0..127)) {
-            $bits.Set($pos, $true);
+            $bob = $bob.Insert($pos, '^');
             $snag = $true;
-            #Write-Output $DataLine;
-            #Write-Output ('Target found as position {0}' -f $pos);
-            Write-Host -Message "Snag at pos $pos";
         }
+        $pos++;
     }# end WHILE loop
 
     if ($snag) {
-        Write-Host $DataLine;
-        foreach ($m in $bits.GetEnumerator()) {
-            switch ($m) {
-                $true {$marker = "^"}
-                $false {$marker = " "}
-            }
-            Write-Host $marker -NoNewline;
-        }
-        
+        Write-Output ('Source line #{0}' -f $LineNumber);
+        Write-Output $DataLine;
+        Write-Output $bob.ToString();
+        Write-Output '';
     }# end if ($snag)
 
   }
@@ -100,7 +102,7 @@ function Main-Routine {
                   $lineCounter++;
                   # Examine the string for any illegal characters.
                   Write-Verbose $inrec;
-                  Examine-String $inrec;
+                  Examine-String -DataLine $inrec -LineNumber $lineCounter;
 
               }# end WHILE loop
           } finally {
@@ -121,6 +123,19 @@ function Main-Routine {
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
+
+Set-StrictMode -Version Latest;
+
+Invoke-Command -ScriptBlock {
+    Write-Output '';
+    Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
+ 
+    $script = $MyInvocation.MyCommand.Name;
+    $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+    Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+    Write-Output '';
+ 
+}
 
 Main-Routine;
 
