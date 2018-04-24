@@ -16,27 +16,32 @@ Param () #end param
 #region ***** function Examine-String *****
 function Examine-String {
 [CmdletBinding()]
-[OutputType([System.String])]
+[OutputType([System.Management.Automation.PSCustomObject])]
 Param (
        [parameter(Position=0,
                   Mandatory=$true)]
        [AllowEmptyString()]
        [ValidateNotNull()]
-       [String]$DataLine,
-
-       [parameter(Position=1,
-                  Mandatory=$true)]
-       [ValidateNotNullOrEmpty()]
-       [Int32]$LineNumber
+       [String]$DataLine
       ) #end param
 
   BEGIN {
     [Int32]$pos = 0;
     $myEnum = $DataLine.GetEnumerator();
     [Int32]$val = 0;
-    $snag = $false;
     $bob = New-Object -TypeName System.Text.StringBuilder -ArgumentList $DataLine.Length;
-
+    $myObject = [PSCustomObject]@{
+        HasErrors  = $false;
+        Markers    = '';
+    }
+    # Delimits the range of byte values we're prepared to accept.
+    # Anything outside the range is deemed to be illegal. All
+    # values are in decimal.
+    $range = @{
+        Min = 0
+        Max  = 127
+    }
+        
   }
 
   PROCESS {
@@ -51,24 +56,23 @@ Param (
     # (empty) lines.
     while ($myEnum.MoveNext()) {
         $val = [Int32]$myEnum.Current;
-        if ($val -notin (0..127)) {
+        if ($val -notin ($range.Min..$range.Max)) {
+
+            # Mark the appropriate spot in the StringBuilder object
+            # where an illegal character was found. This helps to show
+            # where the error(s) are later on when we output the
+            # StringBuilder as a string.
             $bob = $bob.Insert($pos, '^');
-            $snag = $true;
+            $myObject.HasErrors = $true;
         }
         $pos++;
     }# end WHILE loop
-
-    if ($snag) {
-        Write-Output ('Source line #{0}' -f $LineNumber);
-        Write-Output $DataLine;
-        Write-Output $bob.ToString();
-        Write-Output '';
-    }# end if ($snag)
-
+    $myObject.Markers = $bob.ToString();
   }
 
   END {
     $myEnum.Dispose();
+    return $myObject;
   }
 
 } #end function Examine-String
@@ -81,15 +85,23 @@ function Main-Routine {
     Param () #end param
 
         BEGIN {
-          $inf = 'C:\Family\ian\VisitDirs.java';
+          New-Variable -Name 'INF' -Value 'C:\Family\ian\VisitDirs.java' -Option Constant `
+                       -Description 'Input file to be examined for illegal characters';
           $utf8 = New-Object -TypeName System.Text.UTF8Encoding -ArgumentList $false, $false;
-          $sread = New-Object -TypeName System.IO.StreamReader -ArgumentList $inf, $utf8;
+          $sread = New-Object -TypeName System.IO.StreamReader -ArgumentList $INF, $utf8;
           [UInt16]$lineCounter = 0;
           [String]$inrec = '';
+          # Contains information relating to a string which contains illegal
+          # characters. The structure of this variable is defined in function
+          # 'Examine-String'.
+          $illChars = New-Object PSCustomObject;
+          [UInt16]$errorLines = 0;
         }
 
         PROCESS {
-          try {
+        	Write-Output ('Looking for illegal characters in file {0}' -f $INF);
+            Write-Output '';
+            try {
               while (-not $sread.EndOfStream) {
                   # I've had to put the first read from the file at
                   # the beginning of the WHILE loop as other variations
@@ -102,8 +114,16 @@ function Main-Routine {
                   $lineCounter++;
                   # Examine the string for any illegal characters.
                   Write-Verbose $inrec;
-                  Examine-String -DataLine $inrec -LineNumber $lineCounter;
+                  $illChars = Examine-String -DataLine $inrec;
 
+                  if ($illChars.HasErrors) {
+                      Write-Output ('Source line #{0}' -f $lineCounter);
+                      Write-Output $inrec;
+                      Write-Output $illChars.Markers;
+                      Write-Output '';
+
+                      $errorLines++;
+                  }
               }# end WHILE loop
           } finally {
               $sread.Dispose();
@@ -112,8 +132,9 @@ function Main-Routine {
         }
 
         END {
-          Write-Output "`nTest complete";
-          Write-Output ('{0} lines read from input file {1}' -f $lineCounter, $inf);
+          Write-Output '';
+          Write-Output ('{0} lines read from input file {1}' -f $lineCounter, $INF);
+          Write-Output ('Lines in error: {0}' -f $errorLines);
         }
 
 } #end function Main-Routine
@@ -140,5 +161,5 @@ Invoke-Command -ScriptBlock {
 Main-Routine;
 
 ##=============================================
-## END OF SCRIPT: Get-Lastlines.ps1
+## END OF SCRIPT: tt.ps1
 ##=============================================
