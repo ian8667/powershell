@@ -38,7 +38,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Find-IllegalChars.ps1
 Author       : Ian Molloy
-Last updated : 2018-04-24
+Last updated : 2018-04-27
 
 .LINK
 
@@ -132,7 +132,7 @@ Param (
     # Anything outside the range is deemed to be illegal. All
     # values are in decimal.
     $range = @{
-        Min = 0
+        Min = 1
         Max  = 127
     }
         
