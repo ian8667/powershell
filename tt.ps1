@@ -1,165 +1,67 @@
-# PSScriptAnalyzer deep dive � Part 1 of 4
-# https://blogs.technet.microsoft.com/heyscriptingguy/2017/01/31/psscriptanalyzer-deep-dive-part-1-of-4/
+# C:\Family\ian
+# illegalChars.txt
 #
-# About Functions Advanced Parameters
-# https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-6
-#
-# System.String.GetEnumerator Method
-# an object that can iterate through the individual characters in a string.
-#
-# System.CharEnumerator
-# Supports iterating over a String object and reading its individual characters.
-#
+
 [CmdletBinding()]
 Param () #end param
 
-#region ***** function Examine-String *****
-function Examine-String {
-[CmdletBinding()]
-[OutputType([System.Management.Automation.PSCustomObject])]
-Param (
-       [parameter(Position=0,
-                  Mandatory=$true)]
-       [AllowEmptyString()]
-       [ValidateNotNull()]
-       [String]$DataLine
-      ) #end param
+$ErrorActionPreference = 'Stop';
 
-  BEGIN {
-    [Int32]$pos = 0;
-    $myEnum = $DataLine.GetEnumerator();
-    [Int32]$val = 0;
-    $bob = New-Object -TypeName System.Text.StringBuilder -ArgumentList $DataLine.Length;
-    $myObject = [PSCustomObject]@{
-        HasErrors  = $false;
-        Markers    = '';
-    }
-    # Delimits the range of byte values we're prepared to accept.
-    # Anything outside the range is deemed to be illegal. All
-    # values are in decimal.
-    $range = @{
-        Min = 0
-        Max  = 127
-    }
-        
-  }
+$validBytes = New-Object -TypeName System.Collections.Generic.List[Int32](150);
+foreach ($num in 1..127) {
+    $validBytes.Add($num);
+}
+# End-of-line characters
+$validBytes.Add(0X0D); # Carriage Return (CR)
+$validBytes.Add(0X0A); # Line Feed (LF)
+$validBytes.TrimExcess();
+Set-Variable -Name 'validBytes' -Option ReadOnly;
 
-  PROCESS {
-    # Initialise our StringBuilder object with spaces.
-    $bob = $bob.Insert(0, ' ', $DataLine.Length);
+New-Variable -Name "BUFSIZE" -Value 4KB -Option Constant;
+New-Variable -Name "EOF" -Value 0 -Option Constant;
+New-Variable -Name "INF" -Value 'C:\Family\powershell\ian.ian' -Option Constant;
+$bytesRead = 0;
+[UInt16]$illCount = 0; # count of illegal characters found
 
-    # The statement '$myEnum.MoveNext()' will return False if
-    # variable $DataLine happens to be an empty string. Thus
-    # the WHILE loop will not be executed. The source file being
-    # examined may well have blank lines in it. This is
-    # expected behaviour and how we cater for these blank
-    # (empty) lines.
-    while ($myEnum.MoveNext()) {
-        $val = [Int32]$myEnum.Current;
-        if ($val -notin ($range.Min..$range.Max)) {
-
-            # Mark the appropriate spot in the StringBuilder object
-            # where an illegal character was found. This helps to show
-            # where the error(s) are later on when we output the
-            # StringBuilder as a string.
-            $bob = $bob.Insert($pos, '^');
-            $myObject.HasErrors = $true;
-        }
-        $pos++;
-    }# end WHILE loop
-    $myObject.Markers = $bob.ToString();
-  }
-
-  END {
-    $myEnum.Dispose();
-    return $myObject;
-  }
-
-} #end function Examine-String
-#endregion ***** end of function Examine-String *****
-
-#region ***** function Main-Routine *****
-function Main-Routine {
-    [CmdletBinding()]
-    [OutputType([System.Void])]
-    Param () #end param
-
-        BEGIN {
-          New-Variable -Name 'INF' -Value 'C:\Family\ian\VisitDirs.java' -Option Constant `
-                       -Description 'Input file to be examined for illegal characters';
-          $utf8 = New-Object -TypeName System.Text.UTF8Encoding -ArgumentList $false, $false;
-          $sread = New-Object -TypeName System.IO.StreamReader -ArgumentList $INF, $utf8;
-          [UInt16]$lineCounter = 0;
-          [String]$inrec = '';
-          # Contains information relating to a string which contains illegal
-          # characters. The structure of this variable is defined in function
-          # 'Examine-String'.
-          $illChars = New-Object PSCustomObject;
-          [UInt16]$errorLines = 0;
-        }
-
-        PROCESS {
-        	Write-Output ('Looking for illegal characters in file {0}' -f $INF);
-            Write-Output '';
-            try {
-              while (-not $sread.EndOfStream) {
-                  # I've had to put the first read from the file at
-                  # the beginning of the WHILE loop as other variations
-                  # of writing this loop failed to stop reading at the
-                  # end-of-file correctly. In other words, it kept on
-                  # trying to read beyond the end-of-file despite the
-                  # fact it had reached the end.
-                  $inrec = $sread.ReadLine();
-
-                  $lineCounter++;
-                  # Examine the string for any illegal characters.
-                  Write-Verbose $inrec;
-                  $illChars = Examine-String -DataLine $inrec;
-
-                  if ($illChars.HasErrors) {
-                      Write-Output ('Source line #{0}' -f $lineCounter);
-                      Write-Output $inrec;
-                      Write-Output $illChars.Markers;
-                      Write-Output '';
-
-                      $errorLines++;
-                  }
-              }# end WHILE loop
-          } finally {
-              $sread.Dispose();
-          }
-
-        }
-
-        END {
-          Write-Output '';
-          Write-Output ('{0} lines read from input file {1}' -f $lineCounter, $INF);
-          Write-Output ('Lines in error: {0}' -f $errorLines);
-        }
-
-} #end function Main-Routine
-#endregion ***** end of function Main-Routine *****
-
-##=============================================
-## SCRIPT BODY
-## Main routine starts here
-##=============================================
-
-Set-StrictMode -Version Latest;
-
-Invoke-Command -ScriptBlock {
-    Write-Output '';
-    Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
- 
-    $script = $MyInvocation.MyCommand.Name;
-    $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-    Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
-    Write-Output '';
- 
+if (-not (Test-Path -Path $INF)) {
+    throw [System.IO.FileNotFoundException] "Input file not found", $INF;
 }
 
-Main-Routine;
+$opts1 = [PSCustomObject]@{
+    path        = $INF;
+    mode        = [System.IO.FileMode]::Open;
+    access      = [System.IO.FileAccess]::Read;
+    share       = [System.IO.FileShare]::Read;
+    bufferSize  = $BUFSIZE;
+    options     = [System.IO.FileOptions]::SequentialScan
+}
+$databuffer = New-Object Byte[] $BUFSIZE;
 
-##=============================================
-## END OF SCRIPT: tt.ps1
-##=============================================
+try {
+    $fis = New-Object -typeName System.IO.FileStream -ArgumentList `
+    $opts1.path, $opts1.mode, $opts1.access, $opts1.share, $opts1.bufferSize, $opts1.options;
+
+    $bytesRead = $fis.Read($databuffer, 0, $databuffer.Length);
+    :outerloop while ($bytesRead -ne $EOF) {
+
+        # Check the data buffer for any dodgy characters.
+        :innerloop for ($i=0; $i -lt $bytesRead; $i++) {
+            if (-not $validBytes.Contains($databuffer[$i])) {
+                Write-Host ("this is a wrong character {0:X2}" -f $databuffer[$i]);
+                $illCount++;
+            }
+        }# end for loop
+
+        $bytesRead = $fis.Read($databuffer, 0, $databuffer.Length);
+    }# end WHILE loop
+}
+catch {
+    $_.Exception.Message;
+    $_.Exception.ItemName;
+}
+finally {
+    $fis.Close();
+    $fis.Dispose();
+}
+Write-Host "`nIllegal characters found in file $($opts1.path): $($illCount)";
+Write-Host 'End of test';
