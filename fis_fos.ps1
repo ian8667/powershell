@@ -32,6 +32,13 @@ No .NET Framework types of objects are output from this script.
 
 .NOTES
 
+A Better View of PowerShell Help
+But in PowerShell 3 we can display help in a pop-up window using the
+-ShowWindow parameter:
+
+PS C:\> help Get-EventLog -ShowWindow
+
+
 File Name    : fis_fos.ps1
 Author       : Ian Molloy
 Last updated : 2018-05-23
@@ -46,6 +53,10 @@ FileStream Class
 Provides a Stream for a file, supporting both synchronous and
 asynchronous read and write operations.
 https://docs.microsoft.com/en-us/dotnet/api/system.io.filestream?view=netframework-4.7.1
+
+About Comment Based Help
+Describes how to write comment-based help topics for functions and scripts.
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comment_based_help?view=powershell-6
 
 #>
 
@@ -107,3 +118,7 @@ if ($hashInfo[0].Hash -ne $hashInfo[1].Hash) {
 
 
 Write-Host "`nEnd of test";
+
+##=============================================
+## END OF SCRIPT: fis_fos.ps1
+##=============================================
