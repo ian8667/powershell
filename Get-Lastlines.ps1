@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2018-04-06
+Last updated : 2018-06-16
 
 .LINK
 
@@ -55,19 +55,20 @@ function Get-Parameters {
     $object = [PSCustomObject]@{
         # Input filename. A 'FileNotFoundException' exception is thrown
         # if the file does not exist.
-        path              = 'C:\test\gashInput.txt';
+        path              = 'C:\Family\powershell\ian2.ian';
 
-        # Int32 Struct. This variable serves a dual purpose as:
-        #   1. The buffer size used by the stream.
-        #   2. Data buffer size when reading a block of bytes by
-        #      the filestream 'Read' method.
+        # Output filename. The file will be overwritten if it exists.
+        pathout           = 'C:\Family\powershell\fred.txt';
+
+        # Int32 Struct. This variable determines the bufferSize
+        # used by the System.IO.Stream object.
         buffersize        = 4096;
 
-        # Int64 Struct. Sets the current position of this stream to
-        # the given value. ie, the total number of bytes from the end
-        # of the file. Adjust this figure accordingly depending upon
-        # the amount of data from the end of the file you wish to look
-        # at.
+        # Int64 Struct. Seek position pointer. Sets the current
+        # position of this stream to the given value. ie, the
+        # total number of bytes from the end of the file. Adjust
+        # this figure accordingly depending upon the amount of
+        # data from the end of the file you wish to look at.
         #
         # So if you're interested in the last 15Kb of the file, for
         # example, set this variable as:
@@ -108,7 +109,7 @@ function Get-InputFilestream {
         path        = $Filename;
         mode        = [System.IO.FileMode]::Open;
         access      = [System.IO.FileAccess]::Read;
-        share       = [System.IO.FileShare]::Read;
+        share       = [System.IO.FileShare]::None; #Declines sharing of the current file.
         bufferSize  = $Buffsize;
         options     = [System.IO.FileOptions]::None;
     }
@@ -128,10 +129,59 @@ function Get-InputFilestream {
 }
 #endregion ***** end of function Get-InputFilestream *****
 
+#region ***** function Get-OutputFilestream *****
+function Get-OutputFilestream {
+  [CmdletBinding()]
+  [OutputType([System.IO.FileStream])]
+  Param (
+    [parameter(Position=0,
+               Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
+    [String]$Filename,
+
+    [parameter(Position=1,
+               Mandatory=$true)]
+    [Int32]$Buffsize
+  ) #end param
+
+  BEGIN {
+     $optOut = [PSCustomObject]@{
+         path        = $Filename;
+         mode        = [System.IO.FileMode]::OpenOrCreate;
+         access      = [System.IO.FileAccess]::Write;
+         share       = [System.IO.FileShare]::None;
+         bufferSize  = $Buffsize;
+         options     = [System.IO.FileOptions]::None;
+     }
+
+    # It is important to note that by specifying "Open", it does
+    # not actually overwrite the entire file, it only starts at
+    # the beginning of the file and overwrites the text up to the
+    # point that the new text ends. To make this a true overwriting
+    # of the file, I will call the SetLength() method and specify
+    # a 0 tell the file to be 0 bytes and clear the file prior
+    # to adding new text. This is similar to using the
+    # Clear-Content cmdlet.
+    $outStream = New-Object -typeName System.IO.FileStream -ArgumentList `
+        $optOut.path, $optOut.mode, $optOut.access, $optOut.share, $optOut.bufferSize, $optOut.options;
+    $outStream.SetLength(0);
+  }
+
+  PROCESS {}
+
+  END {
+
+    return $outStream;
+
+  }
+}
+#endregion ***** end of function Get-OutputFilestream *****
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
+Set-StrictMode -Version Latest;
 
 $param = Get-Parameters;
 Set-Variable -Name "param" -Option ReadOnly -Description "Contains program parameters";
@@ -141,19 +191,10 @@ Set-Variable -Name "param" -Option ReadOnly -Description "Contains program param
 # beginning. In other words, we're going backwards not forwards.
 $theEnd = [System.IO.SeekOrigin]::End;
 
-# Total number of bytes read into the data buffer or zero if the end
-# of the stream (EOF) is reached.
-$bytesRead = 0;
-
-$utf8 = New-Object -TypeName System.Text.UTF8Encoding -ArgumentList $false, $true;
-
-New-Variable -Name "EOF" -Value 0 -Description "End of file marker" -Option Constant;
-
-$param.buffersize = [System.Math]::Abs($param.buffersize);
-$dataBuffer = New-Object byte[] $param.buffersize;
-
 try {
   $fis = Get-InputFilestream -Filename $param.path -Buffsize $param.buffersize;
+
+  $fos = Get-OutputFilestream -Filename $param.pathout -Buffsize $param.buffersize;
 
   # Find out which is the smallest value. This ensures we don't
   # attempt to move the file position (pointer) before the
@@ -161,7 +202,6 @@ try {
   # file. Failure to do so results in the error:
   #   "An attempt was made to move the file pointer before the beginning of the file."
   $lookBytes = [System.Math]::Min($fis.Length, $param.seekPos);
-
 
   # In order to seek to a new position backwards from the end of the
   # stream, the first parameter of method 'Seek' HAS to be a
@@ -171,19 +211,19 @@ try {
   $lookBytes = [System.Math]::Abs($lookBytes) * -1;
   $fis.Seek($lookBytes, $theEnd) | Out-Null;
 
-  $bytesRead = $fis.Read($dataBuffer, 0, $dataBuffer.Length);
-  while ($bytesRead -ne $EOF) {
-    $str = $utf8.GetString($dataBuffer);
-    Write-Output $str;
-
-    $bytesRead = $fis.Read($dataBuffer, 0, $dataBuffer.Length);
-  }
+  # Copying begins at the current position in the current stream, and
+  # does not reset the position of the destination stream after the
+  # copy operation is complete.
+  $fis.CopyTo($fos);
 
 } catch {
   Write-Error -Message $Error[0];
   Write-Error -Message $error[0].InvocationInfo;
 } finally {
   $fis.Close();
+  $fos.Flush();
+  $fos.Close();
+
 }
 
 Write-Host 'End of run';
