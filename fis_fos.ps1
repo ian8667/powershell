@@ -41,7 +41,7 @@ PS C:\> help Get-EventLog -ShowWindow
 
 File Name    : fis_fos.ps1
 Author       : Ian Molloy
-Last updated : 2018-05-23
+Last updated : 2018-07-22
 
 .LINK
 
@@ -82,10 +82,10 @@ $optOut = [PSCustomObject]@{
     options     = [System.IO.FileOptions]::None;
 }
 
+$sw = New-Object -typeName 'System.Diagnostics.Stopwatch';
+$sw.Start();
 
 try {
-  $sw = New-Object -typeName System.Diagnostics.Stopwatch;
-  $sw.Start();
 
   $fis = New-Object -typeName System.IO.FileStream -ArgumentList `
          $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
@@ -94,19 +94,20 @@ try {
 
   $fis.CopyTo($fos, $bufSize);
 
-  $sw.Stop();
-
 } catch {
-  Write-Error -Message $error[0];
+  Write-Error -Message $error[0].Exception.Message;
 } finally {
 	$fos.Flush();
   $fis.Dispose();
   $fos.Dispose();
+  $sw.Stop();
 }
 
 ls $optIn.path, $optOut.path;
 
-Write-Output "`nFile copy complete in $($sw.Elapsed.TotalSeconds) seconds";
+Write-Output "`nElapsed time for File copy:";
+$elapsed = $sw.Elapsed.Duration();
+$elapsed | Format-Table Days, Hours, Minutes, Seconds -AutoSize
 
 # Ensure both files have the same MD5 hash
 $hashInfo = Get-FileHash -Path $optIn.path, $optOut.path -Algorithm MD5;
@@ -116,8 +117,7 @@ if ($hashInfo[0].Hash -ne $hashInfo[1].Hash) {
   Write-Error -Message 'File hashes are not consistent';
 }
 
-
-Write-Host "`nEnd of test";
+Write-Output "`nEnd of test";
 
 ##=============================================
 ## END OF SCRIPT: fis_fos.ps1
