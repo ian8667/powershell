@@ -97,7 +97,7 @@ try {
 } catch {
   Write-Error -Message $error[0].Exception.Message;
 } finally {
-	$fos.Flush();
+  $fos.Flush();
   $fis.Dispose();
   $fos.Dispose();
   $sw.Stop();
@@ -108,6 +108,16 @@ ls $optIn.path, $optOut.path;
 Write-Output "`nElapsed time for File copy:";
 $elapsed = $sw.Elapsed.Duration();
 $elapsed | Format-Table Days, Hours, Minutes, Seconds -AutoSize
+<#
+In terms of elapsed, one could also use the ideas from the
+following web sites:
+
+Use PowerShell and Conditional Formatting to Format Time Spans
+https://blogs.technet.microsoft.com/heyscriptingguy/2013/03/15/use-powershell-and-conditional-formatting-to-format-time-spans/
+
+Custom TimeSpan Format Strings
+https://docs.microsoft.com/en-us/dotnet/standard/base-types/custom-timespan-format-strings
+#>
 
 # Ensure both files have the same MD5 hash
 $hashInfo = Get-FileHash -Path $optIn.path, $optOut.path -Algorithm MD5;
