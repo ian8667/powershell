@@ -7,7 +7,8 @@ Lists the last N bytes of a file.
 
 Uses the FileStream method 'Seek' in order to move the current position
 of the stream to a given value towards the end of the stream in order
-to read (list) the last N bytes of a file.
+to read the last N bytes of a file. The last N bytes is written to a
+file of the users choosing.
 
 The user defined variables 'path', 'buffersize' and 'seekPos' can be
 modified in function Get-Parameters as appropriate. These variables
@@ -31,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2018-06-16
+Last updated : 2018-07-22
 
 .LINK
 
@@ -53,12 +54,14 @@ function Get-Parameters {
 
   BEGIN {
     $object = [PSCustomObject]@{
+    PSTypeName = 'Widget'
+
         # Input filename. A 'FileNotFoundException' exception is thrown
         # if the file does not exist.
-        path              = 'C:\Family\powershell\ian2.ian';
+        path              = 'C:\test\gashinput01.txt';
 
         # Output filename. The file will be overwritten if it exists.
-        pathout           = 'C:\Family\powershell\fred.txt';
+        pathout           = 'C:\test\gashOutput.txt';
 
         # Int32 Struct. This variable determines the bufferSize
         # used by the System.IO.Stream object.
@@ -70,8 +73,8 @@ function Get-Parameters {
         # this figure accordingly depending upon the amount of
         # data from the end of the file you wish to look at.
         #
-        # So if you're interested in the last 15Kb of the file, for
-        # example, set this variable as:
+        # So if you're interested in the last 15 Kb of the file,
+        # for example, set this variable as:
         # seekPos           = [System.Convert]::ToInt64(15Kb);
         seekPos           = [System.Convert]::ToInt64(2kb);
 
@@ -88,6 +91,99 @@ function Get-Parameters {
   }
 }
 #endregion ***** end of function Get-Parameters *****
+
+#region ***** function Check-parameters *****
+function Check-parameters {
+    [CmdletBinding()]
+    [OutputType([System.IO.FileStream])]
+    Param (
+      [parameter(Position=0,
+                 Mandatory=$true)]
+      [ValidateNotNullOrEmpty()]
+      [PSTypeName('Widget')]$Params
+    ) #end param
+
+    BEGIN {
+        $check1 = {
+          # Exception thrown if the file does not exist.
+          param($File)
+
+          $msg = "Cannot find file '$File' because it does not exist";
+          $notfound = New-Object -TypeName 'System.IO.FileNotFoundException' -ArgumentList $msg;
+
+          throw $notfound;
+        } #end scriptblock check1
+
+        $check2 = {
+            # Exception thrown if file length is zero bytes.
+            param($File)
+
+            $msg = "File '$File' must be greater than zero bytes length"
+            $errcat = [System.Management.Automation.ErrorCategory]::InvalidData;
+            $exception = New-Object -TypeName 'System.IO.InvalidDataException' -ArgumentList $msg;
+
+            $msg2 = "A whole lot more details here from err details";
+            $errDetails = New-Object -TypeName 'System.Management.Automation.ErrorDetails' -ArgumentList $msg2;
+
+            $zerobytes = New-Object -TypeName 'System.Management.Automation.ErrorRecord' -ArgumentList `
+                 $exception, 'file has zero bytes length', $errcat, $File;
+            #$zerobytes.ErrorDetails = $errDetails;
+
+            throw $zerobytes;
+        } #end scriptblock check2
+
+        $check3 = {
+            # Exception thrown if input and output filenames are the same
+            param($File1, $File2)
+
+            $msg = "Input file '$File1' cannot be the same as output file '$File2'";
+            $errcat = [System.Management.Automation.ErrorCategory]::InvalidData;
+            $exception = New-Object -TypeName 'System.ArgumentException' -ArgumentList $msg;
+
+            $same = New-Object -TypeName 'System.Management.Automation.ErrorRecord' -ArgumentList `
+                 $exception, 'file names are the same', $errcat, $File;
+            #$zerobytes.ErrorDetails = $errDetails;
+
+            throw $same;
+        } #end scriptblock check3
+
+    } #end BEGIN block
+
+    PROCESS {
+        # 1. Check the input file exists
+        if (-not (Test-Path -Path $Params.path) ) {
+            Invoke-Command -ScriptBlock $check1 -ArgumentList $Params.path;
+        }
+
+        # 2. Check the input file is greater than zero bytes in length
+        if ((Get-Item -Path $Params.path).length -eq 0kb) {
+            Invoke-Command -ScriptBlock $check2 -ArgumentList $Params.path;
+        }
+
+        # 3. Check the input and output file are not the same
+        if ($Params.path -eq $Params.pathout) {
+            Invoke-Command -ScriptBlock $check3 -ArgumentList $Params.path, $Params.pathout;
+        }
+
+        # 4. If the output file exists, ensure we can write to it
+        if (Test-Path -Path $Params.pathout) {
+            $filemode = [System.IO.FileMode]::Open;
+            $fileaccess = [System.IO.FileAccess]::Write;
+
+            try {
+                $tfile = [System.IO.File]::Open($Params.pathout, $filemode, $fileaccess);
+            } catch {
+                Invoke-Command -ScriptBlock $check99 -ArgumentList $Params.path;
+            } finally {
+                $tfile.Dispose();
+            }
+           
+        }
+    }
+
+    END {  }
+}
+#endregion ***** end of function Check-parameters *****
 
 #region ***** function Get-InputFilestream *****
 function Get-InputFilestream {
@@ -154,7 +250,7 @@ function Get-OutputFilestream {
          options     = [System.IO.FileOptions]::None;
      }
 
-    # It is important to note that by specifying "Open", it does
+    # It's important to note that by specifying "Open", it does
     # not actually overwrite the entire file, it only starts at
     # the beginning of the file and overwrites the text up to the
     # point that the new text ends. To make this a true overwriting
@@ -188,7 +284,8 @@ Set-Variable -Name "param" -Option ReadOnly -Description "Contains program param
 
 # Specifies the end of the stream as a reference point to seek from.
 # We do this because we're interested in the end of the file not the
-# beginning. In other words, we're going backwards not forwards.
+# beginning. In other words, we're going backwards from the end of
+# the file.
 $theEnd = [System.IO.SeekOrigin]::End;
 
 try {
@@ -217,8 +314,7 @@ try {
   $fis.CopyTo($fos);
 
 } catch {
-  Write-Error -Message $Error[0];
-  Write-Error -Message $error[0].InvocationInfo;
+  Write-Error -Message $error[0].Exception.Message;
 } finally {
   $fis.Close();
   $fos.Flush();
@@ -226,7 +322,11 @@ try {
 
 }
 
-Write-Host 'End of run';
+Write-Output "Files used";
+Write-Output "Input file: $($param.path)";
+Write-Output "Output file: $($param.pathout)";
+
+Write-Output 'End of copy';
 ##=============================================
 ## END OF SCRIPT: Get-Lastlines.ps1
 ##=============================================
