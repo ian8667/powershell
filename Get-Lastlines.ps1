@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2018-07-22
+Last updated : 2018-07-25
 
 .LINK
 
@@ -61,7 +61,7 @@ function Get-Parameters {
         path              = 'C:\test\gashinput01.txt';
 
         # Output filename. The file will be overwritten if it exists.
-        pathout           = 'C:\test\gashOutput.txt';
+        pathout           = 'C:\Family\powershell\ian.ian';
 
         # Int32 Struct. This variable determines the bufferSize
         # used by the System.IO.Stream object.
@@ -105,10 +105,10 @@ function Check-parameters {
 
     BEGIN {
         $check1 = {
-          # Exception thrown if the file does not exist.
+          # Exception thrown if the input file does not exist.
           param($File)
 
-          $msg = "Cannot find file '$File' because it does not exist";
+          $msg = "Cannot find input file '$File' because it does not exist";
           $notfound = New-Object -TypeName 'System.IO.FileNotFoundException' -ArgumentList $msg;
 
           throw $notfound;
@@ -147,6 +147,20 @@ function Check-parameters {
             throw $same;
         } #end scriptblock check3
 
+        $check4 = {
+            # Exception thrown if unable to write to the output file
+            param($File1)
+
+            $msg = "Unable to write to output file '$File1'";
+            $errcat = [System.Management.Automation.ErrorCategory]::InvalidData;
+            $exception = New-Object -TypeName 'System.IO.IOException' -ArgumentList $msg;
+
+            $writeerr = New-Object -TypeName 'System.Management.Automation.ErrorRecord' -ArgumentList `
+                 $exception, 'cannot write to file', $errcat, $File;
+
+            throw $writeerr;
+        } #end scriptblock check4
+
     } #end BEGIN block
 
     PROCESS {
@@ -173,7 +187,7 @@ function Check-parameters {
             try {
                 $tfile = [System.IO.File]::Open($Params.pathout, $filemode, $fileaccess);
             } catch {
-                Invoke-Command -ScriptBlock $check99 -ArgumentList $Params.path;
+                Invoke-Command -ScriptBlock $check4 -ArgumentList $Params.pathout;
             } finally {
                 $tfile.Dispose();
             }
@@ -281,6 +295,10 @@ Set-StrictMode -Version Latest;
 
 $param = Get-Parameters;
 Set-Variable -Name "param" -Option ReadOnly -Description "Contains program parameters";
+
+# Check the parameters supplied. A terminating error will be
+# if any checks fail.
+Check-parameters -Params $param;
 
 # Specifies the end of the stream as a reference point to seek from.
 # We do this because we're interested in the end of the file not the
