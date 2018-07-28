@@ -19,7 +19,7 @@
 #------------------------------------------------
 # Go to our preferred startup location.
 #------------------------------------------------
-Set-Location C:\Family\powershell
+Set-Location -Path 'C:\Family\powershell'
 Clear-Host
 
 #------------------------------------------------
@@ -32,8 +32,7 @@ Write-Host "We're currently in directory $(Get-Location)"
 #------------------------------------------------
 # Create some aliases.
 #------------------------------------------------
-Set-Alias view   c:\windows\notepad.exe
-
+Set-Alias -Name 'view' -Value 'C:\windows\system32\notepad.exe' -Description 'Alias for notepad'
 #------------------------------------------------
 # Setup some variables.
 #------------------------------------------------
