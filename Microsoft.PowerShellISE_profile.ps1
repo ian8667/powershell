@@ -2,7 +2,7 @@
 # My local Powershell configuration file.
 # Microsoft.PowerShellISE_profile.ps1
 #
-# Last updated: 12 November 2017
+# Last updated: 28 July 2018
 #------------------------------------------------
 
 # Source: http://dougfinke.com/blog/index.php/2009/02/03/powershell-ise-cream/
@@ -59,13 +59,13 @@ Filter Do-Expansion {
 #------------------------------------------------
 # Create some aliases.
 #------------------------------------------------
-Set-Alias view c:\windows\notepad.exe
-Set-Alias vi   c:\windows\notepad.exe
+Set-Alias -Name 'view' -Value 'C:\windows\system32\notepad.exe' -Description 'Alias for notepad'
+Set-Alias -Name 'vi' -Value 'C:\windows\system32\notepad.exe' -Description 'Alias for notepad'
 
 #------------------------------------------------
 # Go to our preferred startup location.
 #------------------------------------------------
-Set-Location C:\Family\powershell
+Set-Location -Path 'C:\Family\powershell'
 Clear-Host
 
 #------------------------------------------------
