@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2018-07-25
+Last updated : 2018-07-26
 
 .LINK
 
@@ -54,7 +54,7 @@ function Get-Parameters {
 
   BEGIN {
     $object = [PSCustomObject]@{
-    PSTypeName = 'Widget'
+    PSTypeName = 'Widget';
 
         # Input filename. A 'FileNotFoundException' exception is thrown
         # if the file does not exist.
@@ -95,7 +95,7 @@ function Get-Parameters {
 #region ***** function Check-parameters *****
 function Check-parameters {
     [CmdletBinding()]
-    [OutputType([System.IO.FileStream])]
+    [OutputType([System.Void])]
     Param (
       [parameter(Position=0,
                  Mandatory=$true)]
@@ -181,10 +181,12 @@ function Check-parameters {
 
         # 4. If the output file exists, ensure we can write to it
         if (Test-Path -Path $Params.pathout) {
+            $tfile = '';
             $filemode = [System.IO.FileMode]::Open;
             $fileaccess = [System.IO.FileAccess]::Write;
 
             try {
+                Write-Output "checking output file $($Params.pathout)"
                 $tfile = [System.IO.File]::Open($Params.pathout, $filemode, $fileaccess);
             } catch {
                 Invoke-Command -ScriptBlock $check4 -ArgumentList $Params.pathout;
@@ -269,8 +271,8 @@ function Get-OutputFilestream {
     # the beginning of the file and overwrites the text up to the
     # point that the new text ends. To make this a true overwriting
     # of the file, I will call the SetLength() method and specify
-    # a 0 tell the file to be 0 bytes and clear the file prior
-    # to adding new text. This is similar to using the
+    # a 0 (zero) to tell the file to be 0 bytes and clear the file
+    # prior to adding new text. This is analogous to using the
     # Clear-Content cmdlet.
     $outStream = New-Object -typeName System.IO.FileStream -ArgumentList `
         $optOut.path, $optOut.mode, $optOut.access, $optOut.share, $optOut.bufferSize, $optOut.options;
@@ -292,6 +294,7 @@ function Get-OutputFilestream {
 ## Main routine starts here
 ##=============================================
 Set-StrictMode -Version Latest;
+$ErrorActionPreference = 'Stop';
 
 $param = Get-Parameters;
 Set-Variable -Name "param" -Option ReadOnly -Description "Contains program parameters";
@@ -329,7 +332,7 @@ try {
   # Copying begins at the current position in the current stream, and
   # does not reset the position of the destination stream after the
   # copy operation is complete.
-  $fis.CopyTo($fos);
+  $fis.CopyTo($fos, $param.buffersize);
 
 } catch {
   Write-Error -Message $error[0].Exception.Message;
@@ -340,7 +343,7 @@ try {
 
 }
 
-Write-Output "Files used";
+Write-Output "Files used:";
 Write-Output "Input file: $($param.path)";
 Write-Output "Output file: $($param.pathout)";
 
