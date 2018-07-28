@@ -13,7 +13,7 @@
 # or
 # $Host.UI.RawUI.WindowTitle = "PowerShell ROCKS"
 #
-# Last updated: 12 November 2017
+# Last updated: 28 July 2018
 #------------------------------------------------
 
 #------------------------------------------------
