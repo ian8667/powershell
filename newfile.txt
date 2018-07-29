@@ -1,70 +1,57 @@
 <#
 .SYNOPSIS
 
-Compiles a Java program.
+Runs a Java program.
 
 .DESCRIPTION
 
-Compiles a Java program. The CLASSPATH used is a CONSTANT declared
-in the 'Variable/constant declarations' section. This may have to
-be updated depending upon the program being compiled.
+Runs a Java program that has already been compiled. The CLASSPATH used
+is a CONSTANT declared in the 'Variable/constant declarations' section.
+This may have to be updated depending upon the program being run.
 
 .PARAMETER JavaFilename
 
-(optional) the Java program to compile in the format of
+(optional) the Java program to run in the format of
 <programname>.java. If a parameter is not supplied, an internal
 function is invoked to obtain the Java program.
 
 .EXAMPLE
 
-./compile.ps1
+./run_java.ps1
 
 As a parameter has not been supplied, an internal function is invoked
 to obtain the Java filename.
 
 .EXAMPLE
 
-./compile.ps1 myfile.java
+./run_java.ps1 myfile.java
 
-The Java program to compile is supplied as a parameter. Error message:
+The Java program to execute is supplied as a parameter. Error message:
 
-Error: file myfile.java not found to compile
+Error: file myfile.java not found to run
 
 is displayed if, for example, file 'myfile.java' cannot be found or
 doesn't exist.
 
 .EXAMPLE
 
-./compile.ps1 -JavaFilename myfile.java
+./run_java.ps1 -JavaFilename myfile.java
 
-Using a named parameter to supply the Java program
-to compile.
+Using a named parameter to supply the Java program to execute.
 
 .INPUTS
 
-None, no .NET Framework types of objects are used as input.
+None. No .NET Framework types of objects are used as input.
 
 .OUTPUTS
 
-No .NET Framework types of objects are output from this script.
-
-Java CLASS files created withing the last few minutes are listed
-if the compile is successful. In the event of an unsuccessful
-compile, Java errors are shown in the usual way.
+None. No .NET Framework types of objects are output from this script.
 
 .NOTES
 
-File Name    : compile.ps1
+File Name    : run_java.ps1
 Author       : Ian Molloy
-Last updated : 2018-07-06
-
-.LINK
-
-Java SE Documentation at a Glance
-http://www.oracle.com/technetwork/java/javase/documentation/index.html
-
-javac - Java programming language compiler
-http://docs.oracle.com/javase/8/docs/technotes/tools/windows/javac.html
+Last updated : 2018-05-12
 
 #>
 
@@ -72,10 +59,11 @@ http://docs.oracle.com/javase/8/docs/technotes/tools/windows/javac.html
 Param (
    [parameter(Position=0,
               Mandatory=$false)]
-   [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
    [String]
    $JavaFilename
 ) #end param
+
+  trap { "An error: $_"; exit 1;}
 
 #################################################
 #region ********** function Get-Script-Info **********
@@ -89,7 +77,7 @@ Param (
 ## where the script is running from.
 ## Returns: N/A
 ##=============================================
-function Get-ScriptInfo
+function Get-ScriptInfo()
 {
    Write-Verbose -Message "Displaying script information";
 
@@ -98,7 +86,7 @@ function Get-ScriptInfo
        $scriptdir = Split-Path -Parent $MyInvocation.ScriptName;
        Write-Output "`nExecuting script ""$scriptname"" in folder ""$scriptdir""";
    } else {
-      $MyInvocation.MyCommand.Definition;
+       $MyInvocation.MyCommand.Definition;
    }
 
 }
@@ -108,11 +96,11 @@ function Get-ScriptInfo
 
 #region ********** Function Get-Filename **********
 #* Function: Get-Filename
-#* Last modified: 2017-02-11
+#* Last modified: 2017-01-15
 #* Author: Ian Molloy
 #*
 #* Arguments:
-#* Title - the title displayed on the dialog box window.
+#* title - the title displayed on the dialog box window.
 #*
 #* See also:
 #* OpenFileDialog Class.
@@ -128,13 +116,11 @@ Param (
         [parameter(Mandatory=$true,
                    HelpMessage="ShowDialog box title")]
         [ValidateNotNullOrEmpty()]
-        [String]$Title
+        [String]$title
       ) #end param
 
-  #trap { "An error: $_"; exit 1;}
-
 BEGIN {
-  Write-Verbose -Message "Invoking function to obtain the Java filename to compile";
+  Write-Verbose -Message "Invoking function to obtain the Java filename to run";
 
   Add-Type -AssemblyName "System.Windows.Forms";
   [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
@@ -149,9 +135,8 @@ BEGIN {
   $ofd.InitialDirectory = "C:\Family\Ian";
   $ofd.Multiselect = $false;
   $ofd.RestoreDirectory = $false;
-  $ofd.Title = $Title; # sets the file dialog box title
+  $ofd.Title = $title; # sets the file dialog box title
   $ofd.DefaultExt = "java";
-
 }
 
 PROCESS {
@@ -191,7 +176,7 @@ param (
         [Char]$char,
         [parameter(Position=1,
                    Mandatory=$true)]
-        [ValidateRange(1,70)]
+        [ValidateRange(1,100)]
         [System.Byte]$num
       ) #end param
 
@@ -245,13 +230,14 @@ END {}
 
 #region ********** Variable/constant declarations **********
 Write-Verbose -Message "Declaring variables and constants";
-# Variable/constant declarations.
+
 #New-Variable -Name APACHE_HOME -Option Constant -Value 'C:\Program Files\Java\commons-io-2.4';
 New-Variable -Name "CPATH" -Option Constant -Value ".";
 New-Variable -Name "JAVA_TOP" -Option Constant -Value "C:\Program Files\Java\jdk-10";
-New-Variable -Name "EXE" -Option Constant -Value "$JAVA_TOP\bin\javac.exe";
+New-Variable -Name "EXE" -Option Constant -Value "$JAVA_TOP\bin\java.exe";
 $ProgramName = "";
 Write-Verbose -Message "Java CLASSPATH used is:`n$CPATH";
+$rc = -1;
 #endregion ********** End of Variable/constant declarations **********
 
 # *****
@@ -264,16 +250,16 @@ Write-Verbose -Message "Java CLASSPATH used is:`n$CPATH";
 # http://powershell.com/cs/blogs/ebook/archive/2009/03/30/chapter-12-command-discovery-and-scriptblocks.aspx#building-scriptblocks
 # *****
 
+
 #------------------------------------------------------------------------------
 # Main routine starts here
 #------------------------------------------------------------------------------
-Set-StrictMode -Version Latest;
 
 Get-ScriptInfo;
 
 # The location of JAVA_TOP changes due to Java updates to new
 # versions. Check the location really exists and that we've
-# not forgotten to change it to the most recent Java update.
+# not forgotten to change it to the most recent Java version.
 if (-not (Test-Path -Path $JAVA_TOP))
 {
     throw [System.IO.DirectoryNotFoundException] "JAVA_TOP $JAVA_TOP not found";
@@ -283,65 +269,40 @@ if ($PSBoundParameters.ContainsKey('JavaFilename')) {
    $ProgramName = $JavaFilename;
    Write-Output "Program name supplied is $ProgramName";
 } else {
-   # Java file to compile has not been supplied. Get the filename.
-   $ProgramName = Get-Filename "Get Java file to compile";
+   # Java file to run has not been supplied. Get the filename.
+   $ProgramName = Get-Filename "Get Java file to run";
 }
 
 Set-Variable -Name ProgramName -Option ReadOnly;
 
 if (Test-Path -Path $ProgramName)
 {
-  printblanklines 2;
-  printcharacter "=" 50;
 
   $dd = Get-Date -Format "dddd, dd MMMM yyyy HH:mm:ss";
-  Write-Output "Compiling program $ProgramName on $dd";
+  Write-Output "Running program $ProgramName on $dd";
 
-  try {
-    & $EXE -Xlint:all -Xmaxerrs 10 -Xmaxwarns 10 -classpath $CPATH $ProgramName;
-  } catch {
-    Write-Error -Message "Java compile failed";
-  }
+  # Strip off the file extension.
+  $Prog = [System.IO.Path]::GetFileNameWithoutExtension($ProgramName);
 
+  printblanklines 2
+  printcharacter "=" 50
+  & $EXE -classpath $CPATH $Prog
   $rc = $LASTEXITCODE;
-  Write-Output "exitcode = $rc";
 
-  Write-Output "`nFile $ProgramName compiled";
+  printcharacter "=" 50
+  printblanklines 2
+  $dd = Get-Date -Format "HH:mm:ss";
+  Write-Output "Process exited at $dd with exit code $rc"
+  Write-Output "Java $ProgramName completed"
 
-  if ($rc -eq 0) {
-     Write-Output "Exit code = $rc";
-     printblanklines 2;
-     printcharacter "=" 50;
-
-     # Show the resultant class files recently compiled.
-     Write-Output "Java CLASS files created within the last few minutes";
-
-     Get-ChildItem -Filter *.class -File |
-         Where-Object {$_.LastWriteTime -ge (Get-Date).AddMinutes(-5)} |
-         Sort-Object -Property LastWriteTime;
-     printblanklines 2;
-     $dd = Get-Date -Format "HH:mm:ss";
-     Write-Output "Current time is: $dd";
-
-  } else {
-    Write-Warning -Message "Process exited with exit code $rc";
-  }
-
-  printcharacter "=" 50;
-  printblanklines 2;
-
-}
-else
-{
-  Write-Error -Message "File $ProgramName not found to compile" `
+} else {
+  Write-Error -Message "File $ProgramName not found to run" `
               -Category ObjectNotFound `
-              -CategoryActivity "Java compile" `
-              -CategoryReason "File not found to compile";
-
+              -CategoryActivity "Java execute" `
+              -CategoryReason "File not found to execute";
 }
 
 exit $rc;
-
 ##=============================================
-## END OF SCRIPT: compile.ps1
+## END OF SCRIPT: run_java.ps1
 ##=============================================
