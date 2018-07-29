@@ -1,57 +1,91 @@
 <#
 .SYNOPSIS
 
-Runs a Java program.
+Copies a file and inserts the current date/time partway through
+the name of the copied file.
 
 .DESCRIPTION
 
-Runs a Java program that has already been compiled. The CLASSPATH used
-is a CONSTANT declared in the 'Variable/constant declarations' section.
-This may have to be updated depending upon the program being run.
+By copying a file and inserting the current date/time partway through
+the name of the copied file, a 'backup copy' is made of the original
+file. This means we can make amendments to the original file and have
+a backup copy should we have the need to revert to it. The date and
+time show when the file was copied and by having a time component, we
+can make more than one copy of a file per day.
 
-.PARAMETER JavaFilename
+File 'fred.txt', for example, will be copied to a file named with a
+format of 'fred_2018-04-22T14-52-26.txt'. The file when copied can be
+set to ReadOnly if required.
 
-(optional) the Java program to run in the format of
-<programname>.java. If a parameter is not supplied, an internal
-function is invoked to obtain the Java program.
+The date/time component used is:
 
-.EXAMPLE
-
-./run_java.ps1
-
-As a parameter has not been supplied, an internal function is invoked
-to obtain the Java filename.
+<filename>_YYYY-MM-DDTHH-MM-SS.<filename extension>
 
 .EXAMPLE
 
-./run_java.ps1 myfile.java
+PS> ./DateCopy-File.ps1
 
-The Java program to execute is supplied as a parameter. Error message:
-
-Error: file myfile.java not found to run
-
-is displayed if, for example, file 'myfile.java' cannot be found or
-doesn't exist.
+A filename to copy has not been supplied so an internal function will be
+invoked to obtain the file to copy.
 
 .EXAMPLE
 
-./run_java.ps1 -JavaFilename myfile.java
+PS> ./DateCopy-File.ps1 myfile.txt
 
-Using a named parameter to supply the Java program to execute.
+The filename supplied will be copied to a file with the name format
+of myfile_YYYY-MM-DDTHH-MM-SS.txt.
+
+.EXAMPLE
+
+PS> ./DateCopy-File.ps1 -Filename myfile.txt
+
+The filename supplied will be copied to a file with the name format
+of myfile_YYYY-MM-DDTHH-MM-SS.txt.
+
+.EXAMPLE
+
+PS> ./DateCopy-File.ps1 myfile.txt -ReadOnly
+
+The filename supplied will be copied to a file with the name format
+of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
+
+.EXAMPLE
+
+PS> ./DateCopy-File.ps1 -Filename myfile.txt -ReadOnly
+
+The filename supplied will be copied to a file with the name format
+of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
 
 .INPUTS
 
-None. No .NET Framework types of objects are used as input.
+None, no .NET Framework types of objects are used as input.
 
 .OUTPUTS
 
-None. No .NET Framework types of objects are output from this script.
+No .NET Framework types of objects are output from this script.
 
 .NOTES
 
-File Name    : run_java.ps1
+File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2018-05-12
+Last updated : 2018-04-22
+
+.LINK
+
+Date and time format - ISO 8601
+https://www.iso.org/iso-8601-date-and-time-format.html
+
+ISO 8601 Data elements and interchange formats
+https://en.wikipedia.org/wiki/ISO_8601
+
+Namespace:   System.IO.Path Class
+https://msdn.microsoft.com/en-us/library/system.io.path(v=vs.110).aspx
+
+Microsoft.PowerShell.Management
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-5.1
+
+Online notepad
+http://www.rapidtables.com/tools/notepad.htm
 
 #>
 
@@ -59,44 +93,19 @@ Last updated : 2018-05-12
 Param (
    [parameter(Position=0,
               Mandatory=$false)]
+   [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
    [String]
-   $JavaFilename
+   $Filename,
+
+   [parameter(Position=1,
+              Mandatory=$false)]
+   [Switch]
+   $ReadOnly
 ) #end param
 
-  trap { "An error: $_"; exit 1;}
-
-#################################################
-#region ********** function Get-Script-Info **********
-##=============================================
-## Function: Get-Script-Info
-## Created: 2013-05-25
-## Author: Ian Molloy
-## Arguments: none
-##=============================================
-## Purpose: displays the script name and folder from
-## where the script is running from.
-## Returns: N/A
-##=============================================
-function Get-ScriptInfo()
-{
-   Write-Verbose -Message "Displaying script information";
-
-   if ($MyInvocation.ScriptName) {
-       $scriptname = Split-Path -Leaf $MyInvocation.ScriptName;
-       $scriptdir = Split-Path -Parent $MyInvocation.ScriptName;
-       Write-Output "`nExecuting script ""$scriptname"" in folder ""$scriptdir""";
-   } else {
-       $MyInvocation.MyCommand.Definition;
-   }
-
-}
-#endregion ********** end of function Get-Script-Info **********
-
-#------------------------------------------------------------------------------
-
-#region ********** Function Get-Filename **********
-#* Function: Get-Filename
-#* Last modified: 2017-01-15
+#region ***** Function Get-OldFilename *****
+#* Function: Get-OldFilename
+#* Last modified: 2017-10-22
 #* Author: Ian Molloy
 #*
 #* Arguments:
@@ -108,35 +117,38 @@ function Get-ScriptInfo()
 #* =============================================
 #* Purpose:
 #* Displays a standard dialog box that prompts
-#* the user to open a file.
+#* the user to select a filename.
 #* =============================================
-function Get-Filename() {
+function Get-OldFilename {
 [CmdletBinding()]
+[OutputType([System.String])]
 Param (
         [parameter(Mandatory=$true,
                    HelpMessage="ShowDialog box title")]
         [ValidateNotNullOrEmpty()]
-        [String]$title
+        [String]$Boxtitle
       ) #end param
 
 BEGIN {
-  Write-Verbose -Message "Invoking function to obtain the Java filename to run";
+  Write-Verbose -Message "Invoking function to obtain the to file to copy";
 
   Add-Type -AssemblyName "System.Windows.Forms";
   [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
 
   $myok = [System.Windows.Forms.DialogResult]::OK;
   $retFilename = "";
+  $ofd.AddExtension = $false;
   $ofd.CheckFileExists = $true;
   $ofd.CheckPathExists = $true;
-  $ofd.ShowHelp = $false;
-  $ofd.Filter = "Java files (*.java)|*.java|All files (*.*)|*.*";
-  $ofd.FilterIndex = 1;
-  $ofd.InitialDirectory = "C:\Family\Ian";
+  $ofd.DefaultExt = ".txt";
+  $ofd.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+  $ofd.InitialDirectory = "C:\Family\powershell";
   $ofd.Multiselect = $false;
+  $ofd.Title = $Boxtitle; # sets the file dialog box title
+  $ofd.ShowHelp = $false;
   $ofd.RestoreDirectory = $false;
-  $ofd.Title = $title; # sets the file dialog box title
-  $ofd.DefaultExt = "java";
+  Set-Variable -Name 'ofd' -Option ReadOnly;
+
 }
 
 PROCESS {
@@ -152,157 +164,107 @@ END {
   return $retFilename;
 }
 }
-#endregion ********** End of function getFilename **********
+#endregion ***** End of function Get-OldFilename *****
 
-#------------------------------------------------------------------------------
-
-#region ********** Function printcharacter **********
-#
-# Prints a character a number of times on the same line
-# without any line breaks.
-# Parameters:
-# char - the character to print.
-# num - the number of times the character shall be printed.
-#
-# Note:
-# This has been written to take into account PowerShell ISE which
-# doesn't seem very console minded.
-#
-function printcharacter() {
-param (
-        [parameter(Position=0,
-                   Mandatory=$true)]
+#region ***** Function Get-NewFilename *****
+#* Function: Get-NewFilename
+#* Last modified: 2017-10-22
+#* Author: Ian Molloy
+#*
+#* Arguments:
+#* filename - the filename from which to create the new
+#* filename.
+#*
+#* See also:
+#* OpenFileDialog Class.
+#* http://msdn.microsoft.com/en-us/library/system.windows.forms.openfiledialog.aspx
+#* =============================================
+#* Purpose:
+#* Creates the new filename from the filename supplied.
+#* =============================================
+function Get-NewFilename {
+[CmdletBinding()]
+[OutputType([System.String])]
+Param (
+        [parameter(Mandatory=$true,
+                   HelpMessage="The filename to rename")]
         [ValidateNotNullOrEmpty()]
-        [Char]$char,
-        [parameter(Position=1,
-                   Mandatory=$true)]
-        [ValidateRange(1,100)]
-        [System.Byte]$num
+        [String]$Filename
       ) #end param
 
 BEGIN {
-  $fred = "";
-}
+  $a = [System.IO.Path]::GetDirectoryName($Filename); # file path only
+  $b = [System.IO.Path]::GetFileNameWithoutExtension($Filename); # filename minus extension
+  $c = [System.IO.Path]::GetExtension($Filename); # extension
 
-PROCESS {}
-
-END {
-  Write-Output $fred.PadRight($num, $char);
-}
-
-}
-#endregion ********** End of function printcharacter **********
-
-#------------------------------------------------------------------------------
-
-#region ********** Function printblanklines **********
-#
-# Prints the number of blank lines specified.
-# Parameters:
-# lines - the number of blank lines to print.
-#
-function printblanklines() {
-param (
-        [parameter(Position=0,
-                   Mandatory=$true)]
-        [ValidateRange(1,15)]
-        [System.Byte]$lines
-      ) #end param
-
-BEGIN {
-  $blankline = ([Char]0X0D + [Char]0X0A);
+  $dd = ("{0:s}" -f (Get-Date))
+  $dd = $dd -replace ':', '-';
 }
 
 PROCESS {
+  # Join the path and filename minus the extension.
+  $tempPath = [System.IO.Path]::Combine($a, $b);
+  $newFilename = ("{0}_{1}{2}" -f $tempPath, $dd, $c);
+}
 
-  for ($i=0; $i -lt $lines; $i++) {
-      Write-Output $blankline;
+END {
+  return $newFilename;
+}
+
+}
+#endregion ***** End of function Get-NewFilename *****
+
+##=============================================
+## SCRIPT BODY
+## Main routine starts here
+##=============================================
+Set-StrictMode -Version Latest;
+
+Invoke-Command -ScriptBlock {
+
+   Write-Host '';
+   Write-Host ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Host ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+if ($PSBoundParameters.ContainsKey('Filename')) {
+   # Use the filename supplied.
+   $oldFilename = Resolve-Path -LiteralPath $Filename;
+} else {
+   # Filename has not been supplied. Execute function Get-OldFilename
+   # to allow the user to select a file to copy.
+   $oldFilename = Get-OldFilename 'File to copy';
+}
+Set-Variable -Name 'oldFilename' -Option ReadOnly;
+
+
+$newFilename = Get-NewFilename $oldFilename;
+Set-Variable -Name 'newFilename' -Option ReadOnly;
+
+Write-Output ("`nFile we want to copy: {0}" -f $oldFilename);
+Write-Output ("New filename = {0}" -f $newFilename);
+Copy-Item -Path $oldFilename -Destination $newFilename -Confirm;
+
+if (Test-Path -Path $newFilename) {
+  # Set the value of the 'LastWriteTime' property of the file just copied
+  # to the current date/time rather than keep the value of the file it
+  # was copied from. If we didn't do this, both the original file and the
+  # file we've copied will have the same 'LastWriteTime' property. The
+  # original file has the earlier 'LastWriteTime' property.
+  Set-ItemProperty -Path $newFilename -Name LastWriteTime -Value (Get-Date);
+
+  if ($PSBoundParameters.ContainsKey('ReadOnly')) {
+     # Set the value of the 'IsReadOnly' property of the file just copied
+     # to true making it read only.
+     Set-ItemProperty -Path $newFilename -Name IsReadOnly -Value $True;
   }
 
 }
 
-END {}
-
-}
-#endregion ********** End of function printblanklines **********
-
-#------------------------------------------------------------------------------
-
-#region ********** Variable/constant declarations **********
-Write-Verbose -Message "Declaring variables and constants";
-
-#New-Variable -Name APACHE_HOME -Option Constant -Value 'C:\Program Files\Java\commons-io-2.4';
-New-Variable -Name "CPATH" -Option Constant -Value ".";
-New-Variable -Name "JAVA_TOP" -Option Constant -Value "C:\Program Files\Java\jdk-10";
-New-Variable -Name "EXE" -Option Constant -Value "$JAVA_TOP\bin\java.exe";
-$ProgramName = "";
-Write-Verbose -Message "Java CLASSPATH used is:`n$CPATH";
-$rc = -1;
-#endregion ********** End of Variable/constant declarations **********
-
-# *****
-# The Call Operator "&"
-# The little call operator "&" gives you great discretionary power
-# over the execution of PowerShell commands. If you place this
-# operator in front of a string (or a string variable), the string
-# will be interpreted as a command and executed just as if you had
-# input it directly into the console.
-# http://powershell.com/cs/blogs/ebook/archive/2009/03/30/chapter-12-command-discovery-and-scriptblocks.aspx#building-scriptblocks
-# *****
-
-
-#------------------------------------------------------------------------------
-# Main routine starts here
-#------------------------------------------------------------------------------
-
-Get-ScriptInfo;
-
-# The location of JAVA_TOP changes due to Java updates to new
-# versions. Check the location really exists and that we've
-# not forgotten to change it to the most recent Java version.
-if (-not (Test-Path -Path $JAVA_TOP))
-{
-    throw [System.IO.DirectoryNotFoundException] "JAVA_TOP $JAVA_TOP not found";
-}
-
-if ($PSBoundParameters.ContainsKey('JavaFilename')) {
-   $ProgramName = $JavaFilename;
-   Write-Output "Program name supplied is $ProgramName";
-} else {
-   # Java file to run has not been supplied. Get the filename.
-   $ProgramName = Get-Filename "Get Java file to run";
-}
-
-Set-Variable -Name ProgramName -Option ReadOnly;
-
-if (Test-Path -Path $ProgramName)
-{
-
-  $dd = Get-Date -Format "dddd, dd MMMM yyyy HH:mm:ss";
-  Write-Output "Running program $ProgramName on $dd";
-
-  # Strip off the file extension.
-  $Prog = [System.IO.Path]::GetFileNameWithoutExtension($ProgramName);
-
-  printblanklines 2
-  printcharacter "=" 50
-  & $EXE -classpath $CPATH $Prog
-  $rc = $LASTEXITCODE;
-
-  printcharacter "=" 50
-  printblanklines 2
-  $dd = Get-Date -Format "HH:mm:ss";
-  Write-Output "Process exited at $dd with exit code $rc"
-  Write-Output "Java $ProgramName completed"
-
-} else {
-  Write-Error -Message "File $ProgramName not found to run" `
-              -Category ObjectNotFound `
-              -CategoryActivity "Java execute" `
-              -CategoryReason "File not found to execute";
-}
-
-exit $rc;
 ##=============================================
-## END OF SCRIPT: run_java.ps1
+## END OF SCRIPT: DateCopy-File.ps1
 ##=============================================
