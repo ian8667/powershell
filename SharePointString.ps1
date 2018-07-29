@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 Displays a (suggested) date/time which could be used within
