@@ -173,7 +173,7 @@ Param () #end param
 
 BEGIN {
   $uri = "https://www.gov.uk/bank-holidays.json";
-  $wantedYear = 2017; # year of interest
+  $wantedYear = (Get-Date).Year; # year of interest
   $holidays = Invoke-RestMethod -Uri $uri |
               Select-Object -ExpandProperty 'england-and-wales';
 
@@ -213,8 +213,8 @@ END {}
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
-
 Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
 Write-Output ("`nToday is {0:dddd, dd MMMM yyyy}" -f (Get-Date));
 
