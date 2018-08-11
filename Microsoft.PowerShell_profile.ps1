@@ -12,14 +12,12 @@
 # $a.WindowTitle = "Admin Session"
 # or
 # $Host.UI.RawUI.WindowTitle = "PowerShell ROCKS"
-#
-# Last updated: 28 July 2018
 #------------------------------------------------
 
 #------------------------------------------------
 # Go to our preferred startup location.
 #------------------------------------------------
-Set-Location -Path 'C:\Family\powershell'
+Set-Location C:\Family\powershell
 Clear-Host
 
 #------------------------------------------------
@@ -32,7 +30,14 @@ Write-Host "We're currently in directory $(Get-Location)"
 #------------------------------------------------
 # Create some aliases.
 #------------------------------------------------
-Set-Alias -Name 'view' -Value 'C:\windows\system32\notepad.exe' -Description 'Alias for notepad'
+Set-Alias -Name 'view' -Value 'c:\windows\notepad.exe';
+Set-Alias -Name 'grep' -Value 'Select-String';
+
+Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward
+Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
+Set-PSReadlineOption -TokenKind String -ForegroundColor Cyan
+Set-PSReadlineOption -ContinuationPromptForegroundColor Magenta
+
 #------------------------------------------------
 # Setup some variables.
 #------------------------------------------------
@@ -59,7 +64,9 @@ function prompt
 #------------------------------------------------
 #Set-PSDebug -Strict
 Set-StrictMode -Version Latest
-
+# The JShell tool, also called REPL (Read Evaluate Print Loop),
+# allows you to execute Java code, getting immediate results.
+$jshell = 'C:\Program Files\Java\jdk-10\bin\jshell.exe';
 
 # Once you've written a number of PowerShell scripts, you
 # might find it useful to collect them in one place and
