@@ -17,6 +17,7 @@ the contents of the directory.
 
 The destination archive filename will be deleted if it exists to avoid
 the exception "Exception calling "CreateFromDirectory" with "4" argument(s)"
+
 .EXAMPLE
 
 ./ZipMyDirectory.ps1
@@ -74,7 +75,7 @@ Add-Type -AssemblyName "System.IO.Compression.FileSystem";
 
 $opt = [System.IO.Compression.CompressionLevel]::Optimal;
 $includeBaseDirectory = $false;
-Write-Output ('Zipping directory {0}' -f $sourceDir);
+Write-Output ('Zipping directory {0} to ZIP file {1}' -f $sourceDir, $destinationFile);
 [System.IO.Compression.ZipFile]::CreateFromDirectory( `
             $sourceDir, `
             $destinationFile, `
