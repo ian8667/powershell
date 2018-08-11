@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 
-Displays a list of bank holidays
+Displays a list of bank holidays for the current year
 
 .DESCRIPTION
 
@@ -67,7 +67,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Holidays.ps1
 Author       : Ian Molloy
-Last updated : 2017-08-29
+Last updated : 2018-08-11
 
 .LINK
 
@@ -143,7 +143,7 @@ Param (
       ) #end param
 
 BEGIN {
-  $dateDifference = [System.DateTime]::Today - [System.DateTime]$HolidayDate;
+  $dateDifference = ([System.DateTime]::Today - [System.DateTime]$HolidayDate);
   $indicator = '';
   $diffResult = [System.Math]::Sign($dateDifference.Days);
 }
