@@ -9,6 +9,7 @@ Param () #end param
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
+$xmlline = New-Object -TypeName 'System.Text.StringBuilder' -ArgumentList 100;
 $settings = New-Object -TypeName System.Xml.XmlReaderSettings;
 $settings.Async = $true;
 $settings.CheckCharacters = $true;
@@ -24,8 +25,9 @@ $indent = 0;
 #             New = 0;}
 $Depth = 0;
 New-Variable -Name indentInc -Value 4 -Option ReadOnly `
-             -Description 'Amount by which text is indented by';
+             -Description 'Amount by which text is indented/decremented by';
 $tagname = "";
+$padchar = "";
 $reader = [System.Xml.XmlReader]::Create($ff, $settings);
 
 Write-Output 'Start of test';
@@ -40,24 +42,30 @@ while ($reader.Read()) {
         $indent -= $indentInc;
     }
 
+    $xmlline.Length = 0;
     switch ($reader.NodeType) {
         $element {
             # A start element tag
-            Write-Output("{0,$($indent)}{1}>" -f "<", $reader.Name);
+            $xmlline.Append("".PadLeft($indent, " ")) | Out-Null;
+            $xmlline.Append('<') | Out-Null;
+            $xmlline.Append($($reader.Name)) | Out-Null;
+            $xmlline.Append('>') | Out-Null;
+            Write-Output $xmlline.ToString();
+
             Write-Verbose("Depth = {0}" -f $reader.Depth);
             break;}
         $endelement {
             # An end element tag
             #$tagname = -Join ($reader.Name, ">");
             #$tagname = -Join ('</', 'parttwo', '>');
-            $tagname = -Join ($reader.Name, '>');
+            #$tagname = -Join ($reader.Name, '>');
             
             #Write-Output("tagname === $tagname");
             #Write-Output("indent === $($indent)");
 
             #$tagname = ("{0,$($indent)}{1}>" -f "</", $reader.Name);
             #Write-Output("{0,$($indent)}{1}" -f "</", $($tagname));
-            Write-Output("{0,$($indent)}{1}" -f '</', $tagname);
+            Write-Output("{0,$($indent)}{1}" -f '</', $reader.Name, ">");
 
             #Write-Output ("{0,$($indent)}" -f 'hellotagname');
             Write-Verbose("Depth = {0}" -f $reader.Depth);
