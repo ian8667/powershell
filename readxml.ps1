@@ -59,14 +59,16 @@ while ($reader.Read()) {
             #$tagname = -Join ($reader.Name, ">");
             #$tagname = -Join ('</', 'parttwo', '>');
             #$tagname = -Join ($reader.Name, '>');
-            
-            #Write-Output("tagname === $tagname");
-            #Write-Output("indent === $($indent)");
 
             #$tagname = ("{0,$($indent)}{1}>" -f "</", $reader.Name);
             #Write-Output("{0,$($indent)}{1}" -f "</", $($tagname));
-            Write-Output("{0,$($indent)}{1}" -f '</', $reader.Name, ">");
-
+            #Write-Output("{0,$($indent)}{1}" -f '</', $reader.Name, ">");
+            $xmlline.Append("".PadLeft($indent, " ")) | Out-Null;
+            $xmlline.Append('</') | Out-Null;
+            $xmlline.Append($($reader.Name)) | Out-Null;
+            $xmlline.Append('>') | Out-Null;
+            Write-Output $xmlline.ToString();
+            
             #Write-Output ("{0,$($indent)}" -f 'hellotagname');
             Write-Verbose("Depth = {0}" -f $reader.Depth);
             Write-Verbose("indent = {0}" -f $indent);
