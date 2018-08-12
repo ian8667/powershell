@@ -14,6 +14,15 @@ Param (
       ) #end param
 
 BEGIN {
+if (-not (Test-Path -Path $Filename)) {
+    Write-Error -Message "Cannot find path '$Filename' because it does not exist" `
+     -Category ObjectNotFound `
+     -RecommendedAction "Supply correct filename" `
+     -CategoryActivity "Opening input file" `
+     -CategoryReason "File not found" `
+     -CategoryTargetName $Filename `
+     -CategoryTargetType "XML file"
+}
 $xsettings = New-Object -TypeName 'System.Xml.XmlReaderSettings';
 $xsettings.Async = $false;
 $xsettings.CheckCharacters = $true;
@@ -44,19 +53,20 @@ END {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-$xmlline = New-Object -TypeName 'System.Text.StringBuilder' -ArgumentList 100;
-$ff = 'C:\Family\ian\hello.xml';
-$xreader = Get-XmlReader $ff;
-# An start element tag, ie <item>.
-$element = [System.Xml.XmlNodeType]::Element;
-# An end element tag ie ie <item>.
-$endelement = [System.Xml.XmlNodeType]::EndElement;
-$indentVal = 0;
-$Depth = 0;
+New-Variable -Name 'inputXML' -Value 'C:\Family\ian\hello.xml' -Option Constant `
+             -Description 'XML file to process';
 New-Variable -Name indentInc -Value 4 -Option Constant `
              -Description 'Amount by which text is indented/decremented by';
+$xmlline = New-Object -TypeName 'System.Text.StringBuilder' -ArgumentList 100;
+$xreader = Get-XmlReader $inputXML;
+# An start element tag, ie <item>.
+$element = [System.Xml.XmlNodeType]::Element;
+# An end element tag ie ie </item>.
+$endelement = [System.Xml.XmlNodeType]::EndElement;
+$indentVal = 0; # The current value by which a line will be indented.
+$Depth = 0; # Holds the depth of the current node in the XML document.
 
-Write-Output 'Start of test';
+Write-Output "Processing XML file $inputXML";
 
 while ($xreader.Read()) {
 
@@ -68,39 +78,34 @@ while ($xreader.Read()) {
         $indentVal -= $indentInc;
     }
 
+    # Empty the StringBuilder object ready for the next line to construct.
     $xmlline.Length = 0;
     switch ($xreader.NodeType) {
         $element {
             # A start element tag
+
+            Write-Verbose "depth is now $($xreader.Depth)"
             $xmlline.Append("".PadLeft($indentVal, " ")) | Out-Null;
             $xmlline.Append('<') | Out-Null;
             $xmlline.Append($($xreader.Name)) | Out-Null;
             $xmlline.Append('>') | Out-Null;
             Write-Output $xmlline.ToString();
 
-            Write-Verbose("Depth = {0}" -f $xreader.Depth);
             break;}
         $endelement {
             # An end element tag
-            #$tagname = -Join ($xreader.Name, ">");
-            #$tagname = -Join ('</', 'parttwo', '>');
-            #$tagname = -Join ($xreader.Name, '>');
 
-            #$tagname = ("{0,$($indentVal)}{1}>" -f "</", $xreader.Name);
-            #Write-Output("{0,$($indentVal)}{1}" -f "</", $($tagname));
-            #Write-Output("{0,$($indentVal)}{1}" -f '</', $xreader.Name, ">");
+            Write-Verbose "depth is now $($xreader.Depth)"
             $xmlline.Append("".PadLeft($indentVal, " ")) | Out-Null;
             $xmlline.Append('</') | Out-Null;
             $xmlline.Append($($xreader.Name)) | Out-Null;
             $xmlline.Append('>') | Out-Null;
             Write-Output $xmlline.ToString();
 
-            #Write-Output ("{0,$($indentVal)}" -f 'hellotagname');
-            Write-Verbose("Depth = {0}" -f $xreader.Depth);
-            Write-Verbose("indent = {0}" -f $indentVal);
             break;}
         default {break;}
     }# end switch
+
     $Depth = $xreader.Depth;
 } #end WHILE loop
 
