@@ -1,4 +1,60 @@
-#
+<#
+.SYNOPSIS
+
+Reads through an XML file and prints start and end tags in a
+hierarchical fashion.
+
+.DESCRIPTION
+
+Reads through an XML file printing the start and end tags to give
+an idea of the structure of the input file. No data is printed.
+
+The input filename is hard coded within the program.
+
+.EXAMPLE
+
+PS> ./ReadXml-File.ps1
+
+If the input file was something like:
+
+<note>
+  <to>Tove</to>
+  <from>Jani</from>
+  <heading>Reminder</heading>
+  <body>Don't forget me this weekend!</body>
+</note>
+
+The sample output will be:
+
+Processing XML file C:\Family\ian\note.xml
+<note>
+    <to>
+    </to>
+    <from>
+    </from>
+    <heading>
+    </heading>
+    <body>
+    </body>
+</note>
+All done now
+
+.INPUTS
+
+None, no .NET Framework types of objects are used as input.
+
+.OUTPUTS
+
+No .NET Framework types of objects are output from this script.
+
+.NOTES
+
+File Name    : ReadXml-File.ps1
+Author       : Ian Molloy
+Last updated : 2018-08-12
+
+#>
+
 [CmdletBinding()]
 Param () #end param
 
@@ -53,7 +109,7 @@ END {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-New-Variable -Name 'inputXML' -Value 'C:\Family\ian\hello.xml' -Option Constant `
+New-Variable -Name 'inputXML' -Value 'C:\Family\ian\note.xml' -Option Constant `
              -Description 'XML file to process';
 New-Variable -Name indentInc -Value 4 -Option Constant `
              -Description 'Amount by which text is indented/decremented by';
