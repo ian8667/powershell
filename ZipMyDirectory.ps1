@@ -60,8 +60,11 @@ Param (
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
+#
+# Change the next two constants accordingly.
+#
 New-Variable -Name 'sourceDir' -Value 'C:\IanmTools\GitRepos\powershell' -Option Constant `
-             -Description 'The path to the directory to be archived';
+             -Description 'The path of the directory to be archived';
 New-Variable -Name 'destinationFile' -Value 'C:\Test\gashfile.zip'  -Option Constant `
              -Description 'The path of the archive (ZIP file) to be created';
 
