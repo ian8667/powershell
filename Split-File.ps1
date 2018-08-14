@@ -1,3 +1,45 @@
+<#
+.SYNOPSIS
+
+Splits a file into multiple smaller files (chunks).
+
+.DESCRIPTION
+
+Splits a text file into smaller files based on a chunk size of 8 Mb.
+Each of these smaller files are equal in size, with the exception of
+the last one created. It is the remainder of the original. Your
+original file is not changed by split. You may find the split command
+helpful in dividing large data files into smaller, more manageable
+files. The original file can be recreated from the chunks created
+using cat command.
+
+.EXAMPLE
+
+PS> ./Split-File.ps1
+
+The file to split up is hardcoded within the program.
+
+.INPUTS
+
+None, no .NET Framework types of objects are used as input.
+
+.OUTPUTS
+
+No .NET Framework types of objects are output from this script.
+
+.NOTES
+
+File Name    : Split-File.ps1
+Author       : Ian Molloy
+Last updated : 2018-08-14
+
+.LINK
+
+Online notepad
+http://www.rapidtables.com/tools/notepad.htm
+
+#>
+
 [CmdletBinding()]
 Param ()
 
@@ -38,26 +80,41 @@ $ErrorActionPreference = "Stop";
 # Stream.Close Method
 # http://msdn.microsoft.com/en-us/library/system.io.stream.close.aspx
 #
-$inputfile = "C:\junk\gashinputfile.txt";
+
+New-Variable -Name INPUTFILE -Value "C:\junk\gashinputfile.txt" -Option Constant
+             -Description 'Input text file to be split up into smaller files';
+
+New-Variable -Name CHUNKSIZE -Value 8MB -Option Constant
+             -Description 'The original file will be split up into smaller files of this size';
+
+New-Variable -Name BUFFSIZE -Value 4KB -Option Constant
+             -Description 'Buffer size used with file I/O';
+
+New-Variable -Name EOF -Value 0 -Option Constant
+             -Description 'Signifies the end of the stream has been reached';
+
 # Opens an existing file for reading.
+# Returns: FileStream, A read-only FileStream on the specified path.
 $sourceFile = [System.IO.File]::OpenRead($inputfile);
 Write-Host "Reading from input file $inputfile";
 
-$chunkSize = 1kb;
-$buff = New-Object -TypeName byte[] $chunkSize;
+$dataBuffer = New-Object -TypeName byte[] $BUFFSIZE;
 
+# The total number of bytes read into the buffer. This can be less
+# than the number of bytes requested if that many bytes are not
+# currently available, or zero (0) if the end of the stream has been
+# reached.
 $bytesRead = 0;
+
 $idx = 0; # Used to help identify chunk files and forms part of the filename.
-$eof = 0; # Signifies the end of the stream has been reached.
 
 # Create the chunk file template in the format of, for example:
-#   C:\junk\ian.{0}.csv
+#   C:\junk\filename.{0}.csv
 # where the place holder will be used to insert an integer
 # number thus making the file name unqiue each time around.
 $pos = $inputfile.LastIndexOf([System.IO.Path]::GetExtension($inputfile));
 $template = $inputfile.Insert($pos, ".{0}");
 Write-Verbose -Message "Chunk file template used is $template";
-#($template -f 7);
 
 Write-Host "Splitting file $inputfile using $chunkSize byte chunks per file.";
 try {
@@ -67,32 +124,32 @@ try {
         # might be less than the number of bytes requested if that number
         # of bytes are not currently available, or zero (EOF) if the end of
         # the stream is reached.
-        $bytesRead = $sourceFile.Read($buff, 0, $buff.Length);
-        if ($bytesRead -gt $eof) {
+        $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
+        if ($bytesRead -gt $EOF) {
 
             # Increment counter ready for the next filename to be used.
             $idx++;
 
             # Create a filename for the next chunk file to be written to.
             # The number portion of filename will have leading zeros.
-            $to = ($template -f ($idx.ToString('000')));
+            $fout = ($template -f ($idx.ToString('000')));
 
             # Open the next chunk file to write to.
-            $dest = [System.IO.File]::OpenWrite($to);
+            $destFile = [System.IO.File]::OpenWrite($fout);
 
             try {
-                Write-Host "Writing to chunk file $to";
-                $dest.Write($buff, 0, $bytesRead);
+                Write-Host "Writing to chunk file $fout";
+                $destFile.Write($dataBuffer, 0, $bytesRead);
             } finally {
                 # Close the chunk file just used. We don't need it anymore.
-                $dest.Flush($true);
-                $dest.Close();
+                $destFile.Flush($true);
+                $destFile.Close();
             }
         
         } #end of IF statement.
 
 
-    } while ($bytesRead -gt $eof)
+    } while ($bytesRead -gt $EOF)
 }
 finally {
     # Close the input file.
@@ -107,7 +164,7 @@ if ($PSBoundParameters['Verbose']) {
      $p1 = [System.IO.Path]::GetDirectoryName($ff);
      $p2 = [System.IO.Path]::GetFileNameWithoutExtension($ff) + '*';
      #$newfiles.append([System.IO.Path]::GetDirectoryName($ff));
-     ls -Path $p1 -Filter $p2;
+     #ls -Path $p1 -Filter $p2;
 }
 
 Write-Host "";
