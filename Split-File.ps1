@@ -71,7 +71,7 @@ $ErrorActionPreference = "Stop";
 New-Variable -Name INPUTFILE -Value "C:\test\bigfile.txt" -Option Constant `
              -Description 'Input text file to be split up into smaller files';
 
-New-Variable -Name CHUNKSIZE -Value 2MB -Option Constant `
+New-Variable -Name CHUNKSIZE -Value 8MB -Option Constant `
              -Description 'The original file will be split up into smaller files of this size';
 
 New-Variable -Name BUFFSIZE -Value 4KB -Option Constant `
