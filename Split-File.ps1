@@ -11,7 +11,7 @@ the last one created. It is the remainder of the original. Your
 original file is not changed by split. You may find the split command
 helpful in dividing large data files into smaller, more manageable
 files. The original file can be recreated from the chunks created
-using cat command.
+using cat command (Get-Content).
 
 .EXAMPLE
 
@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Split-File.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-14
+Last updated : 2018-08-18
 
 .LINK
 
@@ -162,7 +162,7 @@ try {
 
             # Close the chunk file just written to. We don't need it anymore.
             $destFile.Flush($true);
-            $destFile.Close();
+            $destFile.Dispose();
 
         } //end WHILE (outer) loop
 
