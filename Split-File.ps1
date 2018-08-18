@@ -106,7 +106,14 @@ $dataBuffer = New-Object -TypeName byte[] $BUFFSIZE;
 # reached.
 $bytesRead = 0;
 
-$idx = 0; # Used to help identify chunk files and forms part of the filename.
+# Keeps track of the number of bytes written to the current chunk.
+# When the number of bytes written is greater than or equal to
+# the value of 'CHUNKSIZE', we know we've completed the current
+# chunk and can consider creating another chunk if necessary.
+$bytesWritten = 0;
+
+# Used to help identify chunk files and forms part of the filename.
+$idx = 0;
 
 # Create the chunk file template in the format of, for example:
 #   C:\junk\filename.{0}.csv
@@ -119,39 +126,47 @@ Write-Verbose -Message "Chunk file template used is $template";
 Write-Host "Splitting file $inputfile using $chunkSize byte chunks per file.";
 try {
 
-    do {
         # $bytesRead - the total number of bytes read into the buffer. This
         # might be less than the number of bytes requested if that number
         # of bytes are not currently available, or zero (EOF) if the end of
         # the stream is reached.
         $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
-        if ($bytesRead -gt $EOF) {
+
+        :outerloop while ($bytesRead -gt $EOF) {
 
             # Increment counter ready for the next filename to be used.
             $idx++;
 
+            $bytesWritten = 0;
+
             # Create a filename for the next chunk file to be written to.
-            # The number portion of filename will have leading zeros.
+            # The number portion of filename will have leading zeros. So
+            # the number 7 will be written into the filename as 007.
             $fout = ($template -f ($idx.ToString('000')));
 
             # Open the next chunk file to write to.
+            # Returns FileStream, An unshared FileStream object on
+            # the specified path with Write access.
             $destFile = [System.IO.File]::OpenWrite($fout);
 
-            try {
-                Write-Host "Writing to chunk file $fout";
+            :innerloop while (($bytesWritten -le $CHUNKSIZE) -or ($bytesRead -gt $EOF)) {
+                # Keep track of how many bytes we've written to
+                # the current chunk.
+                $bytesWritten += $bytesRead;
+
                 $destFile.Write($dataBuffer, 0, $bytesRead);
-            } finally {
-                # Close the chunk file just used. We don't need it anymore.
-                $destFile.Flush($true);
-                $destFile.Close();
-            }
-        
-        } #end of IF statement.
 
+                $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
 
-    } while ($bytesRead -gt $EOF)
-}
-finally {
+            } //end WHILE (inner) loop
+
+            # Close the chunk file just written to. We don't need it anymore.
+            $destFile.Flush($true);
+            $destFile.Close();
+
+        } //end WHILE (outer) loop
+
+} finally {
     # Close the input file.
     $sourceFile.Close();
 }
