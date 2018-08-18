@@ -82,8 +82,8 @@ New-Variable -Name EOF -Value 0 -Option Constant `
 
 # Opens an existing file for reading.
 # Returns: FileStream, A read-only FileStream on the specified path.
-$sourceFile = [System.IO.File]::OpenRead($inputfile);
-Write-Host "Reading from input file $inputfile";
+$sourceFile = [System.IO.File]::OpenRead($INPUTFILE);
+Write-Host "Reading from input file $INPUTFILE";
 
 $dataBuffer = New-Object -TypeName byte[] $BUFFSIZE;
 
@@ -158,11 +158,12 @@ try {
 } finally {
     # Close the input file.
     $sourceFile.Close();
+    $sourceFile.Dispose();
 }
 
-Write-Host "";
-Write-Host ("{0} chunk files created" -f $idx);
-Write-Host "All done now!";
+Write-Output "";
+Write-Output ("{0} chunk files created" -f $idx);
+Write-Output "All done now!";
 
 ##=============================================
 ## END OF SCRIPT: Split-File.ps1
