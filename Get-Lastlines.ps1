@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2018-07-26
+Last updated : 2018-08-19
 
 .LINK
 
@@ -58,7 +58,7 @@ function Get-Parameters {
 
         # Input filename. A 'FileNotFoundException' exception is thrown
         # if the file does not exist.
-        path              = 'C:\test\gashinput01.txt';
+        path              = 'C:\test\sampledata.dat';
 
         # Output filename. The file will be overwritten if it exists.
         pathout           = 'C:\Family\powershell\ian.ian';
@@ -76,7 +76,7 @@ function Get-Parameters {
         # So if you're interested in the last 15 Kb of the file,
         # for example, set this variable as:
         # seekPos           = [System.Convert]::ToInt64(15Kb);
-        seekPos           = [System.Convert]::ToInt64(2kb);
+        seekPos           = [System.Convert]::ToInt64(10kb);
 
     }
 
@@ -133,7 +133,7 @@ function Check-parameters {
         } #end scriptblock check2
 
         $check3 = {
-            # Exception thrown if input and output filenames are the same
+            # Exception thrown if input and output filenames have the same name
             param($File1, $File2)
 
             $msg = "Input file '$File1' cannot be the same as output file '$File2'";
@@ -337,9 +337,9 @@ try {
 } catch {
   Write-Error -Message $error[0].Exception.Message;
 } finally {
-  $fis.Close();
+  $fis.Dispose();
   $fos.Flush();
-  $fos.Close();
+  $fos.Dispose();
 
 }
 
