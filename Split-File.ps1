@@ -13,6 +13,10 @@ helpful in dividing large data files into smaller, more manageable
 files. The original file can be recreated from the chunks created
 using cat command (Get-Content).
 
+As byte buffers are used to copy data, it's not possible to do anything
+about (or correct) trailining spaces or end-of-line sequence (i.e.,
+Unix or MS Windows). The data is copied as-is.
+
 .EXAMPLE
 
 PS> ./Split-File.ps1
