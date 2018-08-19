@@ -38,7 +38,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Find-IllegalChars.ps1
 Author       : Ian Molloy
-Last updated : 2018-04-27
+Last updated : 2018-08-19
 
 .LINK
 
@@ -53,6 +53,11 @@ an object that can iterate through the individual characters in a string.
 
 System.CharEnumerator
 Supports iterating over a String object and reading its individual characters.
+
+The HashSet<T> class provides high-performance set operations. A set
+is a collection that contains no duplicate elements, and whose elements
+are in no particular order.
+http://bit.ly/2nRI5xG
 
 #>
 
@@ -107,71 +112,6 @@ END {
 }
 #endregion ***** End of function Get-Filename *****
 
-#region ***** function Examine-String *****
-function Examine-String {
-[CmdletBinding()]
-[OutputType([System.Management.Automation.PSCustomObject])]
-Param (
-       [parameter(Position=0,
-                  Mandatory=$true)]
-       [AllowEmptyString()]
-       [ValidateNotNull()]
-       [String]$DataLine
-      ) #end param
-
-  BEGIN {
-    [Int32]$pos = 0;
-    $myEnum = $DataLine.GetEnumerator();
-    [Int32]$val = 0;
-    $bob = New-Object -TypeName System.Text.StringBuilder -ArgumentList $DataLine.Length;
-    $myObject = [PSCustomObject]@{
-        HasErrors  = $false;
-        Markers    = '';
-    }
-    # Delimits the range of byte values we're prepared to accept.
-    # Anything outside the range is deemed to be illegal. All
-    # values are in decimal.
-    $range = @{
-        Min = 1
-        Max  = 127
-    }
-        
-  }
-
-  PROCESS {
-    # Initialise our StringBuilder object with spaces.
-    $bob = $bob.Insert(0, ' ', $DataLine.Length);
-
-    # The statement '$myEnum.MoveNext()' will return False if
-    # variable $DataLine happens to be an empty string. Thus
-    # the WHILE loop will not be executed. The source file being
-    # examined may well have blank lines in it. This is
-    # expected behaviour and how we cater for these blank
-    # (empty) lines.
-    while ($myEnum.MoveNext()) {
-        $val = [Int32]$myEnum.Current;
-        if ($val -notin ($range.Min..$range.Max)) {
-
-            # Mark the appropriate spot in the StringBuilder object
-            # where an illegal character was found. This helps to show
-            # where the error(s) are later on when we output the
-            # StringBuilder as a string.
-            $bob = $bob.Insert($pos, '^');
-            $myObject.HasErrors = $true;
-        }
-        $pos++;
-    }# end WHILE loop
-    $myObject.Markers = $bob.ToString();
-  }
-
-  END {
-    $myEnum.Dispose();
-    return $myObject;
-  }
-
-} #end function Examine-String
-#endregion ***** end of function Examine-String *****
-
 #region ***** function Main-Routine *****
 function Main-Routine {
     [CmdletBinding()]
@@ -182,54 +122,65 @@ function Main-Routine {
           $inf = Get-Filename 'File to examine'  ;
           Set-Variable -Name "inf" -Option ReadOnly `
               -Description 'Input file to be examined for illegal characters';
-          $utf8 = New-Object -TypeName System.Text.UTF8Encoding -ArgumentList $false, $false;
-          $sread = New-Object -TypeName System.IO.StreamReader -ArgumentList $INF, $utf8;
-          [UInt16]$lineCounter = 0;
-          [String]$inrec = '';
-          # Contains information relating to a string which contains illegal
-          # characters. The structure of this variable is defined in function
-          # 'Examine-String'.
-          $illChars = New-Object PSCustomObject;
-          [UInt16]$errorLines = 0;
+          New-Variable -Name BUFFSIZE -Value 4KB -Option Constant `
+                       -Description 'Buffer size used with file I/O';
+          New-Variable -Name EOF -Value 0 -Option Constant `
+                       -Description 'Signifies the end of the stream has been reached';
+          $dataBuffer = New-Object -TypeName byte[] $BUFFSIZE;
+          $range = @{
+              Min = 1
+              Max  = 127
+          }
+          Set-Variable -Name "range" -Option ReadOnly `
+              -Description 'Contains the range of decimal values considered to valid';
+          # A set is a collection that contains no duplicate elements,
+          # and whose elements are in no particular order.
+          $errorSet = New-Object -typeName 'System.Collections.Generic.HashSet[Int32]';
+          $optIn = [PSCustomObject]@{
+            path        = $inf;
+            mode        = [System.IO.FileMode]::Open;
+            access      = [System.IO.FileAccess]::Read;
+            share       = [System.IO.FileShare]::Read;
+            bufferSize  = $BUFFSIZE;
+            options     = [System.IO.FileOptions]::SequentialScan;
+          }
+          $sourceFile = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
+                 $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
+
+          [UInt16]$errorBytes = 0;
         }
 
         PROCESS {
-        	Write-Output ('Looking for illegal characters in file {0}' -f $INF);
+          Write-Output ('Looking for illegal characters in file {0}' -f $inf);
             Write-Output '';
             try {
-              while (-not $sread.EndOfStream) {
-                  # I've had to put the first read from the file at
-                  # the beginning of the WHILE loop as other variations
-                  # of writing this loop failed to stop reading at the
-                  # end-of-file correctly. In other words, it kept on
-                  # trying to read beyond the end-of-file despite the
-                  # fact it had reached the end.
-                  $inrec = $sread.ReadLine();
+               $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
+write-verbose -message "Bytes read = $($bytesRead)";
+               # Loop to process file
+               while ($bytesRead -gt $EOF) {
 
-                  $lineCounter++;
-                  # Examine the string for any illegal characters.
-                  Write-Verbose $inrec;
-                  $illChars = Examine-String -DataLine $inrec;
+                  # Loop to process each dataBuffer
+                  foreach ($num in 0..($bytesRead-1)) {
+write-verbose -message "value = $($dataBuffer[$num])";
 
-                  if ($illChars.HasErrors) {
-                      Write-Output ('Source line #{0}' -f $lineCounter);
-                      Write-Output $inrec;
-                      Write-Output $illChars.Markers;
-                      Write-Output '';
+                    if ($dataBuffer[$num] -notin ($range.Min..$range.Max)) {
+                    	 $errorBytes++;
+                    	 $errorSet.Add($dataBuffer[$num]);
+                    }
+                  } #end foreach loop
 
-                      $errorLines++;
-                  }
-              }# end WHILE loop
-          } finally {
-              $sread.Dispose();
-          }
+                  $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
+               } #end WHILE loop
+
+             } finally {
+               $sourceFile.Dispose();
+            }
 
         }
 
         END {
           Write-Output '';
-          Write-Output ('{0} lines read from input file {1}' -f $lineCounter, $INF);
-          Write-Output ('Lines in error: {0}' -f $errorLines);
+          Write-Output ('Bytes in error: {0}' -f $errorBytes);
         }
 
 } #end function Main-Routine
@@ -239,22 +190,22 @@ function Main-Routine {
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
-
 Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
     Write-Output '';
     Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
- 
+
     $script = $MyInvocation.MyCommand.Name;
     $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
     Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
     Write-Output '';
- 
+
 }
 
 Main-Routine;
 
 ##=============================================
-## END OF SCRIPT: tt.ps1
+## END OF SCRIPT: Find-IllegalChars.ps1
 ##=============================================
