@@ -299,7 +299,7 @@ $ErrorActionPreference = 'Stop';
 $param = Get-Parameters;
 Set-Variable -Name "param" -Option ReadOnly -Description "Contains program parameters";
 
-# Check the parameters supplied. A terminating error will be
+# Check the parameters supplied. A terminating error will be thrown
 # if any checks fail.
 Check-parameters -Params $param;
 
