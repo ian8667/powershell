@@ -35,7 +35,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Split-File.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-18
+Last updated : 2018-08-19
 
 .LINK
 
