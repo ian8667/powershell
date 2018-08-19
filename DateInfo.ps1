@@ -67,7 +67,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2018-01-02
+Last updated : 2018-08-19
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -385,6 +385,9 @@ END {
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
 Write-Verbose -Message "Starting script $($MyInvocation.Mycommand)";
 
 Show-DateInformation;
