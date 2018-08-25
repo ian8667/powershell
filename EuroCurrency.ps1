@@ -380,7 +380,11 @@ END {
 ## Main routine starts here
 ##=============================================
 Set-StrictMode -Version Latest;
+<<<<<<< HEAD
 $ErrorActionPreference = 'Stop';
+=======
+$ErrorActionPreference = "Stop";
+>>>>>>> dev_illegal
 
 Clear-Host;
 Write-Output '';

@@ -5,9 +5,9 @@ Examines a file for illegal characters.
 
 .DESCRIPTION
 
-Reads in a file line by line examining each one for illegal characters.
+Reads in a file byte by byte examining each one for illegal characters.
 As my interest is with ASCII files, an illegal character is deemed to
-be anything with a value outside the range of 0 to 127 (decimal).
+be anything with a value outside the range of 1 to 127 (decimal).
 
 This program came about when I compiled a Java program which complained
 about illegal characters. I had a rough idea where in the program it
@@ -38,13 +38,18 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Find-IllegalChars.ps1
 Author       : Ian Molloy
+<<<<<<< HEAD
 Last updated : 2018-08-19
+=======
+Last updated : 2018-08-25
+>>>>>>> dev_illegal
 
 .LINK
 
 PSScriptAnalyzer deep dive Part 1 of 4
 https://blogs.technet.microsoft.com/heyscriptingguy/2017/01/31/psscriptanalyzer-deep-dive-part-1-of-4/
 
+<<<<<<< HEAD
 About Functions Advanced Parameters
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-6
 
@@ -59,6 +64,8 @@ is a collection that contains no duplicate elements, and whose elements
 are in no particular order.
 http://bit.ly/2nRI5xG
 
+=======
+>>>>>>> dev_illegal
 #>
 
 [CmdletBinding()]
@@ -112,6 +119,48 @@ END {
 }
 #endregion ***** End of function Get-Filename *****
 
+<<<<<<< HEAD
+=======
+#region ***** function Get-Filestream *****
+function Get-Filestream {
+[CmdletBinding()]
+[OutputType([System.IO.FileStream])]
+Param (
+       [parameter(Position=0,
+                  Mandatory=$true)]
+       [AllowEmptyString()]
+       [ValidateNotNull()]
+       [String]$Filename
+      ) #end param
+
+  BEGIN {
+
+    [String]$inf = Get-Filename 'File to examine';
+
+    $optIn = [PSCustomObject]@{
+        path        = $inf;
+        mode        = [System.IO.FileMode]::Open;
+        access      = [System.IO.FileAccess]::Read;
+        share       = [System.IO.FileShare]::Read;
+        bufferSize  = 4KB;
+        options     = [System.IO.FileOptions]::SequentialScan;
+    }
+
+    $fis = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
+           $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
+
+  }
+
+  PROCESS {}
+
+  END {
+    return $fis;
+  }
+
+} #end function Get-Filestream
+#endregion ***** end of function Get-Filestream *****
+
+>>>>>>> dev_illegal
 #region ***** function Main-Routine *****
 function Main-Routine {
     [CmdletBinding()]
@@ -119,9 +168,10 @@ function Main-Routine {
     Param () #end param
 
         BEGIN {
-          $inf = Get-Filename 'File to examine'  ;
-          Set-Variable -Name "inf" -Option ReadOnly `
+          $fis = Get-Filestream 'Filename to check';
+          Set-Variable -Name "fis" -Option ReadOnly `
               -Description 'Input file to be examined for illegal characters';
+<<<<<<< HEAD
           New-Variable -Name BUFFSIZE -Value 4KB -Option Constant `
                        -Description 'Buffer size used with file I/O';
           New-Variable -Name EOF -Value 0 -Option Constant `
@@ -175,12 +225,54 @@ write-verbose -message "value = $($dataBuffer[$num])";
              } finally {
                $sourceFile.Dispose();
             }
+=======
+          $fname = $fis.Name;
+          [UInt16]$errorChars = 0;
+          [Int32]$bytesRead = 0;
+          $dataBuffer = New-Object -TypeName byte[] 4KB;
+          New-Variable -Name EOF -Value 0 -Option Constant `
+                       -Description 'Signifies the end of the stream has been reached';
+          $range = @{
+             Min = 1
+             Max  = 127
+          }
+
+        }
+
+        PROCESS {
+          $bytesRead = $fis.Read($dataBuffer, 0, $dataBuffer.Length);
+            Write-Output '';
+            try {
+              # outer loop to read through the filestream
+              while ($bytesRead -gt $EOF) {
+
+                # Inner loop to process the databuffer
+                foreach ($num in 0..($bytesRead-1)) {
+
+                  if ($databuffer[$num] -notin ($range.Min..$range.Max)) {
+                    $errorChars++;
+                  }
+
+                }
+
+                $bytesRead = $fis.Read($databuffer, 0, $databuffer.Length);
+
+              }# end WHILE loop
+          } finally {
+              $fis.Dispose();
+          }
+>>>>>>> dev_illegal
 
         }
 
         END {
           Write-Output '';
+<<<<<<< HEAD
           Write-Output ('Bytes in error: {0}' -f $errorBytes);
+=======
+          Write-Output ('Target file {0}' -f $fname);
+          Write-Output ('Characters in error: {0}' -f $errorChars);
+>>>>>>> dev_illegal
         }
 
 } #end function Main-Routine
