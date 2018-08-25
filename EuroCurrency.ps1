@@ -379,8 +379,8 @@ END {
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
-
 Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
 Clear-Host;
 Write-Output '';

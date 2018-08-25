@@ -83,6 +83,8 @@ Param (
 #--------------------------------------------------------------------
 # Main routine starts here
 #--------------------------------------------------------------------
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
 # Convert the character positions of the input array to
 # a string so we can display them later to remind us
