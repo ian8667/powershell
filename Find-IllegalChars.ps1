@@ -239,8 +239,8 @@ function Main-Routine {
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
-
 Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
     Write-Output '';
