@@ -169,5 +169,5 @@ $xreader.Dispose();
 Write-Output 'All done now';
 
 ##=============================================
-## END OF SCRIPT: readxml.ps1
+## END OF SCRIPT: ReadXml-File.ps1
 ##=============================================
