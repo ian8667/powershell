@@ -5,9 +5,9 @@ Examines a file for illegal characters.
 
 .DESCRIPTION
 
-Reads in a file line by line examining each one for illegal characters.
+Reads in a file byte by byte examining each one for illegal characters.
 As my interest is with ASCII files, an illegal character is deemed to
-be anything with a value outside the range of 0 to 127 (decimal).
+be anything with a value outside the range of 1 to 127 (decimal).
 
 This program came about when I compiled a Java program which complained
 about illegal characters. I had a rough idea where in the program it
@@ -38,21 +38,12 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Find-IllegalChars.ps1
 Author       : Ian Molloy
-Last updated : 2018-04-27
+Last updated : 2018-08-25
 
 .LINK
 
 PSScriptAnalyzer deep dive Part 1 of 4
 https://blogs.technet.microsoft.com/heyscriptingguy/2017/01/31/psscriptanalyzer-deep-dive-part-1-of-4/
-
-About Functions Advanced Parameters
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-6
-
-System.String.GetEnumerator Method
-an object that can iterate through the individual characters in a string.
-
-System.CharEnumerator
-Supports iterating over a String object and reading its individual characters.
 
 #>
 
@@ -107,70 +98,44 @@ END {
 }
 #endregion ***** End of function Get-Filename *****
 
-#region ***** function Examine-String *****
-function Examine-String {
+#region ***** function Get-Filestream *****
+function Get-Filestream {
 [CmdletBinding()]
-[OutputType([System.Management.Automation.PSCustomObject])]
+[OutputType([System.IO.FileStream])]
 Param (
        [parameter(Position=0,
                   Mandatory=$true)]
        [AllowEmptyString()]
        [ValidateNotNull()]
-       [String]$DataLine
+       [String]$Filename
       ) #end param
 
   BEGIN {
-    [Int32]$pos = 0;
-    $myEnum = $DataLine.GetEnumerator();
-    [Int32]$val = 0;
-    $bob = New-Object -TypeName System.Text.StringBuilder -ArgumentList $DataLine.Length;
-    $myObject = [PSCustomObject]@{
-        HasErrors  = $false;
-        Markers    = '';
+
+    [String]$inf = Get-Filename 'File to examine';
+
+    $optIn = [PSCustomObject]@{
+        path        = $inf;
+        mode        = [System.IO.FileMode]::Open;
+        access      = [System.IO.FileAccess]::Read;
+        share       = [System.IO.FileShare]::Read;
+        bufferSize  = 4KB;
+        options     = [System.IO.FileOptions]::SequentialScan;
     }
-    # Delimits the range of byte values we're prepared to accept.
-    # Anything outside the range is deemed to be illegal. All
-    # values are in decimal.
-    $range = @{
-        Min = 1
-        Max  = 127
-    }
-        
+
+    $fis = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
+           $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
+
   }
 
-  PROCESS {
-    # Initialise our StringBuilder object with spaces.
-    $bob = $bob.Insert(0, ' ', $DataLine.Length);
-
-    # The statement '$myEnum.MoveNext()' will return False if
-    # variable $DataLine happens to be an empty string. Thus
-    # the WHILE loop will not be executed. The source file being
-    # examined may well have blank lines in it. This is
-    # expected behaviour and how we cater for these blank
-    # (empty) lines.
-    while ($myEnum.MoveNext()) {
-        $val = [Int32]$myEnum.Current;
-        if ($val -notin ($range.Min..$range.Max)) {
-
-            # Mark the appropriate spot in the StringBuilder object
-            # where an illegal character was found. This helps to show
-            # where the error(s) are later on when we output the
-            # StringBuilder as a string.
-            $bob = $bob.Insert($pos, '^');
-            $myObject.HasErrors = $true;
-        }
-        $pos++;
-    }# end WHILE loop
-    $myObject.Markers = $bob.ToString();
-  }
+  PROCESS {}
 
   END {
-    $myEnum.Dispose();
-    return $myObject;
+    return $fis;
   }
 
-} #end function Examine-String
-#endregion ***** end of function Examine-String *****
+} #end function Get-Filestream
+#endregion ***** end of function Get-Filestream *****
 
 #region ***** function Main-Routine *****
 function Main-Routine {
@@ -179,57 +144,51 @@ function Main-Routine {
     Param () #end param
 
         BEGIN {
-          $inf = Get-Filename 'File to examine'  ;
-          Set-Variable -Name "inf" -Option ReadOnly `
+          $fis = Get-Filestream 'Filename to check';
+          Set-Variable -Name "fis" -Option ReadOnly `
               -Description 'Input file to be examined for illegal characters';
-          $utf8 = New-Object -TypeName System.Text.UTF8Encoding -ArgumentList $false, $false;
-          $sread = New-Object -TypeName System.IO.StreamReader -ArgumentList $INF, $utf8;
-          [UInt16]$lineCounter = 0;
-          [String]$inrec = '';
-          # Contains information relating to a string which contains illegal
-          # characters. The structure of this variable is defined in function
-          # 'Examine-String'.
-          $illChars = New-Object PSCustomObject;
-          [UInt16]$errorLines = 0;
+          $fname = $fis.Name;
+          [UInt16]$errorChars = 0;
+          [Int32]$bytesRead = 0;
+          $dataBuffer = New-Object -TypeName byte[] 4KB;
+          New-Variable -Name EOF -Value 0 -Option Constant `
+                       -Description 'Signifies the end of the stream has been reached';
+          $range = @{
+             Min = 1
+             Max  = 127
+          }
+
         }
 
         PROCESS {
-        	Write-Output ('Looking for illegal characters in file {0}' -f $INF);
+          $bytesRead = $fis.Read($dataBuffer, 0, $dataBuffer.Length);
             Write-Output '';
             try {
-              while (-not $sread.EndOfStream) {
-                  # I've had to put the first read from the file at
-                  # the beginning of the WHILE loop as other variations
-                  # of writing this loop failed to stop reading at the
-                  # end-of-file correctly. In other words, it kept on
-                  # trying to read beyond the end-of-file despite the
-                  # fact it had reached the end.
-                  $inrec = $sread.ReadLine();
+              # outer loop to read through the filestream
+              while ($bytesRead -gt $EOF) {
 
-                  $lineCounter++;
-                  # Examine the string for any illegal characters.
-                  Write-Verbose $inrec;
-                  $illChars = Examine-String -DataLine $inrec;
+                # Inner loop to process the databuffer
+                foreach ($num in 0..($bytesRead-1)) {
 
-                  if ($illChars.HasErrors) {
-                      Write-Output ('Source line #{0}' -f $lineCounter);
-                      Write-Output $inrec;
-                      Write-Output $illChars.Markers;
-                      Write-Output '';
-
-                      $errorLines++;
+                  if ($databuffer[$num] -notin ($range.Min..$range.Max)) {
+                    $errorChars++;
                   }
+
+                }
+
+                $bytesRead = $fis.Read($databuffer, 0, $databuffer.Length);
+
               }# end WHILE loop
           } finally {
-              $sread.Dispose();
+              $fis.Dispose();
           }
 
         }
 
         END {
           Write-Output '';
-          Write-Output ('{0} lines read from input file {1}' -f $lineCounter, $INF);
-          Write-Output ('Lines in error: {0}' -f $errorLines);
+          Write-Output ('Target file {0}' -f $fname);
+          Write-Output ('Characters in error: {0}' -f $errorChars);
         }
 
 } #end function Main-Routine
@@ -245,16 +204,16 @@ $ErrorActionPreference = "Stop";
 Invoke-Command -ScriptBlock {
     Write-Output '';
     Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
- 
+
     $script = $MyInvocation.MyCommand.Name;
     $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
     Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
     Write-Output '';
- 
+
 }
 
 Main-Routine;
 
 ##=============================================
-## END OF SCRIPT: tt.ps1
+## END OF SCRIPT: Find-IllegalChars.ps1
 ##=============================================
