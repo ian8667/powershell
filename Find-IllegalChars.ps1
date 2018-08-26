@@ -144,8 +144,9 @@ function Main-Routine {
     Param () #end param
 
         BEGIN {
-          $fis = Get-Filestream 'Filename to check';
-          Set-Variable -Name "fis" -Option ReadOnly `
+          $sourceFile = Get-Filestream 'Filename to check';
+          $fname = $sourceFile.Name;
+          Set-Variable -Name "sourceFile" -Option ReadOnly `
               -Description 'Input file to be examined for illegal characters';
           New-Variable -Name BUFFSIZE -Value 4KB -Option Constant `
                        -Description 'Buffer size used with file I/O';
@@ -165,9 +166,8 @@ function Main-Routine {
         }
 
         PROCESS {
-          Write-Output ('Looking for illegal characters in file {0}' -f $inf);
-            Write-Output '';
-            try {
+
+          try {
                $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
                # Loop to process file
                while ($bytesRead -gt $EOF) {
@@ -193,7 +193,7 @@ function Main-Routine {
         END {
           Write-Output '';
           Write-Output ('Target file {0}' -f $fname);
-          Write-Output ('Characters in error: {0}' -f $errorChars);
+          Write-Output ('Characters in error: {0}' -f $errorBytes);
         }
 
 } #end function Main-Routine
