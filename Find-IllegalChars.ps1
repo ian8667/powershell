@@ -49,23 +49,6 @@ Last updated : 2018-08-25
 PSScriptAnalyzer deep dive Part 1 of 4
 https://blogs.technet.microsoft.com/heyscriptingguy/2017/01/31/psscriptanalyzer-deep-dive-part-1-of-4/
 
-<<<<<<< HEAD
-About Functions Advanced Parameters
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-6
-
-System.String.GetEnumerator Method
-an object that can iterate through the individual characters in a string.
-
-System.CharEnumerator
-Supports iterating over a String object and reading its individual characters.
-
-The HashSet<T> class provides high-performance set operations. A set
-is a collection that contains no duplicate elements, and whose elements
-are in no particular order.
-http://bit.ly/2nRI5xG
-
-=======
->>>>>>> dev_illegal
 #>
 
 [CmdletBinding()]
