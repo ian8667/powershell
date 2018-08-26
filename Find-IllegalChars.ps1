@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 
 Examines a file for illegal characters.
@@ -38,11 +38,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Find-IllegalChars.ps1
 Author       : Ian Molloy
-<<<<<<< HEAD
-Last updated : 2018-08-19
-=======
 Last updated : 2018-08-25
->>>>>>> dev_illegal
 
 .LINK
 
