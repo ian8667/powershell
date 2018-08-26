@@ -153,6 +153,9 @@ function Main-Routine {
           New-Variable -Name EOF -Value 0 -Option Constant `
                        -Description 'Signifies the end of the stream has been reached';
           $dataBuffer = New-Object -TypeName byte[] $BUFFSIZE;
+          # Delimits the range of byte values we're prepared to accept.
+          # Anything outside the range is deemed to be illegal. All
+          # values are in decimal.
           $range = @{
               Min = 1
               Max  = 127
