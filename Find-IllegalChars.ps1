@@ -98,8 +98,6 @@ END {
 }
 #endregion ***** End of function Get-Filename *****
 
-<<<<<<< HEAD
-=======
 #region ***** function Get-Filestream *****
 function Get-Filestream {
 [CmdletBinding()]
@@ -139,7 +137,6 @@ Param (
 } #end function Get-Filestream
 #endregion ***** end of function Get-Filestream *****
 
->>>>>>> dev_illegal
 #region ***** function Main-Routine *****
 function Main-Routine {
     [CmdletBinding()]
@@ -150,7 +147,6 @@ function Main-Routine {
           $fis = Get-Filestream 'Filename to check';
           Set-Variable -Name "fis" -Option ReadOnly `
               -Description 'Input file to be examined for illegal characters';
-<<<<<<< HEAD
           New-Variable -Name BUFFSIZE -Value 4KB -Option Constant `
                        -Description 'Buffer size used with file I/O';
           New-Variable -Name EOF -Value 0 -Option Constant `
@@ -165,17 +161,6 @@ function Main-Routine {
           # A set is a collection that contains no duplicate elements,
           # and whose elements are in no particular order.
           $errorSet = New-Object -typeName 'System.Collections.Generic.HashSet[Int32]';
-          $optIn = [PSCustomObject]@{
-            path        = $inf;
-            mode        = [System.IO.FileMode]::Open;
-            access      = [System.IO.FileAccess]::Read;
-            share       = [System.IO.FileShare]::Read;
-            bufferSize  = $BUFFSIZE;
-            options     = [System.IO.FileOptions]::SequentialScan;
-          }
-          $sourceFile = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
-                 $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
-
           [UInt16]$errorBytes = 0;
         }
 
@@ -184,17 +169,15 @@ function Main-Routine {
             Write-Output '';
             try {
                $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
-write-verbose -message "Bytes read = $($bytesRead)";
                # Loop to process file
                while ($bytesRead -gt $EOF) {
 
                   # Loop to process each dataBuffer
                   foreach ($num in 0..($bytesRead-1)) {
-write-verbose -message "value = $($dataBuffer[$num])";
 
                     if ($dataBuffer[$num] -notin ($range.Min..$range.Max)) {
                     	 $errorBytes++;
-                    	 $errorSet.Add($dataBuffer[$num]);
+                    	 $errorSet.Add($dataBuffer[$num]) | Out-Null;
                     }
                   } #end foreach loop
 
@@ -204,54 +187,13 @@ write-verbose -message "value = $($dataBuffer[$num])";
              } finally {
                $sourceFile.Dispose();
             }
-=======
-          $fname = $fis.Name;
-          [UInt16]$errorChars = 0;
-          [Int32]$bytesRead = 0;
-          $dataBuffer = New-Object -TypeName byte[] 4KB;
-          New-Variable -Name EOF -Value 0 -Option Constant `
-                       -Description 'Signifies the end of the stream has been reached';
-          $range = @{
-             Min = 1
-             Max  = 127
-          }
-
-        }
-
-        PROCESS {
-          $bytesRead = $fis.Read($dataBuffer, 0, $dataBuffer.Length);
-            Write-Output '';
-            try {
-              # outer loop to read through the filestream
-              while ($bytesRead -gt $EOF) {
-
-                # Inner loop to process the databuffer
-                foreach ($num in 0..($bytesRead-1)) {
-
-                  if ($databuffer[$num] -notin ($range.Min..$range.Max)) {
-                    $errorChars++;
-                  }
-
-                }
-
-                $bytesRead = $fis.Read($databuffer, 0, $databuffer.Length);
-
-              }# end WHILE loop
-          } finally {
-              $fis.Dispose();
-          }
->>>>>>> dev_illegal
 
         }
 
         END {
           Write-Output '';
-<<<<<<< HEAD
-          Write-Output ('Bytes in error: {0}' -f $errorBytes);
-=======
           Write-Output ('Target file {0}' -f $fname);
           Write-Output ('Characters in error: {0}' -f $errorChars);
->>>>>>> dev_illegal
         }
 
 } #end function Main-Routine
