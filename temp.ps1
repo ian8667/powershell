@@ -18,12 +18,12 @@ do {
         $num = $choiceData.Count - 1;
         foreach ($m in 0..$num) {Write-Host ("{0}" -f $choiceData[$m])}
 
-        Write-Host -NoNewline "Type your choice and press Enter: "
+        Write-Host -NoNewline "Type your choice and press Enter: ";
 
-        $choice = Read-Host
+        $choice = Read-Host;
         Write-Host "";
 
-        $ok = $choice -match '^[abcdx]+$'
+        $ok = $choice -match '^[abcdx]+$';
 
         if ( -not $ok) { Write-Error -Message "Invalid selection" }
     } until ( $ok )
@@ -31,22 +31,22 @@ do {
     switch -Regex ( $choice ) {
         "A"
         {
-            Write-Host "You entered 'A'"
+            Write-Host "You entered 'A'";
         }
 
         "B"
         {
-            Write-Host "You entered 'B'"
+            Write-Host "You entered 'B'";
         }
 
         "C"
         {
-            Write-Host "You entered 'C'"
+            Write-Host "You entered 'C'";
         }
 
         "D"
         {
-            Write-Host "You entered 'D'"
+            Write-Host "You entered 'D'";
         }
     }
 } until ( $choice -match "X" )
