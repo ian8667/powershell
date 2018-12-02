@@ -1,16 +1,23 @@
 # Sample menu option choice.
 #
+$choiceData = DATA {
+    ""
+    "A - Selection A"
+    "B - Selection B"
+    "C - Selection C"
+    "D - Selection D"
+    ""
+    "X - Exit"
+    ""
+}
+
 do {
 
     do {
-        Write-Host ""
-        Write-Host "A - Selection A"
-        Write-Host "B - Selection B"
-        Write-Host "C - Selection C"
-        Write-Host "D - Selection D"
-        Write-Host ""
-        Write-Host "X - Exit"
-        Write-Host ""
+
+        $num = $choiceData.Count - 1;
+        foreach ($m in 0..$num) {Write-Host ("{0}" -f $choiceData[$m])}
+
         Write-Host -NoNewline "Type your choice and press Enter: "
 
         $choice = Read-Host
