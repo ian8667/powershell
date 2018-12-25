@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2018-12-23
+Last updated : 2018-12-25
 
 .LINK
 
@@ -151,7 +151,6 @@ function Delete-File {
           ) #end param
 
     BEGIN {
-      write-output 'inside function delete file'
       $fileLen = (Get-ChildItem -Path $FileName).Length;
       $byteArray = New-Object -TypeName Byte[] -ArgumentList $fileLen;
       $rng = New-Object -TypeName 'System.Security.Cryptography.RNGCryptoServiceProvider';
@@ -166,12 +165,12 @@ function Delete-File {
           $rng.GetBytes($byteArray);
           [System.IO.File]::WriteAllBytes($FileName, $byteArray);
 
-        } #end foreach loop
+       } #end foreach loop
+
        Remove-Item -Path $FileName -Force;
        #[System.IO.File]::Delete($FileName);
 
      } catch {
-       $Error[0];
        Write-Host $_.Exception.Message -ForegroundColor Green
      } finally {
        $rng.Dispose();
@@ -193,11 +192,19 @@ function Delete-File {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script, $scriptPath);
+
+}
+
 $Path = Get-Filename 'Filename to delete';
 if (Confirm-Delete $Path) {
-write-output 'about to delete file';
   Delete-File $Path;
-write-output 'should be gone now';
 } else {
   Write-Warning -Message "File $($Path) not deleted at user request";
 }
