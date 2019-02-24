@@ -35,7 +35,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Split-File.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-19
+Last updated : 2019-02-23
 
 .LINK
 
@@ -65,6 +65,24 @@ http://msdn.microsoft.com/en-us/library/system.io.stream.close.aspx
 [CmdletBinding()]
 Param ()
 
+#region ***** function DisplayInBytes *****
+function DisplayInBytes($num)
+{
+   $suffix = @("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB");
+   $index = 0
+   [Double]$d = $num
+
+   while ($d -gt 1kb)
+   {
+      $d = $d / 1kb
+      $index++
+   }
+
+   return "{0:N4} {1}" -f $d, $suffix[$index];
+}
+#endregion ***** end of function DisplayInBytes *****
+
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
@@ -72,10 +90,10 @@ Param ()
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-New-Variable -Name INPUTFILE -Value "C:\test\bigfile.txt" -Option Constant `
+New-Variable -Name INPUTFILE -Value "C:\test\large_sampledata.dat" -Option Constant `
              -Description 'Input text file to be split up into smaller files';
 
-New-Variable -Name CHUNKSIZE -Value 8MB -Option Constant `
+New-Variable -Name CHUNKSIZE -Value 5MB -Option Constant `
              -Description 'The original file will be split up into smaller files of this size';
 
 New-Variable -Name BUFFSIZE -Value 4KB -Option Constant `
@@ -87,7 +105,9 @@ New-Variable -Name EOF -Value 0 -Option Constant `
 # Opens an existing file for reading.
 # Returns: FileStream, A read-only FileStream on the specified path.
 $sourceFile = [System.IO.File]::OpenRead($INPUTFILE);
-Write-Host "Reading from input file $INPUTFILE";
+Write-Host "`nReading from input file $INPUTFILE";
+$len = DisplayInBytes  (get-item $INPUTFILE).length
+Write-Output ("Input file length {0}" -f $len);
 
 $dataBuffer = New-Object -TypeName byte[] $BUFFSIZE;
 
@@ -114,50 +134,53 @@ $pos = $inputfile.LastIndexOf([System.IO.Path]::GetExtension($inputfile));
 $template = $inputfile.Insert($pos, ".{0}");
 Write-Verbose -Message "Chunk file template used is $template";
 
-Write-Output "Splitting file $inputfile using $CHUNKSIZE byte chunks per file.";
+Write-Output "`nSplitting input file using $CHUNKSIZE byte chunks per file.";
+$startTime = Get-Date;
+Write-Output ($startTime.ToString('F') );
+$parent = Split-Path $INPUTFILE -Parent;
 
 try {
 
-        # $bytesRead - the total number of bytes read into the buffer. This
-        # might be less than the number of bytes requested if that number
-        # of bytes are not currently available, or zero (EOF) if the end of
-        # the stream is reached.
-        $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
+     # $bytesRead - the total number of bytes read into the buffer. This
+     # might be less than the number of bytes requested if that number
+     # of bytes are not currently available, or zero (EOF) if the end of
+     # the stream is reached.
+     $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
 
-        :outerloop while ($bytesRead -gt $EOF) {
+     :outerloop while ($bytesRead -gt $EOF) {
 
-            # Increment counter ready for the next filename to be used.
-            $idx++;
+         # Increment counter ready for the next filename to be used.
+         $idx++;
 
-            $bytesWritten = 0;
+         $bytesWritten = 0;
 
-            # Create a filename for the next chunk file to be written to.
-            # The number portion of filename will have leading zeros. So
-            # the number 7 will be written into the filename as 007.
-            $fout = ($template -f ($idx.ToString('000')));
-            Write-Verbose -Message "creating chunk file  $($fout)";
+         # Create a filename for the next chunk file to be written to.
+         # The number portion of filename will have leading zeros. So
+         # the number 7 will be written into the filename as 007.
+         $fout = ($template -f ($idx.ToString('000')));
+         Write-Verbose -Message "creating chunk file  $($fout)";
 
-            # Open the next chunk file to write to.
-            # Returns FileStream, An unshared FileStream object on
-            # the specified path with Write access.
-            $chunkPiece = [System.IO.File]::OpenWrite($fout);
+         # Open the next chunk file to write to.
+         # Returns FileStream, An unshared FileStream object on
+         # the specified path with Write access.
+         $chunkPiece = [System.IO.File]::OpenWrite($fout);
 
-            :innerloop while (($bytesWritten -le $CHUNKSIZE) -and ($bytesRead -gt $EOF)) {
-                # Keep track of how many bytes we've written to
-                # the current chunk.
-                $bytesWritten += $bytesRead;
+         :innerloop while (($bytesWritten -le $CHUNKSIZE) -and ($bytesRead -gt $EOF)) {
+              # Keep track of how many bytes we've written to
+              # the current chunk.
+              $bytesWritten += $bytesRead;
 
-                $chunkPiece.Write($dataBuffer, 0, $bytesRead);
+              $chunkPiece.Write($dataBuffer, 0, $bytesRead);
 
-                $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
+              $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
 
-            } #end WHILE (inner) loop
+         } #end WHILE (inner) loop
 
-            # Close the chunk file just written to. We don't need it anymore.
-            $chunkPiece.Flush($true);
-            $chunkPiece.Dispose();
+         # Close the chunk file just written to. We don't need it anymore.
+         $chunkPiece.Flush($true);
+         $chunkPiece.Dispose();
 
-        } #end WHILE (outer) loop
+     } #end WHILE (outer) loop
 
 } finally {
     # Close the input file.
@@ -165,9 +188,14 @@ try {
     $sourceFile.Dispose();
 }
 
+$endTime = Get-Date;
+$tspan = New-TimeSpan -Start $startTime -End $endTime;
+
 Write-Output "";
-Write-Output ("{0} chunk files created" -f $idx);
-Write-Output "All done now!";
+Write-Output ("{0} chunk files created`nin directory {1}" -f $idx, $parent);
+Write-Output "`nElapsed time for split:";
+Write-Output $tspan | Select-Object Hours, Minutes, Seconds;
+Write-Output "`nAll done now!";
 
 ##=============================================
 ## END OF SCRIPT: Split-File.ps1
