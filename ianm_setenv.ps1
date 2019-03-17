@@ -97,6 +97,21 @@ if (Test-Path -Path $oh) {
 }
 
 
+# Check 2 - MS Windows Oracle service
+# This test is simply to warn the user if they don't have an
+# MS Windows service for the ORACLE_SID environment variable
+# just created. For the purpose of this test, it’s assumed
+# the service name concerned will be in the format of:
+#   "OracleService<ORACLE_SID>".
+$sid = $params.ORACLE_SID;
+$svc = "OracleService$($sid)";
+if (-not (Get-Service -Name $svc -ErrorAction SilentlyContinue)) {
+    Write-Output "";
+    Write-Warning -Message "Nothing to worry about, but can't find an MS Windows service for ORACLE_SID supplied: $($params.ORACLE_SID)";
+    Write-Output "";
+}
+
+
 # An enumerated type used to specify the environment variable
 # created will be stored in the environment block associated
 # with the current session only. In other words, these variables
@@ -104,21 +119,6 @@ if (Test-Path -Path $oh) {
 # be deleted when you exit the current PowerShell session.
 $proc = [System.EnvironmentVariableTarget]::Process;
 Set-Variable -Name 'proc' -Option ReadOnly;
-
-
-# Check 2 - MS Windows Oracle service
-# This test is simply to warn the user if they don't have an
-# MS Windows service for the ORACLE_SID environment variable
-# just created. For the purpose of this test, it’s assumed
-# the service name concerned will be in the format of:
-#   "OracleService<ORACLE_SID>".
-$sid = [System.Environment]::GetEnvironmentVariable("ORACLE_SID", $proc);
-$svc = "OracleService$($sid)";
-if (-not (Get-Service -Name $svc -ErrorAction SilentlyContinue)) {
-    Write-Output "";
-    Write-Warning -Message "Nothing to worry about, but can't find an MS Windows service for ORACLE_SID supplied: $($params.ORACLE_SID)";
-    Write-Output "";
-}
 
 
 # Create the environment variables. The following is true
