@@ -32,12 +32,12 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-19
+Last updated : 2019-03-30
 
 .LINK
 
-Online notepad
-http://www.rapidtables.com/tools/notepad.htm
+FileStream Class
+https://docs.microsoft.com/en-us/dotnet/api/system.io.filestream?view=netframework-4.7.2
 
 Microsoft.PowerShell.Core help topic 'about'
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/?view=powershell-6
@@ -53,12 +53,13 @@ function Get-Parameters {
   param ()
 
   BEGIN {
+    # Change the values in this PSCustomObject object accordingly.
     $object = [PSCustomObject]@{
     PSTypeName = 'Widget';
 
         # Input filename. A 'FileNotFoundException' exception is thrown
         # if the file does not exist.
-        path              = 'C:\test\sampledata.dat';
+        path              = 'C:\Family\rman\CreateMiscBackup.rcv';
 
         # Output filename. The file will be overwritten if it exists.
         pathout           = 'C:\Family\powershell\ian.ian';
@@ -75,8 +76,8 @@ function Get-Parameters {
         #
         # So if you're interested in the last 15 Kb of the file,
         # for example, set this variable as:
-        # seekPos           = [System.Convert]::ToInt64(15Kb);
-        seekPos           = [System.Convert]::ToInt64(10kb);
+        # seekPos           = [System.Convert]::ToInt64(15KB);
+        seekPos           = [System.Convert]::ToInt64(2KB);
 
     }
 
@@ -186,14 +187,14 @@ function Check-parameters {
             $fileaccess = [System.IO.FileAccess]::Write;
 
             try {
-                Write-Output "checking output file $($Params.pathout)"
                 $tfile = [System.IO.File]::Open($Params.pathout, $filemode, $fileaccess);
             } catch {
                 Invoke-Command -ScriptBlock $check4 -ArgumentList $Params.pathout;
             } finally {
+                $tfile.Close();
                 $tfile.Dispose();
             }
-           
+
         }
     }
 
@@ -226,7 +227,7 @@ function Get-InputFilestream {
         options     = [System.IO.FileOptions]::None;
     }
 
-    $inStream = New-Object -typeName System.IO.FileStream -ArgumentList `
+    $inStream = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
         $opts1.path, $opts1.mode, $opts1.access, $opts1.share, $opts1.bufferSize, $opts1.options;
 
   }
@@ -274,7 +275,7 @@ function Get-OutputFilestream {
     # a 0 (zero) to tell the file to be 0 bytes and clear the file
     # prior to adding new text. This is analogous to using the
     # Clear-Content cmdlet.
-    $outStream = New-Object -typeName System.IO.FileStream -ArgumentList `
+    $outStream = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
         $optOut.path, $optOut.mode, $optOut.access, $optOut.share, $optOut.bufferSize, $optOut.options;
     $outStream.SetLength(0);
   }
@@ -296,6 +297,8 @@ function Get-OutputFilestream {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = 'Stop';
 
+Write-Output "Getting last few bytes of a file";
+
 $param = Get-Parameters;
 Set-Variable -Name "param" -Option ReadOnly -Description "Contains program parameters";
 
@@ -306,13 +309,18 @@ Check-parameters -Params $param;
 # Specifies the end of the stream as a reference point to seek from.
 # We do this because we're interested in the end of the file not the
 # beginning. In other words, we're going backwards from the end of
-# the file.
+# the file towards the beginning.
 $theEnd = [System.IO.SeekOrigin]::End;
+
+[Int64]$FileStreamPosition = 0;
 
 try {
   $fis = Get-InputFilestream -Filename $param.path -Buffsize $param.buffersize;
+  Write-Verbose -Message "Input stream $($param.path) open";
+  Write-Verbose -Message "Length of input stream $($fis.Length) bytes";
 
   $fos = Get-OutputFilestream -Filename $param.pathout -Buffsize $param.buffersize;
+  Write-Verbose -Message "Output stream $($param.pathout) open";
 
   # Find out which is the smallest value. This ensures we don't
   # attempt to move the file position (pointer) before the
@@ -328,6 +336,8 @@ try {
   # when we start reading from that position to the end the stream.
   $lookBytes = [System.Math]::Abs($lookBytes) * -1;
   $fis.Seek($lookBytes, $theEnd) | Out-Null;
+  $FileStreamPosition = $fis.Position;
+  Write-Verbose -Message "FileStream position of input stream moved to $($FileStreamPosition)";
 
   # Copying begins at the current position in the current stream, and
   # does not reset the position of the destination stream after the
@@ -337,17 +347,19 @@ try {
 } catch {
   Write-Error -Message $error[0].Exception.Message;
 } finally {
+  $fis.Close();
   $fis.Dispose();
   $fos.Flush();
+  $fos.Close();
   $fos.Dispose();
 
 }
 
-Write-Output "Files used:";
+Write-Output "`nFiles used:";
 Write-Output "Input file: $($param.path)";
 Write-Output "Output file: $($param.pathout)";
 
-Write-Output 'End of copy';
+Write-Output "`nEnd of copy last few bytes";
 ##=============================================
 ## END OF SCRIPT: Get-Lastlines.ps1
 ##=============================================
