@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2018-04-22
+Last updated : 2019-04-25
 
 .LINK
 
@@ -189,23 +189,20 @@ Param (
         [parameter(Mandatory=$true,
                    HelpMessage="The filename to rename")]
         [ValidateNotNullOrEmpty()]
-        [String]$Filename
+        [String]$OldFilename
       ) #end param
 
 BEGIN {
-  $a = [System.IO.Path]::GetDirectoryName($Filename); # file path only
-  $b = [System.IO.Path]::GetFileNameWithoutExtension($Filename); # filename minus extension
-  $c = [System.IO.Path]::GetExtension($Filename); # extension
+  $mask = 'yyyy-MM-ddTHH-mm-ss';
+  $dateTime = (Get-Date).ToString($mask);
 
-  $dd = ("{0:s}" -f (Get-Date))
-  $dd = $dd -replace ':', '-';
+  $pos = $OldFilename.LastIndexOf([System.IO.Path]::GetExtension($OldFilename));
+  $template = $OldFilename.Insert($pos, "_{0}");
+
+  $newFilename = ($template -f $dateTime);
 }
 
-PROCESS {
-  # Join the path and filename minus the extension.
-  $tempPath = [System.IO.Path]::Combine($a, $b);
-  $newFilename = ("{0}_{1}{2}" -f $tempPath, $dd, $c);
-}
+PROCESS {}
 
 END {
   return $newFilename;
@@ -238,17 +235,17 @@ if ($PSBoundParameters.ContainsKey('Filename')) {
 } else {
    # Filename has not been supplied. Execute function Get-OldFilename
    # to allow the user to select a file to copy.
-   $oldFilename = Get-OldFilename 'File to copy';
+   $oldFilename = Get-OldFilename -Boxtitle 'File to copy';
 }
 Set-Variable -Name 'oldFilename' -Option ReadOnly;
 
 
-$newFilename = Get-NewFilename $oldFilename;
+$newFilename = Get-NewFilename -OldFilename $oldFilename;
 Set-Variable -Name 'newFilename' -Option ReadOnly;
 
 Write-Output ("`nFile we want to copy: {0}" -f $oldFilename);
 Write-Output ("New filename = {0}" -f $newFilename);
-Copy-Item -Path $oldFilename -Destination $newFilename -Confirm;
+Copy-Item -Path $oldFilename -Destination $newFilename;
 
 if (Test-Path -Path $newFilename) {
   # Set the value of the 'LastWriteTime' property of the file just copied
@@ -264,6 +261,7 @@ if (Test-Path -Path $newFilename) {
      Set-ItemProperty -Path $newFilename -Name IsReadOnly -Value $True;
   }
 
+  Get-ChildItem -Path $newFilename;
 }
 
 ##=============================================

@@ -81,7 +81,7 @@ No .NET Framework types of objects are output from this script.
 File Name    : Browse-Logfiles.ps1
 Author       : Ian Molloy
 Last updated : 2019-04-22
-Keywords     ; rman log file
+Keywords     : rman log file
 
 .LINK
 
