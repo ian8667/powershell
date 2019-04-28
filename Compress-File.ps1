@@ -1,6 +1,9 @@
 <#
 #>
 
+[CmdletBinding()]
+Param () #end param
+
 #region ***** function Compress-Gzip *****
 function Compress-Gzip {
 [CmdletBinding()]
@@ -12,8 +15,8 @@ $bufSize = 4KB;
 
 $file = [PSCustomObject]@{
     # Input and output files used
-    Input       = 'C:\test\gashInput.txt';
-    Output      = 'C:\test\gashOutput.gz';
+    Input     = 'C:\test\gashInput.txt';
+    Output    = 'C:\test\gashOutput.gz';
 }
 
 $optIn = [PSCustomObject]@{
@@ -109,16 +112,16 @@ Write-Output 'test for Compress-File.ps1';
 
 enum CompressFormat 
 {
-    Gzip
-    Zip
+   Gzip;
+   Zip;
 }
 
-$Choice = [CompressFormat]::Zip;
+[CompressFormat]$Choice = [CompressFormat]::Gzip;
 
 switch ($Choice)
 {
-  "Gzip"   {Compress-Gzip; break } 
-  "Zip"    {Compress-Zip; break } 
+  "Gzip"   {Compress-Gzip; break;} 
+  "Zip"    {Compress-Zip; break;} 
 }
 
 Write-Output 'test for Compress-File.ps1 done';
