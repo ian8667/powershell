@@ -42,6 +42,13 @@ Creates a zip archive that contains the files and directories
 from the specified directory.
 https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=netframework-4.8
 
+GZIP file format specification version 4.3
+Request for Comments (RFC) : 1952
+https://tools.ietf.org/html/rfc1952
+
+How to: Compress and extract files
+https://docs.microsoft.com/en-us/dotnet/standard/io/how-to-compress-and-extract-files
+
 #>
 
 
@@ -134,6 +141,7 @@ Param () #end param
 
 BEGIN {
 
+# change accordingly
 $file = [PSCustomObject]@{
     # Input and output files used
     'Input'     = 'C:\test\gashInput_02.txt';
@@ -225,6 +233,7 @@ Param () #end param
 
 BEGIN {
 
+# change accordingly
 $file = [PSCustomObject]@{
     # Input and output objects used
     'Input'     = 'C:\test\Blankdir'; # Has to be a directory
