@@ -1,4 +1,47 @@
 <#
+
+.SYNOPSIS
+
+Compress objects using either Zip or Gzip compression methods.
+
+.DESCRIPTION
+
+Enables compression of a file using gzip data format (an
+industry-standard algorithm for lossless file compression and
+decompression) or zip data format which allows for the compression
+of the contents of a directory into one zip file.
+
+.EXAMPLE
+
+./Compress-File.ps1
+
+No parameters are used
+
+.INPUTS
+
+None, no .NET Framework types of objects are used as input.
+
+.OUTPUTS
+
+No .NET Framework types of objects are output from this script.
+
+.NOTES
+
+File Name    : Compress-File.ps1
+Author       : Ian Molloy
+Last updated : 2019-05-04
+
+.LINK
+
+System.IO.Compression.GZipStream class
+https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.gzipstream?view=netframework-4.8
+
+System.IO.Compression.ZipFile class
+System.IO.Compression.ZipFile.CreateFromDirectory Method
+Creates a zip archive that contains the files and directories
+from the specified directory.
+https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=netframework-4.8
+
 #>
 
 
@@ -127,6 +170,8 @@ Write-Output ('Gzip compress file start: {0}' -f $CompressStart.ToString("yyyy-M
 
 PROCESS {
 try {
+
+    # The stream to compress.
     $fis = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
       $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
 
@@ -195,7 +240,7 @@ $opt = [System.IO.Compression.CompressionLevel]::Optimal;
 $includeBaseDirectory = $false;
 
 $CompressStart = Get-Date;
-Write-Output ('Zip compress directory start: {0}' -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
+Write-Output ("`nZip compress directory start: {0}" -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
 } #end BEGIN block
 
 PROCESS {
@@ -217,7 +262,7 @@ END {
     Write-Output "Directory and output file used:";
     Write-Output ("Input - {0}" -f $file.Input);
     Write-Output ("Output - {0}" -f $file.Output);
-    Get-ChildItem $file.Input, $file.Output;
+    Get-ChildItem $file.Output;
     Write-Output "`nAll done now";
 }
 
@@ -237,7 +282,7 @@ enum CompressFormat
    Zip;
 }
 
-[CompressFormat]$Choice = [CompressFormat]::Zip;
+[CompressFormat]$Choice = [CompressFormat]::Gzip;
 
 switch ($Choice)
 {
