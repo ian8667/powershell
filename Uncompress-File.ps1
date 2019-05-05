@@ -77,18 +77,16 @@ Write-Output ('Gzip uncompress file start: {0}' -f $CompressStart.ToString("yyyy
 
 PROCESS {
 try {
-Write-Output 'opening stream fis';
+
     # The stream to Uncompress.
     $fis = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
       $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
-Write-Output 'done';
 
-Write-Output 'opening stream fos';
+
     $fos = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
       $optOut.path, $optOut.mode, $optOut.access, $optOut.share, $optOut.bufferSize, $optOut.options;
-Write-Output 'done';
 
-Write-Output 'opening stream gzipStream';
+
     $gzipIn = [PSCustomObject]@{
         stream    = $fis;
         mode      = [System.IO.Compression.CompressionMode]::Decompress;
@@ -96,7 +94,7 @@ Write-Output 'opening stream gzipStream';
     }
     $gzipStream = New-Object 'System.IO.Compression.GzipStream' -ArgumentList `
       $gzipIn.stream, $gzipIn.mode, $gzipIn.leaveOpen;
-Write-Output 'done';
+
 
     $gzipStream.CopyTo($fos, $bufSize);
 
