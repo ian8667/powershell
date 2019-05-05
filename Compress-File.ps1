@@ -2,7 +2,7 @@
 
 .SYNOPSIS
 
-Compress objects using either Zip or Gzip compression methods.
+Compress file objects using either Zip or Gzip compression methods.
 
 .DESCRIPTION
 
