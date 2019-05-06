@@ -32,6 +32,39 @@ Param (
 #endregion ***** end of function Check-Gzipfiles *****
 
 
+#region ***** function Check-Zipfiles *****
+function Check-Zipfiles {
+[CmdletBinding()]
+[OutputType([System.Double])]
+Param (
+        [parameter(Mandatory=$true,
+                   Position=0)]
+        [ValidateScript({Test-Path -Path $_})]
+        [System.String]
+        $InputFile,
+
+        [parameter(Mandatory=$true,
+                   Position=1)]
+        [ValidateNotNullOrEmpty()]
+        [System.String]
+        $OutDirectory
+      ) #end param
+
+  if ((Get-Item $OutDirectory).PSIsContainer -ne $true)
+  {
+      throw "Output directory $($OutDirectory) has to be a directory";
+  }
+
+  if ($InputFile -eq $OutDirectory)
+  {
+      $msg = ("Input file {0} cannot be the same as the output file {1}" -f $InputFile, $OutDirectory);
+      throw $msg;
+  }
+
+}
+#endregion ***** end of function Check-Zipfiles *****
+
+
 #region ***** function Uncompress-Gzip *****
 function Uncompress-Gzip {
 [CmdletBinding()]
@@ -44,7 +77,7 @@ BEGIN {
 $file = [PSCustomObject]@{
     # Input and output files used
     'Input'     = 'C:\test\gashInput.gz';
-    'Output'    = 'C:\test\gashOutput.txt';
+    'Output'    = 'C:\test\gashOutputttt.txt';
 }
 
 Check-Gzipfiles -InputFile $file.Input -OutputFile $file.Output;
@@ -71,8 +104,8 @@ $optOut = [PSCustomObject]@{
     options     = [System.IO.FileOptions]::None;
 }
 
-$CompressStart = Get-Date;
-Write-Output ('Gzip uncompress file start: {0}' -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
+$UncompressStart = Get-Date;
+Write-Output ('Gzip uncompress file start: {0}' -f $UncompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
 } #end BEGIN block
 
 PROCESS {
@@ -82,10 +115,8 @@ try {
     $fis = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
       $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
 
-
     $fos = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
       $optOut.path, $optOut.mode, $optOut.access, $optOut.share, $optOut.bufferSize, $optOut.options;
-
 
     $gzipIn = [PSCustomObject]@{
         stream    = $fis;
@@ -112,9 +143,9 @@ try {
 } #end PROCESS block
 
 END {
-    $CompressFinish = Get-Date;
-    Write-Output ('uncompress finish: {0}' -f $CompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
-    $tspan = $CompressFinish - $CompressStart;
+    $UncompressFinish = Get-Date;
+    Write-Output ('uncompress finish: {0}' -f $UncompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
+    $tspan = $UncompressFinish - $UncompressStart;
     Write-Output "`nElapsed time:";
     $tspan | Format-Table Days, Hours, Minutes, Seconds
     Write-Output "Files used:";
@@ -128,6 +159,55 @@ END {
 #endregion ***** end of function Uncompress-Gzip *****
 
 
+#region ***** function Uncompress-Zip *****
+function Uncompress-Zip {
+[CmdletBinding()]
+#[OutputType([System.Collections.Hashtable])]
+Param () #end param
+
+BEGIN {
+
+# change accordingly
+$file = [PSCustomObject]@{
+    # Input and output objects used
+    'Input'   = 'C:\test\gashInput.zip';  # Zip archive file
+    'Output'  = 'C:\Test\gash.ian';  # Has to be a directory
+}
+
+Check-Zipfiles -InputFile $file.Input -OutDirectory $file.Output;
+
+
+Add-Type -AssemblyName "System.IO.Compression.FileSystem";
+
+
+$UncompressStart = Get-Date;
+Write-Output ("`nZip uncompress start: {0}" -f $UncompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
+} #end BEGIN block
+
+PROCESS {
+
+[System.IO.Compression.ZipFile]::ExtractToDirectory( `
+            $file.Input, `
+            $file.Output);
+
+} #end PROCESS block
+
+END {
+    $UncompressFinish = Get-Date;
+    Write-Output ('Uncompress finish: {0}' -f $UncompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
+    $tspan = $UncompressFinish - $UncompressStart;
+    Write-Output "`nElapsed time:";
+    $tspan | Format-Table Days, Hours, Minutes, Seconds
+    Write-Output "Directory and output file used:";
+    Write-Output ("Input - {0}" -f $file.Input);
+    Write-Output ("Output - {0}" -f $file.Output);
+    Get-ChildItem $file.Input;
+    Write-Output "`nAll done now";
+}
+
+}
+#endregion ***** end of function Uncompress-Zip *****
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
@@ -135,7 +215,19 @@ END {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-Uncompress-Gzip;
+enum CompressFormat 
+{
+   Gzip;
+   Zip;
+}
+
+[CompressFormat]$Choice = [CompressFormat]::Zip;
+
+switch ($Choice)
+{
+  "Gzip"   {Uncompress-Gzip; break;} 
+  "Zip"    {Uncompress-Zip; break;} 
+}
 
 ##=============================================
 ## END OF SCRIPT: Uncompress-File.ps1
