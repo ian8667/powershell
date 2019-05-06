@@ -1,9 +1,60 @@
 <#
+.SYNOPSIS
+
+Uncompress (expand) compressed files
+
+.DESCRIPTION
+
+Uncompress files that have been compressed with a Zip or Gzip
+data format specification. Only one data format can be
+uncompressed at a time. The file objects required are hard
+coded at the following locations:
+
+Gzip files - function Uncompress-Gzip
+Zip files - function Uncompress-Zip
+
+.EXAMPLE
+
+./Uncompress-File.ps1
+
+No parameters are required
+
+.INPUTS
+
+None, no .NET Framework types of objects are used as input.
+
+.OUTPUTS
+
+No .NET Framework types of objects are output from this script.
+
+.NOTES
+
+File Name    : Uncompress-File.ps1
+Author       : Ian Molloy
+Last updated : 2019-05-06
+
+.LINK
+
+System.IO.Compression.GZipStream class
+https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.gzipstream?view=netframework-4.8
+
+System.IO.Compression.ZipFile class
+System.IO.Compression.ZipFile.CreateFromDirectory Method
+Creates a zip archive that contains the files and directories
+from the specified directory.
+https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=netframework-4.8
+
+GZIP file format specification version 4.3
+Request for Comments (RFC) : 1952
+https://tools.ietf.org/html/rfc1952
+
+How to: Compress and extract files
+https://docs.microsoft.com/en-us/dotnet/standard/io/how-to-compress-and-extract-files
+
 #>
 
 [CmdletBinding()]
 Param () #end param
-
 
 #region ***** function Check-Gzipfiles *****
 function Check-Gzipfiles {
@@ -76,7 +127,7 @@ BEGIN {
 # change accordingly
 $file = [PSCustomObject]@{
     # Input and output files used
-    'Input'     = 'C:\test\gashInput.gz';
+    'Input'     = 'C:\test\gashgash.gz';  # Gzip file
     'Output'    = 'C:\test\gashOutputttt.txt';
 }
 
@@ -105,7 +156,7 @@ $optOut = [PSCustomObject]@{
 }
 
 $UncompressStart = Get-Date;
-Write-Output ('Gzip uncompress file start: {0}' -f $UncompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
+Write-Output ("`nGzip uncompress file start: {0}" -f $UncompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
 } #end BEGIN block
 
 PROCESS {
@@ -171,7 +222,7 @@ BEGIN {
 $file = [PSCustomObject]@{
     # Input and output objects used
     'Input'   = 'C:\test\gashInput.zip';  # Zip archive file
-    'Output'  = 'C:\Test\gash.ian';  # Has to be a directory
+    'Output'  = 'C:\Test\Blankdir';  # Has to be a directory
 }
 
 Check-Zipfiles -InputFile $file.Input -OutDirectory $file.Output;
@@ -221,7 +272,7 @@ enum CompressFormat
    Zip;
 }
 
-[CompressFormat]$Choice = [CompressFormat]::Zip;
+[CompressFormat]$Choice = [CompressFormat]::Gzip;
 
 switch ($Choice)
 {

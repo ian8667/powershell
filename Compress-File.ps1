@@ -11,6 +11,11 @@ industry-standard algorithm for lossless file compression and
 decompression) or zip data format which allows for the compression
 of the contents of a directory into one zip file.
 
+The file objects required are hard coded at the following locations:
+
+Gzip files - function Compress-Gzip
+Zip files - function Compress-Zip
+
 .EXAMPLE
 
 ./Compress-File.ps1
@@ -29,7 +34,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Compress-File.ps1
 Author       : Ian Molloy
-Last updated : 2019-05-04
+Last updated : 2019-05-06
 
 .LINK
 
@@ -145,7 +150,7 @@ BEGIN {
 $file = [PSCustomObject]@{
     # Input and output files used
     'Input'     = 'C:\test\gashInput_02.txt';
-    'Output'    = 'C:\test\gashOutput.gz';
+    'Output'    = 'C:\test\gashOutput.gz';  # Gzip file
 }
 
 Check-Gzipfiles -InputFile $file.Input -OutputFile $file.Output;
@@ -237,7 +242,7 @@ BEGIN {
 $file = [PSCustomObject]@{
     # Input and output objects used
     'Input'     = 'C:\test\Blankdir'; # Has to be a directory
-    'Output'    = 'C:\test\gashOutput.zip';
+    'Output'    = 'C:\test\gashOutput.zip';  #Zip archive file
 }
 
 Check-Zipfiles -InputDirectory $file.Input -OutputFile $file.Output;
