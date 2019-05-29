@@ -83,8 +83,8 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-NetstatPno.ps1
 Author       : Ian Molloy
-Last updated : 2019-04-28
-Keywords     : netstat tcp connection server
+Last updated : 2019-05-29
+Keywords     : netstat tcp connection server ip address
 
 .LINK
 
@@ -111,7 +111,13 @@ https://docs.microsoft.com/en-us/dotnet/api/system.text.regularexpressions.match
 
 
 [CmdletBinding()]
-Param () #end param
+Param (
+   [parameter(Position=0,
+              Mandatory=$false)]
+   [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
+   [String]
+   $NetstatDatafile
+) #end param
 
 #region ***** Function Get-Hostname2 *****
 function Get-Hostname2 {
@@ -123,6 +129,10 @@ Does a DNS lookup on the IP address supplied
 The IP address supplied is used do a DNS lookup using the
 System.Net.Dns class. This is done asynchronously allowing
 us to implement a timeout of X milliseconds.
+
+Of course, there is no guarantee we can resolve the IP
+address to an IPHostEntry instance. If this happens, the
+string "HOST NAME UNKNOWN" will be returned.
 
 .PARAMETER IpAddress
 The IP address to resolve to a host name.
@@ -137,14 +147,14 @@ Param (
         [ValidateNotNullOrEmpty()]
         [String]$IpAddress
       ) #end param
-    
+
   $timeout = 750; # milliseconds timeout
   $iasyncresult = [System.Net.Dns]::BeginGetHostEntry($IpAddress, $null, $null);
   $response = $iasyncresult.AsyncWaitHandle.WaitOne($timeout, $true);
 
   if ($response)
   {
-      # Returns a TypeName: System.Net.IPHostEntry
+      # Returns a TypeName: System.Net.IPHostEntry object
       $result = [System.Net.Dns]::EndGetHostEntry($iasyncresult);
       $retval = $result.HostName;
   }
@@ -152,7 +162,7 @@ Param (
   {
       $retval = 'HOST NAME UNKNOWN';
   }
-    
+
   return $retval;
 }
 #endregion ***** End of function Get-Hostname2 *****
@@ -187,6 +197,9 @@ Param (
   $m = $ForeignAddress | Select-String -Pattern $IPv4_regex;
 
   if ($m.Matches.Success) {
+    # We've managed to extract the IPv4 IP address from
+    # the foreign address. Now do a DNS lookup on this
+    # address to see what the host name is.
     $retval = Get-Hostname2 -IpAddress $m.Matches.Value;
   } else {
     $retval = 'HOST NAME UNKNOWN';
@@ -208,9 +221,20 @@ $ErrorActionPreference = "Stop";
 
 Clear-Host;
 
+if ($PSBoundParameters.ContainsKey('NetstatDatafile')) {
+   # A file containing netstat data has been supplied.
+   # Lets use that.
+   Write-Output "Reading netstat data from file: $($NetstatDatafile)";
+   $data = Get-Content $NetstatDatafile -ReadCount 128;
+} else {
+   # As we don't have a data file to work with, lets grab
+   # our own netstat date.
+   $data = NETSTAT.EXE -n -o -p tcp;
+}
+
 # The Where-Object cmdlet is used to filter out IPv4 addresses
 # that have a state of 'ESTABLISHED'.
-NETSTAT.EXE -no -p tcp | Where-Object {($_ -match 'ESTABLISHED') -and ($_.IndexOf('.') -gt 0 )} |
+$data | Where-Object {($_ -match 'ESTABLISHED') -and ($_.IndexOf('.') -gt 0 )} |
 ForEach-Object -Begin {$Counter = 0} `
 -Process {
     $SplitLine = $_.Trim() -split '\s+';
