@@ -37,7 +37,6 @@ o PID - Process ID of of the process involved with this connection.
 You can find the application based on the PID on the Processes tab
 in Windows Task Manager.
 
-
 .EXAMPLE
 
 ./Get-NetstatPno.ps1
@@ -70,6 +69,23 @@ Process Name    : svchost
 
 All done now. 3 sockets listed
 
+.EXAMPLE
+
+./Get-NetstatPno.ps1 netstatdatefile.txt
+
+Using a positional parameter notation, specifies the path to
+a text file containing netstat data.
+
+Sample output as above.
+
+.EXAMPLE
+
+./Get-NetstatPno.ps1 -NetstatDatafile netstatdatefile.txt
+
+Using a named parameter notation, specifies the path to
+a text file containing netstat data.
+
+Sample output as above.
 
 .INPUTS
 
