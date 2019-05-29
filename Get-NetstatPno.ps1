@@ -244,7 +244,7 @@ if ($PSBoundParameters.ContainsKey('NetstatDatafile')) {
    $data = Get-Content $NetstatDatafile -ReadCount 128;
 } else {
    # As we don't have a data file to work with, lets grab
-   # our own netstat date.
+   # our own netstat data.
    $data = NETSTAT.EXE -n -o -p tcp;
 }
 
