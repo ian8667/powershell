@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 
-Prefixes lines in a text file with an incrementing number
+Prefixes lines in a text file with an integer (incrementing) number
 
 .DESCRIPTION
 
@@ -74,18 +74,20 @@ $ErrorActionPreference = "Stop";
 # has the .tmp file name extension. This cmdlet names the
 # file tmpNNNN.tmp, where NNNN is a random hexadecimal
 # number. The cmdlet creates the file in your
-# $Env:Temp folder.
+# $Env:Temp folder. To find out what this directory is:
+# PS> Write-Output $Env:TEMP;
 $TempFile = New-TemporaryFile;
 
 $config = @{
-   Inputfile   = 'C:\Family\powershell\gash.ian';
+   Inputfile   = 'C:\test\small_sampledata.txt';
    Outputfile  = $TempFile.FullName;
 }
 
 # If we've used the New-TemporaryFile cmdlet to create a
 # file then it will be empty anyway so in theory, we don't
 # need this step. But we'll leave it in anyway just in
-# case we're using an existing file for some reason.
+# case we're using an existing file for some reason and
+# not creating a new temporary file.
 if (Test-Path -Path $config.Outputfile) {
    Clear-Content -Path $config.Outputfile;
 }
@@ -110,8 +112,10 @@ $sw = New-Object -typeName 'System.Diagnostics.Stopwatch';
 $sw.Start();
 
 $dateMask = Get-Date -Format "dddd, dd MMMM yyyy HH:mm:ss";
-Write-Output "Running program on $dateMask";
+Write-Output "`nRunning program on $($dateMask)";
+Write-Output "Line numbering file $($config.Inputfile)";
 Write-Output "Input file length is $($reader.BaseStream.Length) bytes";
+
 try
 {
 
