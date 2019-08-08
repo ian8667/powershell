@@ -1,12 +1,91 @@
-# Stuart Moore
-# Finding the bottom folders of a file tree using PowerShell
-# (the last folder in a known path).
-# Source: https://stuart-moore.com/finding-bottom-folders-file-tree-using-powershell/
-#
+<#
+.SYNOPSIS
+
+Finds the bottom directories of a directory structure
+
+.DESCRIPTION
+
+Finds the bottom folder(s) of a directory structure. ie the last
+directory in a known path. The directory to start from is
+hardcoded within the program.
+
+.EXAMPLE
+
+./Find-BottomFolder.ps1
+
+No parameters are required
+
+Sample output (assuming a start directory of 'C:\Test').
+
+C:\Test\Blankdir (4 files in directory)
+C:\Test\Blankdir2 (0 files in directory)
+C:\Test\gashexpand (1 files in directory)
+C:\Test\t1\t1\t1\t1\longdirectorynamehere (0 files in directory)
+C:\Test\t2\t2\t99 (0 files in directory)
+
+
+Start directory used: C:\Test
+5 'bottom folders' listed
+
+All done now
+
+
+From the above output, you can see that the start directory has five
+subfolders,
+ie
+
+C:\Test
+-> Blankdir
+-> Blankdir2
+-> gashexpand
+-> t1
+-> t2
+
+Subfolder Blankdir contains four files.
+Subfolder Blankdir2 contains no files.
+
+The bottom (base) directory of t2 for example is t99.
+ie
+
+C:\Test
+-> t2
+-> t2
+-> t99
+
+.INPUTS
+
+None, no .NET Framework types of objects are used as input.
+
+.OUTPUTS
+
+No .NET Framework types of objects are output from this script.
+
+.NOTES
+
+File Name    : Find-BottomFolder.ps1
+Author       : Ian Molloy
+Last updated : 2019-08-08
+
+.LINK
+
+List<T> Class
+Represents a strongly typed list of objects that can be accessed
+by index. Provides methods to search, sort, and manipulate lists.
+https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1?view=netframework-4.8
+
+About Comment Based Help
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comment_based_help?view=powershell-6
+
+With inspiration from 'Finding the bottom folders of a file tree using PowerShell'
+by Stuart Moore
+https://stuart-moore.com/finding-bottom-folders-file-tree-using-powershell/
+
+#>
 
 [CmdletBinding()]
 Param () #end param
 
+#region ***** function Get-Filecount *****
 function Get-Filecount {
 [CmdletBinding()]
 [OutputType([System.Int32])]
@@ -23,7 +102,8 @@ Param (
 
   return [System.Linq.Enumerable]::Count($filecount);
 
-} #end function Get-Filecount
+}
+#endregion ***** end of function Get-Filecount *****
 
 ##=============================================
 ## SCRIPT BODY
@@ -32,7 +112,7 @@ Param (
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-$startDir = 'C:\Test2\jar_temp';  # <-- Change accordingly
+$startDir = 'C:\Test';  # <-- Change accordingly
 # Get a recursive list directories starting from our start directory.
 $dirlist = Get-ChildItem -Recurse -Directory -Path $startDir;
 Set-Variable -Name 'startDir', 'dirlist' -Option ReadOnly;
