@@ -5,7 +5,7 @@ Splits a file into multiple smaller files (chunks).
 
 .DESCRIPTION
 
-Splits a text file into smaller files based on a chunk size of 8 Mb.
+Splits a text file into smaller files based on a chunk size of 5 Mb.
 Each of these smaller files are equal in size, with the exception of
 the last one created. It is the remainder of the original. Your
 original file is not changed by split. You may find the split command
@@ -35,7 +35,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Split-File.ps1
 Author       : Ian Molloy
-Last updated : 2019-02-23
+Last updated : 2019-08-08
 
 .LINK
 
@@ -63,7 +63,7 @@ http://msdn.microsoft.com/en-us/library/system.io.stream.close.aspx
 #>
 
 [CmdletBinding()]
-Param ()
+Param()
 
 #region ***** function DisplayInBytes *****
 function DisplayInBytes($num)
@@ -90,7 +90,7 @@ function DisplayInBytes($num)
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-New-Variable -Name INPUTFILE -Value "C:\test\large_sampledata.dat" -Option Constant `
+New-Variable -Name INPUTFILE -Value "C:\test\tmpA885.tmp" -Option Constant `
              -Description 'Input text file to be split up into smaller files';
 
 New-Variable -Name CHUNKSIZE -Value 5MB -Option Constant `
@@ -120,11 +120,16 @@ $bytesRead = 0;
 # Keeps track of the number of bytes written to the current chunk.
 # When the number of bytes written is greater than or equal to
 # the value of 'CHUNKSIZE', we know we've completed the current
-# chunk and can consider creating another chunk if necessary.
+# chunk and can consider creating another chunk if required.
 $bytesWritten = 0;
 
-# Used to help identify chunk files and forms part of the filename.
-$idx = 0;
+# Used to help identify chunk files and forms part of the chunk
+# filename.
+[UInt16]$idx = 0;
+$Attr1 = New-Object -TypeName 'System.Management.Automation.ValidateRangeAttribute' `
+             -ArgumentList 0, 999;
+(Get-Variable idx).Attributes.Add($Attr1);
+
 
 # Create the chunk file template in the format of, for example:
 #   C:\junk\filename.{0}.csv
@@ -149,7 +154,7 @@ try {
 
      :outerloop while ($bytesRead -gt $EOF) {
 
-         # Increment counter ready for the next filename to be used.
+         # Increment counter ready for the next chunk filename to be used.
          $idx++;
 
          $bytesWritten = 0;
@@ -165,6 +170,8 @@ try {
          # the specified path with Write access.
          $chunkPiece = [System.IO.File]::OpenWrite($fout);
 
+         # Inner loop to write out the required amount of data to
+         # the current chunk.
          :innerloop while (($bytesWritten -le $CHUNKSIZE) -and ($bytesRead -gt $EOF)) {
               # Keep track of how many bytes we've written to
               # the current chunk.
