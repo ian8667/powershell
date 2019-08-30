@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2018-12-25
+Last updated : 2019-08-30
 
 .LINK
 
@@ -102,43 +102,42 @@ function Confirm-Delete {
   ) #end param
 
   BEGIN {
-   Add-Type -AssemblyName "System.Windows.Forms";
+   $retval = $false;
+   $title = "Remove file";
+   $yes = New-Object -TypeName 'System.Management.Automation.Host.ChoiceDescription' "&Yes", `
+          "Remove file";
+   $no = New-Object -TypeName 'System.Management.Automation.Host.ChoiceDescription' "&No", `
+         "Ignore file";
 
    $msg = @"
-    Confirm
-    Are you sure you want to perform this action?
+Confirm
+Are you sure you want to perform this action?
 
-    Performing the operation 'Remove File' on target $($FileName).
+Performing the operation 'Remove File' on target $($FileName).
 
-    This action cannot be undone!
+This action cannot be undone! Please make sure
 "@
-
-   $yesnocancel = [System.Windows.Forms.MessageBoxButtons]::YesNoCancel;
-   $warning = [System.Windows.Forms.MessageBoxIcon]::Warning;
-   $default = [System.Windows.Forms.MessageBoxDefaultButton]::Button3
-   $retval = $false;
   }
 
   PROCESS {
 
-   $result = [System.Windows.Forms.MessageBox]::Show($msg, `
-                 'Delete file', `
-                 $YesNoCancel, `
-                 $warning, `
-                 $default);
-    if ($result -eq [System.Windows.Forms.DialogResult]::Yes) {
-       $retval = $true;
-    }
+   $options = [System.Management.Automation.Host.ChoiceDescription[]]($no, $yes);
+
+   $result = $host.ui.PromptForChoice($title, $msg, $options, 0);
 
   }
 
   END {
 
-    return $retval;
+   switch ($result) {
+      0 {$retval = $false; break}  # Response no
+      1 {$retval = $true; break}   # Response yes
+   }
 
+    return $retval;
   }
-  }
-  #endregion ***** end of function Confirm-Delete *****
+}
+#endregion ***** end of function Confirm-Delete *****
 
   #region ********** Function Delete-File **********
 function Delete-File {
@@ -151,6 +150,7 @@ function Delete-File {
           ) #end param
 
     BEGIN {
+      Write-Output "Deleting file $($FileName)";
       $fileLen = (Get-ChildItem -Path $FileName).Length;
       $byteArray = New-Object -TypeName Byte[] -ArgumentList $fileLen;
       $rng = New-Object -TypeName 'System.Security.Cryptography.RNGCryptoServiceProvider';
@@ -206,7 +206,7 @@ $Path = Get-Filename 'Filename to delete';
 if (Confirm-Delete $Path) {
   Delete-File $Path;
 } else {
-  Write-Warning -Message "File $($Path) not deleted at user request";
+  Write-Warning -Message "`nFile $($Path) not deleted at user request";
 }
 
 ##=============================================
