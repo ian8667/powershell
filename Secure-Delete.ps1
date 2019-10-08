@@ -11,7 +11,7 @@ uses a different value of bytes which are obtained from the method
 RNGCryptoServiceProvider.GetBytes.
 
 After the file has been overwritten, it's then deleted using the
-PowerShell Remove-Variable cmdlet.
+PowerShell cmdlet Remove-Item.
 
 .EXAMPLE
 
@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2019-08-30
+Last updated : 2019-10-08
 
 .LINK
 
@@ -43,9 +43,9 @@ https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryp
 #>
 
 [CmdletBinding()]
-Param () #end param
+Param() #end param
 
-#region ********** Function Get-Filename **********
+#region ***** Function Get-Filename *****
 function Get-Filename() {
     [CmdletBinding()]
     Param (
@@ -88,7 +88,7 @@ function Get-Filename() {
       return $retFilename;
     }
 }
-#endregion ********** End of function Get-Filename **********
+#endregion ***** End of function Get-Filename *****
 
 #region ***** function Confirm-Delete *****
 function Confirm-Delete {
@@ -139,7 +139,7 @@ This action cannot be undone! Please make sure
 }
 #endregion ***** end of function Confirm-Delete *****
 
-  #region ********** Function Delete-File **********
+#region ***** Function Delete-File *****
 function Delete-File {
     [CmdletBinding()]
     Param (
@@ -175,6 +175,12 @@ function Delete-File {
      } finally {
        $rng.Dispose();
 
+       # Confirm to the user whether the file has been deleted as intended
+       if (Test-Path -Path $FileName) {
+         Write-Warning -Message "File $($FileName) not deleted";
+       } else {
+         Write-Output "File $($FileName) deleted as intended";
+       }
      }
 
     }
@@ -183,7 +189,7 @@ function Delete-File {
       Remove-Variable -Name fileLen, byteArray -Force;
     }
 }
-#endregion ********** End of function Delete-File **********
+#endregion ***** End of function Delete-File *****
 
 ##=============================================
 ## SCRIPT BODY
@@ -202,6 +208,7 @@ Invoke-Command -ScriptBlock {
 
 }
 
+# Get the filename to delete
 $Path = Get-Filename 'Filename to delete';
 if (Confirm-Delete $Path) {
   Delete-File $Path;
