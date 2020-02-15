@@ -17,8 +17,8 @@
 #------------------------------------------------
 # Go to our preferred startup location.
 #------------------------------------------------
-Set-Location C:\Family\powershell
-Clear-Host
+Set-Location -Path 'C:\Family\powershell';
+Clear-Host;
 
 #------------------------------------------------
 # Welcome message and initial setup.
@@ -35,9 +35,18 @@ Set-Alias -Name 'grep' -Value 'Select-String';
 
 Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward
 Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
-Set-PSReadlineOption -TokenKind String -ForegroundColor Cyan
-Set-PSReadlineOption -ContinuationPromptForegroundColor Magenta
+#Set-PSReadlineOption -TokenKind String -ForegroundColor Cyan
+#Set-PSReadlineOption -ContinuationPromptForegroundColor Magenta
 
+$colors = @{
+  "String" = [System.ConsoleColor]::Cyan;
+  "ContinuationPrompt" = [System.ConsoleColor]::Magenta;
+  "Comment" = [System.ConsoleColor]::Yellow;
+}
+$HistSavePath = 'C:\Family\powershell\ConsoleHost_history.txt';
+Set-PSReadLineOption -Colors $colors -HistorySavePath $HistSavePath;
+
+Remove-Variable -Name colors, HistSavePath;
 #------------------------------------------------
 # Setup some variables.
 #------------------------------------------------
@@ -67,6 +76,8 @@ Set-StrictMode -Version Latest
 # The JShell tool, also called REPL (Read Evaluate Print Loop),
 # allows you to execute Java code, getting immediate results.
 $jshell = 'C:\Program Files\Java\jdk-10\bin\jshell.exe';
+
+$Host.UI.RawUI.WindowTitle = "PowerShell ROCKS";
 
 # Once you've written a number of PowerShell scripts, you
 # might find it useful to collect them in one place and
