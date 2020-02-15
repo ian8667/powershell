@@ -196,12 +196,12 @@ BEGIN {
   # Date format used to help rename the file from the original
   # filename.
   $mask = '_yyyy-MM-ddTHH-mm-ss';
-  $dateTime = (Get-Date).ToString($mask);
+  $timestamp = (Get-Date).ToString($mask);
 
   $pos = $OldFilename.LastIndexOf([System.IO.Path]::GetExtension($OldFilename));
   $template = $OldFilename.Insert($pos, "{0}");
 
-  $newFilename = ($template -f $dateTime);
+  $newFilename = ($template -f $timestamp);
 }
 
 PROCESS {}
