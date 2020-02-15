@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2019-04-25
+Last updated : 2020-02-15
 
 .LINK
 
@@ -193,11 +193,13 @@ Param (
       ) #end param
 
 BEGIN {
-  $mask = 'yyyy-MM-ddTHH-mm-ss';
+  # Date format used to help rename the file from the original
+  # filename.
+  $mask = '_yyyy-MM-ddTHH-mm-ss';
   $dateTime = (Get-Date).ToString($mask);
 
   $pos = $OldFilename.LastIndexOf([System.IO.Path]::GetExtension($OldFilename));
-  $template = $OldFilename.Insert($pos, "_{0}");
+  $template = $OldFilename.Insert($pos, "{0}");
 
   $newFilename = ($template -f $dateTime);
 }
