@@ -231,6 +231,12 @@ Invoke-Command -ScriptBlock {
 
 }
 
+# With a small sleep delay at the start of the program,
+# it helps ensure we can never have two timestamps the
+# same because we have at least two seconds delay between
+# each run of the program.
+Start-Sleep -Seconds 2.0;
+
 if ($PSBoundParameters.ContainsKey('Filename')) {
    # Use the filename supplied.
    $oldFilename = Resolve-Path -LiteralPath $Filename;
