@@ -167,6 +167,7 @@ function Delete-File {
 
        } #end foreach loop
 
+       # Now we've overwritten the file, delete it
        Remove-Item -Path $FileName -Force;
        #[System.IO.File]::Delete($FileName);
 
