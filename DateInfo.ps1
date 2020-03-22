@@ -67,11 +67,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-19
-
-For information regarding this subject (comment-based help),
-execute the command:
-PS> Get-Help about_comment_based_help
+Last updated : 2020-03-22
 
 .LINK
 
@@ -104,7 +100,7 @@ http://www.epochconverter.com/weeks/2016
 #>
 
 [CmdletBinding()]
-Param (
+Param(
     [parameter(Position=0,
                Mandatory=$false,
                HelpMessage="Determines whether to display week ending information")]
@@ -122,8 +118,8 @@ Param (
 ## Author: Ian Molloy
 ## Arguments: N/A
 ##=============================================
-## Purpose: display a list weekending dates from
-## the start of contract until the present.
+## Purpose: display a list weekending dates (Saturday)
+## from the start of contract until the present.
 ##
 ## Returns: N/A
 ##=============================================
@@ -131,31 +127,38 @@ function Show-WeekendingDates()
 {
 
 BEGIN {
-  # End of week date of the first week of the contract.
-  # This date should be, for example, the Saturday of
-  # the end of my first week on the contract.
-  $hash = @{
-      Year   = 2017;
-      Month  = 09;
-      Day    = 09;
-  }
-  $startdate = New-Object -TypeName PSObject -Property $hash;
 
   # Counts the number of weeks as we list them.
   [Byte]$weekCounter = 1;
-  
+
   # Puts a blank line in the output every N lines depending
   # upon the value of this variable.
   [Byte]$blockSize = 5;
-  Set-Variable -Name blockSize -Option ReadOnly;
 
-  # This is the date from where our output starts from.
-  $weekEnding = Get-Date -Year $startdate.Year -Month $startdate.Month -Day $startdate.Day;
-  
-  # The end date is determined to be the current date, ie whatever
+  # End date of the first week of the contract. This
+  # date should be, for example, the Saturday of the
+  # end of the first week on the contract. This date
+  # should be earlier than the end date.
+  $startDate = Get-Date -Year 2020 -Month 03 -Day 01;
+
+  # The end date is determined to be the current date, whatever
   # today is. Our output will finish when it gets to this date.
-  [System.DateTime]$endDate = Get-Date;
-  Set-Variable -Name endDate -Option ReadOnly;
+  $endDate = Get-Date;
+
+  # Check the start date is earlier than the end date. Throw
+  # a terminating error if this is not the case.
+  $Result = (($startDate.Date).CompareTo($endDate.Date));
+  if ($Result -ge 0) {
+      throw "Start date $($startDate) must be earlier than end date $($endDate)";
+  }
+
+  # Check the start date is a Saturday. Throw a terminating
+  # error if this is not the case.
+  if (([System.DayOfWeek]::Saturday) -ne $startDate.DayOfWeek) {
+    throw "Start date $($startDate) must be a Saturday";
+  }
+
+  Set-Variable -Name 'blockSize', 'startDate', 'endDate' -Option ReadOnly;
 
   Write-Host "Contract weekending information";
   Write-Host "";
@@ -163,17 +166,20 @@ BEGIN {
 
 PROCESS {
 
+  # loop in multiples of 7 days
+  $tempDate = $startDate;
   do {
 
-    Write-Host ("Week {0}, ending on {1}" -f $weekCounter, $weekEnding.ToString("yyyy-MM-dd"));
+    Write-Host ("Week {0}, ending on {1}" -f $weekCounter, $tempDate.ToString("yyyy-MM-dd"));
 
+    # see whether we're due to insert a blank line in our output
     if (($weekCounter % $blockSize) -eq 0) {
        Write-Host "";
     }
-    $weekEnding = $weekEnding.AddDays(7.0);
+    $tempDate = $tempDate.AddDays(7.0);
     $weekCounter++;
 
-  } until ($weekEnding -gt $endDate);
+  } until ($tempDate -gt $endDate);
 
 }
 
@@ -184,10 +190,7 @@ END {
 
   $weekCounter--;
   Write-Host ('Weeks listed: {0}' -f $weekCounter.ToString());
-  Write-Host ("Start date used: {0}-{1}-{2}" -f `
-              $startdate.Year.ToString(), `
-              $startdate.Month.ToString("00"), `
-              $startdate.Day.ToString("00"));
+  Write-Host ("Start date used: {0}" -f $startDate.ToString("dddd, dd MMMM yyyy"));
 
 }
 
@@ -294,7 +297,6 @@ BEGIN {
 
   foreach ($num in 1..2) {Write-Host ""}
 
-  #[DateTime]$myDate = Get-Date -Format "dddd, dd MMMM yyyy HH:mm"
   $myDate = Get-Date;
 
   # Get the Julian Date for the current date.
@@ -340,7 +342,7 @@ END {
 }
 
 }
-#endregion ********** end of function Show-DateInformation **********
+#endregion ***** end of function Show-DateInformation *****
 
 #region ***** function Get-WeekendingDate *****
 ##=============================================
@@ -352,26 +354,33 @@ END {
 ## Purpose: calculates the week ending date which is
 ## the Saturday following the day this program is run.
 ##
+## 'Today' is defined as the day this program is run.
+##
 ## Returns: the week ending date
 ##=============================================
-function Get-WeekendingDate()
+function Get-WeekendingDate
 {
 
 BEGIN {
   $sat = [System.DayOfWeek]::Saturday;
+  Set-Variable -Name 'sat' -Option ReadOnly;
+  # ie, todays date
   $tempDate = Get-Date;
-  $tday = ($tempDate).DayOfWeek;
+  # see what day of the week today is
+  $weekday = ($tempDate).DayOfWeek;
 }
 
 PROCESS {
-  while ($tday -ne $sat) {
+  # keep looping until we find the next Saturday from today
+  while ($weekday -ne $sat) {
      $tempDate = $tempDate.AddDays(1.0);
-     $tday = ($tempDate).DayOfWeek;
+
+     $weekday = ($tempDate).DayOfWeek;
   }
 }
 
 END {
-  return ($tempDate).ToString("yyyy-MM-dd");
+  return $tempDate;
 }
 
 } #end function Get-WeekendingDate
@@ -397,12 +406,13 @@ if ($WeekEnding.IsPresent) {
   # command line; otherwise, false.
   Show-WeekendingDates;
   $WeekEnd = Get-WeekendingDate;
-  Write-Host "";
-  Write-Host ('The next week ending coming up is Saturday, {0}' -f $WeekEnd);
+  $msg = "The next week ending coming up after today is: {0}";
+  Write-Output '';
+  Write-Output ($msg -f $WeekEnd.ToString("dddd dd MMMM yyyy"));
 }
 
 Write-Verbose -Message "All done now!";
-Write-Host "";
+Write-Output "";
 ##=============================================
 ## END OF SCRIPT: DateInfo.ps1
 ##=============================================
