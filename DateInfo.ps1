@@ -139,7 +139,7 @@ BEGIN {
   # date should be, for example, the Saturday of the
   # end of the first week on the contract. This date
   # should be earlier than the end date.
-  $startDate = Get-Date -Year 2020 -Month 03 -Day 01;
+  $startDate = Get-Date -Year 2019 -Month 11 -Day 30;
 
   # The end date is determined to be the current date, whatever
   # today is. Our output will finish when it gets to this date.
