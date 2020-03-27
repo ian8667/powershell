@@ -31,7 +31,8 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2019-10-08
+Last updated : 2020-03-27
+Keywords     : yes no yesno
 
 .LINK
 
@@ -46,7 +47,7 @@ https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryp
 Param() #end param
 
 #region ***** Function Get-Filename *****
-function Get-Filename() {
+function Get-Filename {
     [CmdletBinding()]
     Param (
             [parameter(Mandatory=$true,
@@ -151,7 +152,9 @@ function Delete-File {
 
     BEGIN {
       Write-Output "Deleting file $($FileName)";
-      $fileLen = (Get-ChildItem -Path $FileName).Length;
+      $objectFile = Get-Item -Path $FileName;
+      $fileLen = $objectFile.Length;
+      $objectFile.IsReadOnly = $false;
       $byteArray = New-Object -TypeName Byte[] -ArgumentList $fileLen;
       $rng = New-Object -TypeName 'System.Security.Cryptography.RNGCryptoServiceProvider';
 
@@ -169,7 +172,6 @@ function Delete-File {
 
        # Now we've overwritten the file, delete it
        Remove-Item -Path $FileName -Force;
-       #[System.IO.File]::Delete($FileName);
 
      } catch {
        Write-Host $_.Exception.Message -ForegroundColor Green
@@ -182,7 +184,7 @@ function Delete-File {
        } else {
          Write-Output "File $($FileName) deleted as intended";
        }
-     }
+     } #end try/catch/finally block
 
     }
 
@@ -212,9 +214,9 @@ Invoke-Command -ScriptBlock {
 # Get the filename to delete
 $Path = Get-Filename 'Filename to delete';
 if (Confirm-Delete $Path) {
-  Delete-File $Path;
+   Delete-File $Path;
 } else {
-  Write-Warning -Message "`nFile $($Path) not deleted at user request";
+   Write-Warning -Message "`nFile $($Path) not deleted at user request";
 }
 
 ##=============================================
