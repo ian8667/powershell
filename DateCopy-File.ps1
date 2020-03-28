@@ -37,7 +37,7 @@ of myfile_YYYY-MM-DDTHH-MM-SS.txt.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1 -Filename myfile.txt
+PS> ./DateCopy-File.ps1 -Path myfile.txt
 
 The filename supplied will be copied to a file with the name format
 of myfile_YYYY-MM-DDTHH-MM-SS.txt.
@@ -51,7 +51,7 @@ of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1 -Filename myfile.txt -ReadOnly
+PS> ./DateCopy-File.ps1 -Path myfile.txt -ReadOnly
 
 The filename supplied will be copied to a file with the name format
 of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-02-15
+Last updated : 2020-03-28
 
 .LINK
 
@@ -84,9 +84,6 @@ https://msdn.microsoft.com/en-us/library/system.io.path(v=vs.110).aspx
 Microsoft.PowerShell.Management
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-5.1
 
-Online notepad
-http://www.rapidtables.com/tools/notepad.htm
-
 #>
 
 [CmdletBinding()]
@@ -95,7 +92,7 @@ Param (
               Mandatory=$false)]
    [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
    [String]
-   $Filename,
+   $Path,
 
    [parameter(Position=1,
               Mandatory=$false)]
@@ -123,7 +120,8 @@ function Get-OldFilename {
 [CmdletBinding()]
 [OutputType([System.String])]
 Param (
-        [parameter(Mandatory=$true,
+        [parameter(Position=0,
+                   Mandatory=$true,
                    HelpMessage="ShowDialog box title")]
         [ValidateNotNullOrEmpty()]
         [String]$Boxtitle
@@ -180,13 +178,16 @@ END {
 #* http://msdn.microsoft.com/en-us/library/system.windows.forms.openfiledialog.aspx
 #* =============================================
 #* Purpose:
-#* Creates the new filename from the filename supplied.
+#* Creates the new filename from the filename supplied. This
+#* function is designed to cater for the fact that not all
+#* files have a file extension. Most do of course.
 #* =============================================
 function Get-NewFilename {
 [CmdletBinding()]
 [OutputType([System.String])]
 Param (
-        [parameter(Mandatory=$true,
+        [parameter(Position=0,
+                   Mandatory=$true,
                    HelpMessage="The filename to rename")]
         [ValidateNotNullOrEmpty()]
         [String]$OldFilename
@@ -194,14 +195,33 @@ Param (
 
 BEGIN {
   # Date format used to help rename the file from the original
-  # filename.
+  # filename provided.
   $mask = '_yyyy-MM-ddTHH-mm-ss';
   $timestamp = (Get-Date).ToString($mask);
+  Set-Variable -Name 'mask', 'timestamp' -Option ReadOnly;
 
-  $pos = $OldFilename.LastIndexOf([System.IO.Path]::GetExtension($OldFilename));
-  $template = $OldFilename.Insert($pos, "{0}");
+  # Get the absolute path without the filename or extension
+  $f1 = [System.io.Path]::GetDirectoryName($OldFilename);
 
-  $newFilename = ($template -f $timestamp);
+  # Get the filename itself without the path or extension
+  $f2 = [System.io.Path]::GetFileNameWithoutExtension($OldFilename);
+
+  # Get the extension (including the period "."), or empty
+  # if variable 'OldFilename' does not contain an extension.
+  $f3 = [System.io.Path]::GetExtension($OldFilename);
+
+  # Character used to separate directory levels in a path
+  $slash = [System.io.Path]::DirectorySeparatorChar;
+  Set-Variable -Name 'f1', 'f2', 'f3', 'slash' -Option ReadOnly;
+
+  $newFilename = ("{0}{1}{2}{3}" -f $f1, $slash, $f2, $timestamp);
+
+  if (-not ([System.String]::IsNullOrEmpty($f3))) {
+      # This filename has a file extension. Insert it
+      # into our new filename
+      $newFilename = ("$($newFilename){0}" -f $f3);
+  }
+
 }
 
 PROCESS {}
@@ -237,16 +257,15 @@ Invoke-Command -ScriptBlock {
 # each run of the program.
 Start-Sleep -Seconds 2.0;
 
-if ($PSBoundParameters.ContainsKey('Filename')) {
+if ($PSBoundParameters.ContainsKey('Path')) {
    # Use the filename supplied.
-   $oldFilename = Resolve-Path -LiteralPath $Filename;
+   $oldFilename = Resolve-Path -LiteralPath $Path;
 } else {
    # Filename has not been supplied. Execute function Get-OldFilename
    # to allow the user to select a file to copy.
    $oldFilename = Get-OldFilename -Boxtitle 'File to copy';
 }
 Set-Variable -Name 'oldFilename' -Option ReadOnly;
-
 
 $newFilename = Get-NewFilename -OldFilename $oldFilename;
 Set-Variable -Name 'newFilename' -Option ReadOnly;
@@ -266,7 +285,7 @@ if (Test-Path -Path $newFilename) {
   if ($PSBoundParameters.ContainsKey('ReadOnly')) {
      # Set the value of the 'IsReadOnly' property of the file just copied
      # to true making it read only.
-     Set-ItemProperty -Path $newFilename -Name IsReadOnly -Value $True;
+     Set-ItemProperty -Path $newFilename -Name 'IsReadOnly' -Value $True;
   }
 
   Get-ChildItem -Path $newFilename;
