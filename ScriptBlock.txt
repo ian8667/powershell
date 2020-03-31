@@ -1,0 +1,268 @@
+#-------------------------------------------------
+Collection of scriptblocks.
+
+This text file is a collection of useful ScriptBlocks
+(System.Management.Automation.ScriptBlock) which can be
+used with PowerShell background jobs and the Start-Job
+cmdlet.
+
+See also the Start-Job cmdlet parameter 'ScriptBlock'.
+Last updated: 29 March 2020
+#-------------------------------------------------
+
+
+
+##===========================================
+## New item
+## Find oldest and newest LastWriteTime of
+## files.
+## 25 March 2020
+##===========================================
+
+$sb = {
+<#
+Oldest and newest file.
+Scriptblock to find the oldest and newest LastWriteTime of files
+in a directory. No recursion is done so only the start (initial)
+directory is looked at.
+#>
+
+BEGIN {
+    Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
+
+    $path = 'C:\Gash\gashdir'; # <-- Change accordingly.
+    Set-Variable -Name 'path' -Description "Search directory for the scriptblock" -Option ReadOnly;
+
+    $oldDate = [System.DateTime]::MaxValue;
+    $newDate = [System.DateTime]::MinValue;
+    $oldFilename = '';
+    $newFilename = '';
+    [UInt32]$fileCounter = 0;
+
+    Write-Output "`nLooking for the oldest and newest LastWriteTime of files";
+    Write-Output ("Directory looked at (with no recursion): {0}" -f $path);
+}
+
+PROCESS {
+    Get-ChildItem -Path $path -File | ForEach-Object {
+        $data = $_;
+        $fileCounter++;
+
+        if ($data.LastWriteTime -lt $oldDate) {
+            $oldFilename = $data.Name;
+            $oldDate = $data.LastWriteTime;
+        }
+
+        if ($data.LastWriteTime -gt $newDate) {
+            $newFilename = $data.Name;
+            $newDate = $data.LastWriteTime;
+        }
+    } #end ForEach-Object block
+}
+
+END {
+    if ($fileCounter -eq 0) {
+       Write-Warning -Message 'No files found in directory';
+    } else {
+      Write-Output "`n`nOldest file:";
+      Write-Output ("Name: {0},     LastWriteTime: {1}" -f $oldFilename, $oldDate.ToString('F'));
+      Write-Output "Newest file:";
+      Write-Output ("Name: {0},     LastWriteTime: {1}" -f $newFilename, $newDate.ToString('F'));
+      Write-Output ("`n{0:N0} files looked at" -f $fileCounter);
+
+      Write-Output "`nTime difference between oldest and newest LastWriteTime of the files:";
+      $tspan = New-TimeSpan -Start $oldDate -End $newDate;
+      Write-Output $tspan | Format-List Days, Hours, Minutes;
+    }
+
+    Write-Output ("`nAll done now at {0}" -f (Get-Date -Format 's'));
+    Write-Output "";
+}
+
+} #end of scriptblock
+
+##===========================================
+## New item
+## Text file line numbers.
+## 25 March 2020
+##===========================================
+
+$sb = {
+<#
+Text file line numbers.
+
+Concatenates a text file to a new text file prefixing a line
+number to each line in the new file. The line number has a data
+structure of UInt16, so line numbers will potentially be in the
+range 1 to 65535.
+
+There are comments on the Internet regarding performance
+implications of using cmdlets 'Get-Content' and 'Add-Content'.
+Given the ad-hoc nature of this little script, I’m prepared to
+take any performance implications. If the worst comes to the
+worst, I'll wrap this code in a script block and submit it as
+PowerShell background job using the Start-Job cmdlet.
+#>
+
+BEGIN {
+  $datetimeMask = 'yyyy-MM-ddTHH-mm-ss';
+  $ProcessStart = Get-Date;
+  Write-Output ('Text file line numbering start: {0}' -f $ProcessStart.ToString($datetimeMask))
+
+  $BasePath = 'C:\gash';
+  Set-Location -Path $BasePath;
+  $myfile = @{
+      'Input' = Join-Path -Path $BasePath -ChildPath 'gash01.txt';
+      'Output' = Join-Path -Path $BasePath -ChildPath 'gash02.txt';
+  }
+
+  [UInt16]$lineCounter = 0;
+
+  # Specifies how many lines of content are sent through
+  # the pipeline at a time
+  [Int64]$rCount = 1024;
+
+  if ((Get-Item $myfile.Input).Length -eq 0) {
+      throw "Input file $($myfile.Input) cannot be zero bytes length)";
+  }
+
+  if ($myfile.Input -eq $myfile.Output) {
+      throw "Input file $($myfile.Input) cannot be the same as output file $($myfile.Output)";
+  }
+
+  if (Test-Path -Path $myfile.Output) {
+      Clear-Content -Path $myfile.Output;
+  }
+}
+
+PROCESS {
+
+  foreach ($oldLine in (Get-Content -Path $myfile.Input -ReadCount $rCount)) {
+      $lineCounter++;
+      $newLine = [System.String]::Format(("{0} | {1}"), $lineCounter.ToString('00000'), $oldLine);
+      Add-Content -Path $myfile.Output -Value $newLine;
+  }
+
+}
+
+END {
+
+  $ProcessFinish = Get-Date;
+  Write-Output ('Text file line numbering finish: {0}' -f $ProcessFinish.ToString($datetimeMask))
+
+  Write-Output "`nFiles used:"
+  Write-Output $myfile;
+
+  Get-ChildItem -File -Path $BasePath |
+      Where-Object {$_.LastWriteTime -ge (Get-Date).AddMinutes(-5)}
+
+  Write-Output 'All done now!';
+
+}
+
+} #end of scriptblock
+
+##===========================================
+## New item
+## List files older (or newer) than N days.
+## 29 March 2020
+##===========================================
+
+Invoke-Command -ScriptBlock {
+  $dateMask = 'dddd, dd MMMM yyyy';
+  Write-Host ('Today is {0}' -f (date).ToString($dateMask));
+}
+
+
+$sb = {
+<#
+List files older (or newer) than N days. Directories are ignored.
+TypeName: System.Management.Automation.ScriptBlock
+#>
+
+    BEGIN {
+        Write-Output ("`nScriptBlock started on {0}" -f (Get-Date -Format 's'));
+
+        # Change values in this hash table as appropriate. In effect,
+        # these are used as configuration data.
+        $config = @{
+            # Number of days to look back. Has to be a negative number.
+            olddays = -3;
+
+            # Directory where the search for files will look. No
+            # recursion is carried out.
+            startHere = 'C:\gash';
+
+            # Output file where the results of the search will be written.
+            # The 'New-TemporaryFile' cmdlet creates a file tmp<NNNN>.tmp,
+            # where <NNNN> is a random hexadecimal number in your TEMP
+            # folder. The location of the temp folder in question can be
+            # found with the command "<variable>.FullName" or the static
+            # method "[System.IO.Path]::GetTempPath()". This static method
+            # returns the path of the current user's temporary folder.
+            outputpath = New-TemporaryFile;
+
+            # Filter used to look for files.
+            # EXAMPLE 1
+            # To list text files: "Filter" = '*.txt';
+            # EXAMPLE 2
+            # To list 'ian' files: "Filter" = '*.ian';
+            # EXAMPLE 3
+            # To list all files: "Filter" = '*';
+            Filter = '*';
+
+            # true if we should look for files older than our cut-off date;
+            # false otherwise.
+            olderFiles = $false;
+
+        } #end of config data
+
+        # Ensure $config.olddays is a negative number
+        $config.olddays = [System.Math]::Abs($config.olddays) * -1;
+
+        # Create the cut-off date now we know how many days to look back.
+        $cutoffDate = (Get-Date).AddDays($config.olddays);
+        Set-Variable -Name 'config', 'cutoffDate' -Option ReadOnly;
+
+        if ($config.olderFiles) {
+            # Look for files older than the cut-off date.
+            $wheresb = {$_.LastWriteTime -lt $cutoffDate}
+            $msg = 'older';
+        } else {
+            # Look for files newer (more recent) than the cut-off date.
+            $wheresb = {$_.LastWriteTime -gt $cutoffDate}
+            $msg = 'newer';
+        }
+
+        $dateMask = 'dd MMMM yyyy';
+
+        # Show (and confirm) which directory we're looking in.
+        Write-Output "`nLooking for files $($msg) than $($config.olddays) days";
+        Write-Output "Directory looked in is $($config.startHere)";
+        Write-Output ("Cut-off date used: {0}" -f $($cutoffDate.ToString($dateMask)) );
+        Write-Output ("Filter used: {0}" -f $($config.Filter));
+        Write-Output ('*' * 45);
+        Write-Output "";
+    } #end BEGIN block
+
+    PROCESS {
+
+        $splat = @{
+            Path = $config.startHere;
+            Filter = $config.Filter;
+            File = $true;
+        }
+        Get-ChildItem @splat |
+            Where-Object $wheresb |
+            Tee-Object -FilePath $config.outputpath;
+
+    } #end PROCESS block
+
+    END {
+
+        Write-Output "";
+        Write-Output ('*' * 45);
+        Write-Output "See also output file $($config.outputpath.FullName)";
+        Write-Output ("`nAll done now at {0}" -f (Get-Date -Format 's'));
+    } #end END block
+} #end of scriptblock
