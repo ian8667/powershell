@@ -67,7 +67,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2020-03-22
+Last updated : 2020-03-31
 
 .LINK
 
@@ -123,7 +123,7 @@ Param(
 ##
 ## Returns: N/A
 ##=============================================
-function Show-WeekendingDates()
+function Show-WeekendingDates
 {
 
 BEGIN {
@@ -160,8 +160,8 @@ BEGIN {
 
   Set-Variable -Name 'blockSize', 'startDate', 'endDate' -Option ReadOnly;
 
-  Write-Host "Contract weekending information";
-  Write-Host "";
+  Write-Output "Contract weekending information";
+  Write-Output "";
 }
 
 PROCESS {
@@ -170,11 +170,11 @@ PROCESS {
   $tempDate = $startDate;
   do {
 
-    Write-Host ("Week {0}, ending on {1}" -f $weekCounter, $tempDate.ToString("yyyy-MM-dd"));
+    Write-Output ("Week {0}, ending on {1}" -f $weekCounter, $tempDate.ToString("yyyy-MM-dd"));
 
     # see whether we're due to insert a blank line in our output
     if (($weekCounter % $blockSize) -eq 0) {
-       Write-Host "";
+       Write-Output "";
     }
     $tempDate = $tempDate.AddDays(7.0);
     $weekCounter++;
@@ -185,12 +185,12 @@ PROCESS {
 
 END {
 
-  foreach ($num in 1..3) {Write-Host '';}
-  Write-Host ('*' * 30);
+  foreach ($num in 1..3) {Write-Output '';}
+  Write-Output ('*' * 30);
 
   $weekCounter--;
-  Write-Host ('Weeks listed: {0}' -f $weekCounter.ToString());
-  Write-Host ("Start date used: {0}" -f $startDate.ToString("dddd, dd MMMM yyyy"));
+  Write-Output ('Weeks listed: {0}' -f $weekCounter.ToString());
+  Write-Output ("Start date used: {0}" -f $startDate.ToString("dddd, dd MMMM yyyy"));
 
 }
 
@@ -295,7 +295,7 @@ function Show-DateInformation() {
 BEGIN {
   Write-Verbose -Message "Executing function Show-DateInformation";
 
-  foreach ($num in 1..2) {Write-Host ""}
+  foreach ($num in 1..2) {Write-Output ""}
 
   $myDate = Get-Date;
 
@@ -332,8 +332,8 @@ PROCESS {
 
 END {
 
-  Write-Host ("Today is {0:dddd, dd MMMM yyyy HH:mm}" -f $myDate);
-  Write-Host ("ISO 8601 date/time is {0:s}" -f $myDate);
+  Write-Output ("Today is {0:dddd, dd MMMM yyyy HH:mm}" -f $myDate);
+  Write-Output ("ISO 8601 date/time is {0:s}" -f $myDate);
 
   Out-String -InputObject $DayWeek -Width 50;
 
