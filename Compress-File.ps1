@@ -186,7 +186,7 @@ BEGIN {
 Add-Type -AssemblyName "System.IO.Compression.FileSystem";
 
 $opt = [System.IO.Compression.CompressionLevel]::Optimal;
-$includeBaseDirectory = $true;
+$includeBaseDirectory = $false;
 
 $CompressStart = Get-Date;
 Write-Output ("`nZip compress directory start: {0}" -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
@@ -321,7 +321,7 @@ $ConfigData = @{
     #
     # For gzip files - the (usually text) file to compress
     # specified as an absolute path.
-    Input   = 'C:\Gash\d2'
+    Input   = 'C:\Gash\temp'
 
     # Output object.
     # For zip files - the path of the archive (zip file) to be
@@ -330,7 +330,7 @@ $ConfigData = @{
     # For gzip files - the path of the archive (gzip file) to be
     # created, specified as an absolute path. By convention, gzip
     # files have a file extension of either 'gz' or 'gzip'.
-    Output  = 'C:\Gash\gashOutput.zip'
+    Output  = 'C:\Family\CurrentContract\SecurityClearance02.zip'
 
     # Uses one of the values in enumerated type 'CompressFormat'
     # to do the compression.
