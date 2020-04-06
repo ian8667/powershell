@@ -11,10 +11,8 @@ industry-standard algorithm for lossless file compression and
 decompression) or zip data format which allows for the compression
 of the contents of a directory into one zip file.
 
-The file objects required are hard coded at the following locations:
-
-Gzip files - function Compress-Gzip
-Zip files - function Compress-Zip
+The file objects required are hard coded in the hashtable
+'$ConfigData' in the main body of the program.
 
 .EXAMPLE
 
@@ -34,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Compress-File.ps1
 Author       : Ian Molloy
-Last updated : 2019-05-06
+Last updated : 2020-04-06
 
 .LINK
 
@@ -54,112 +52,44 @@ https://tools.ietf.org/html/rfc1952
 How to: Compress and extract files
 https://docs.microsoft.com/en-us/dotnet/standard/io/how-to-compress-and-extract-files
 
+Compress-Archive
+The Compress-Archive cmdlet creates a compressed, or zipped, archive
+file from one or more specified files or directories
+
+Expand-Archive
+The Expand-Archive cmdlet extracts files from a specified zipped
+archive file to a specified destination folder.
+
 #>
 
-
 [CmdletBinding()]
-Param () #end param
-
-#region ***** function Check-Zipfiles *****
-function Check-Zipfiles {
-[CmdletBinding()]
-[OutputType([System.Double])]
-Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $InputDirectory,
-
-        [parameter(Mandatory=$true,
-                   Position=1)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $OutputFile
-      ) #end param
-
-  if ((Get-Item $InputDirectory).PSIsContainer -ne $true)
-  {
-      throw "Input directory $($InputDirectory) has to be a directory";
-  }
-
-  if ($InputDirectory -eq $OutputFile)
-  {
-      $msg = ("Input directory {0} cannot be the same as the output file {1}" -f $InputDirectory, $OutputFile);
-      throw $msg;
-  }
-
-  $FileCount = Get-ChildItem -Path $InputDirectory;
-  if (($FileCount | Measure-Object).Count -eq 0)
-  {
-     throw "No files to compress in directory $($InputDirectory)";
-  }
-
-  if (Test-Path -Path $OutputFile)
-  {
-     $mask = 'yyyy-MM-ddTHH-mm-ss';
-     $dateTime = (Get-Date).ToString($mask);
-
-     $pos = $OutputFile.LastIndexOf([System.IO.Path]::GetExtension($OutputFile));
-     $template = $OutputFile.Insert($pos, "_{0}");
-
-     $newFilename = ($template -f $dateTime);
-     Rename-Item -Path $OutputFile -NewName $newFilename;
-  }
-
-}
-#endregion ***** end of function Check-Zipfiles *****
-
-
-#region ***** function Check-Gzipfiles *****
-function Check-Gzipfiles {
-[CmdletBinding()]
-[OutputType([System.Double])]
-Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateScript({Test-Path -Path $_})]
-        [System.String]
-        $InputFile,
-
-        [parameter(Mandatory=$true,
-                   Position=1)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $OutputFile
-      ) #end param
-
-  if ($InputFile -eq $OutputFile)
-  {
-      $msg = ("Input file {0} cannot be the same as the output file {1}" -f $InputFile, $OutputFile);
-      throw $msg;
-  }
-}
-#endregion ***** end of function Check-Gzipfiles *****
-
+Param() #end param
 
 #region ***** function Compress-Gzip *****
 function Compress-Gzip {
 [CmdletBinding()]
 #[OutputType([System.Collections.Hashtable])]
-Param () #end param
+Param(
+      [Parameter(Position=0,
+                 Mandatory=$true,
+                 HelpMessage="Input object name")]
+      [ValidateNotNullOrEmpty()]
+      [String]$InputData,
+
+      [Parameter(Position=1,
+                 Mandatory=$true,
+                 HelpMessage="Output object name")]
+      [ValidateNotNullOrEmpty()]
+      [String]$OutputData
+) #end param
 
 BEGIN {
-
-# change accordingly
-$file = [PSCustomObject]@{
-    # Input and output files used
-    'Input'     = 'C:\test\gashInput_02.txt';
-    'Output'    = 'C:\test\gashOutput.gz';  # Gzip file
-}
-
-Check-Gzipfiles -InputFile $file.Input -OutputFile $file.Output;
 
 $bufSize = 4KB;
 
 $optIn = [PSCustomObject]@{
     # Input file options
-    path        = $file.Input;
+    path        = $InputData;
     mode        = [System.IO.FileMode]::Open;
     access      = [System.IO.FileAccess]::Read;
     share       = [System.IO.FileShare]::Read;
@@ -169,7 +99,7 @@ $optIn = [PSCustomObject]@{
 
 $optOut = [PSCustomObject]@{
     # Output file options
-    path        = $file.Output;
+    path        = $OutputData;
     mode        = [System.IO.FileMode]::Create;
     access      = [System.IO.FileAccess]::Write;
     share       = [System.IO.FileShare]::None;
@@ -196,7 +126,8 @@ try {
         mode      = [System.IO.Compression.CompressionMode]::Compress;
         leaveOpen = $false;
     }
-    $gzipStream = New-Object 'System.IO.Compression.GzipStream' -ArgumentList `
+
+    $gzipStream = New-Object -typeName 'System.IO.Compression.GzipStream' -ArgumentList `
       $gzipOut.stream, $gzipOut.mode, $gzipOut.leaveOpen;
 
     $fis.CopyTo($gzipStream, $bufSize);
@@ -206,8 +137,10 @@ try {
 } finally {
     $gzipStream.Close();
     $gzipStream.Dispose();
+
     $fos.Close();
     $fos.Dispose();
+
     $fis.Close();
     $fis.Dispose();
 }
@@ -216,14 +149,14 @@ try {
 
 END {
     $CompressFinish = Get-Date;
-    Write-Output ('Compress finish: {0}' -f $CompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
+    Write-Output ('Gzip compress finish: {0}' -f $CompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
     $tspan = $CompressFinish - $CompressStart;
     Write-Output "`nElapsed time:";
     $tspan | Format-Table Days, Hours, Minutes, Seconds
     Write-Output "Files used:";
-    Write-Output ("Input - {0}" -f $file.Input);
-    Write-Output ("Output - {0}" -f $file.Output);
-    Get-ChildItem $file.Input, $file.Output;
+    Write-Output ("Input - {0}" -f $InputData);
+    Write-Output ("Output - {0}" -f $OutputData);
+    Get-ChildItem $InputData, $OutputData;
     Write-Output "`nAll done now";
 }
 
@@ -234,24 +167,26 @@ END {
 function Compress-Zip {
 [CmdletBinding()]
 #[OutputType([System.Collections.Hashtable])]
-Param () #end param
+Param(
+      [Parameter(Position=0,
+                 Mandatory=$true,
+                 HelpMessage="Input object name")]
+      [ValidateNotNullOrEmpty()]
+      [String]$InputData,
+
+      [Parameter(Position=1,
+                 Mandatory=$true,
+                 HelpMessage="Output object name")]
+      [ValidateNotNullOrEmpty()]
+      [String]$OutputData
+) #end param
 
 BEGIN {
-
-# change accordingly
-$file = [PSCustomObject]@{
-    # Input and output objects used
-    'Input'     = 'C:\test\Blankdir'; # Has to be a directory
-    'Output'    = 'C:\test\gashOutput.zip';  #Zip archive file
-}
-
-Check-Zipfiles -InputDirectory $file.Input -OutputFile $file.Output;
-
 
 Add-Type -AssemblyName "System.IO.Compression.FileSystem";
 
 $opt = [System.IO.Compression.CompressionLevel]::Optimal;
-$includeBaseDirectory = $false;
+$includeBaseDirectory = $true;
 
 $CompressStart = Get-Date;
 Write-Output ("`nZip compress directory start: {0}" -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
@@ -260,8 +195,8 @@ Write-Output ("`nZip compress directory start: {0}" -f $CompressStart.ToString("
 PROCESS {
 
 [System.IO.Compression.ZipFile]::CreateFromDirectory( `
-            $file.Input, `
-            $file.Output, `
+            $InputData, `
+            $OutputData, `
             $opt, `
             $includeBaseDirectory);
 
@@ -269,19 +204,99 @@ PROCESS {
 
 END {
     $CompressFinish = Get-Date;
-    Write-Output ('Compress finish: {0}' -f $CompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
+    Write-Output ('Zip compress finish: {0}' -f $CompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
     $tspan = $CompressFinish - $CompressStart;
     Write-Output "`nElapsed time:";
     $tspan | Format-Table Days, Hours, Minutes, Seconds
     Write-Output "Directory and output file used:";
-    Write-Output ("Input - {0}" -f $file.Input);
-    Write-Output ("Output - {0}" -f $file.Output);
-    Get-ChildItem $file.Output;
+    Write-Output ("Input - {0}" -f $InputData);
+    Write-Output ("Output - {0}" -f $OutputData);
+    Get-ChildItem $OutputData;
     Write-Output "`nAll done now";
 }
 
 }
 #endregion ***** end of function Compress-Zip *****
+
+#region ***** function Check-Parameters *****
+function Check-Parameters {
+[CmdletBinding()]
+#[OutputType([System.Double])]
+Param (
+        [parameter(Mandatory=$true,
+                   Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [System.Collections.Hashtable]
+        $Config
+) #end param
+
+# Check the input is not the same as the output, ignoring
+# the case of the strings being compared.
+$myenum = [System.StringComparison]::CurrentCultureIgnoreCase;
+$kompare = [System.String]::Compare($Config.Input, $Config.Output, $myenum);
+if ($kompare -eq 0) {
+    throw "Input $($Config.Input) cannot be the same as output $($Config.Output)";
+}
+
+# See whether the input object is a file or a directory.
+# true if object is a directory, false otherwise.
+$isDir = (Get-Item $Config.Input).PSIsContainer;
+
+# Get the extension (including the period "."), or empty
+# if variable 'OldFilename' does not contain an extension.
+$ext = [System.io.Path]::GetExtension($Config.Output);
+
+
+if ($Config.Format -eq 'Gzip') {
+    # Carry out Gzip related checks.
+
+    Write-Verbose -Message 'Carrying out Gzip checks';
+    if ($isDir) {
+        # The input object appears to be a directory which we
+        # don't really want
+        throw "For Gzip compression, input object must be a file";
+    }
+
+    # Check whether the output filename has a 'gz' or 'gzip'
+    # file extension. If not, throw a terminating error.
+    $isGzip = $ext -match 'gz|gzip';
+    if (-not $isGzip) {
+        throw "Convention has it that Gzip output files have an extension of 'gz' or 'gzip'";
+    }
+
+    # Check the input file is not an empty file.
+    $len = (Get-Item $Config.Input).Length;
+    if ($len -eq 0) {
+        throw "Input file $($Config.Input) cannot be empty";
+    }
+
+} else {
+    # Carry out Zip related checks.
+    Write-Verbose -Message 'Carrying out Zip checks';
+
+    if (-not $isDir) {
+        # This input object appears to be a file which we don't really want.
+        # The input object has to be a directory.
+        throw "For Zip compression, input object $($Config.Input) must be a directory";
+    }
+
+    # Check whether the output filename has a 'zip' file
+    # extension. If not, throw a terminating error.
+    $isZip = $ext -match 'zip';
+    if (-not $isZip) {
+        throw "Convention has it that Zip output files should have an extension of 'zip'";
+    }
+
+    # Check the input directory has objects to zip. If not,
+    # throw a terminating error.
+    $count = (Get-ChildItem -Recurse -Path $Config.Input | Measure-Object).Count;
+    if ($count -eq 0) {
+        throw "Input directory $($Config.Input) does not appear to have any object to zip";
+    }
+}
+
+} #end function
+#endregion ***** end of function Check-Parameters *****
 
 ##=============================================
 ## SCRIPT BODY
@@ -290,18 +305,46 @@ END {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-enum CompressFormat 
+enum CompressFormat
 {
    Gzip;
    Zip;
 }
 
-[CompressFormat]$Choice = [CompressFormat]::Gzip;
+# change accordingly
+# TypeName: System.Collections.Hashtable
+$ConfigData = @{
 
-switch ($Choice)
+    # Input object.
+    # For zip files - The path to the directory to be archived,
+    # (zipped) specified as an absolute path.
+    #
+    # For gzip files - the (usually text) file to compress
+    # specified as an absolute path.
+    Input   = 'C:\Gash\d2'
+
+    # Output object.
+    # For zip files - the path of the archive (zip file) to be
+    # created, specified as an absolute path.
+    #
+    # For gzip files - the path of the archive (gzip file) to be
+    # created, specified as an absolute path. By convention, gzip
+    # files have a file extension of either 'gz' or 'gzip'.
+    Output  = 'C:\Gash\gashOutput.zip'
+
+    # Uses one of the values in enumerated type 'CompressFormat'
+    # to do the compression.
+    Format  = [CompressFormat]::Zip
+}
+Set-Variable -Name 'ConfigData' -Option ReadOnly;
+
+# Check the values in hashtable 'ConfigData' are OK.
+Check-Parameters -Config $ConfigData;
+
+switch ($ConfigData.Format)
 {
-  "Gzip"   {Compress-Gzip; break;} 
-  "Zip"    {Compress-Zip; break;} 
+  "Gzip"   {Compress-Gzip -InputData $ConfigData.Input -OutputData $ConfigData.Output; break;}
+  "Zip"    {Compress-Zip -Input $ConfigData.Input -Output $ConfigData.Output ; break;}
 }
 
 ##=============================================
