@@ -18,7 +18,7 @@
 # Go to our preferred startup location.
 #------------------------------------------------
 Set-Location -Path 'C:\Family\powershell';
-Clear-Host;
+#Clear-Host;
 
 #------------------------------------------------
 # Welcome message and initial setup.
@@ -50,7 +50,7 @@ Remove-Variable -Name colors, HistSavePath;
 #------------------------------------------------
 # Setup some variables.
 #------------------------------------------------
-$MaximumHistoryCount = (64 * 2);
+$MaximumHistoryCount = 96;
 Write-Host "MaximumHistoryCount now set to $MaximumHistoryCount";
 
 #------------------------------------------------
@@ -77,7 +77,7 @@ Set-StrictMode -Version Latest
 # allows you to execute Java code, getting immediate results.
 $jshell = 'C:\Program Files\Java\jdk-10\bin\jshell.exe';
 
-$Host.UI.RawUI.WindowTitle = "PowerShell ROCKS";
+$Host.UI.RawUI.WindowTitle = "PowerShell 7";
 
 # Once you've written a number of PowerShell scripts, you
 # might find it useful to collect them in one place and
