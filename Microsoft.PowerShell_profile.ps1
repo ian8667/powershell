@@ -12,6 +12,8 @@
 # $a.WindowTitle = "Admin Session"
 # or
 # $Host.UI.RawUI.WindowTitle = "PowerShell ROCKS"
+#
+# Last updated : 2020-04-18
 #------------------------------------------------
 
 #------------------------------------------------
@@ -23,9 +25,10 @@ Set-Location -Path 'C:\Family\powershell';
 #------------------------------------------------
 # Welcome message and initial setup.
 #------------------------------------------------
-Write-Host "You are now entering PowerShell : " $env:Username
-Get-Date
-Write-Host "We're currently in directory $(Get-Location)"
+Write-Host "You are now entering PowerShell : $($env:Username)";
+Get-Date;
+Write-Host "We're currently in directory $(Get-Location)";
+Write-Host ("`nToday is {0}" -f (Get-Date).DayOfWeek);
 
 #------------------------------------------------
 # Create some aliases.
@@ -33,8 +36,8 @@ Write-Host "We're currently in directory $(Get-Location)"
 Set-Alias -Name 'view' -Value 'c:\windows\notepad.exe';
 Set-Alias -Name 'grep' -Value 'Select-String';
 
-Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward
-Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
+Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward;
+Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward;
 #Set-PSReadlineOption -TokenKind String -ForegroundColor Cyan
 #Set-PSReadlineOption -ContinuationPromptForegroundColor Magenta
 
@@ -51,28 +54,28 @@ Remove-Variable -Name colors, HistSavePath;
 # Setup some variables.
 #------------------------------------------------
 $MaximumHistoryCount = 96;
-Write-Host "MaximumHistoryCount now set to $MaximumHistoryCount";
+#Write-Host "MaximumHistoryCount now set to $MaximumHistoryCount";
 
 #------------------------------------------------
 # Create some functions.
 #------------------------------------------------
 function prompt
 {
-    $width = ($Host.UI.RawUI.WindowSize.Width - 2 - $(Get-Location).ToString().Length)
-    $hr = New-Object System.String @('-', $width)
+    $width = ($Host.UI.RawUI.WindowSize.Width - 2 - $(Get-Location).ToString().Length);
+    $hr = New-Object System.String @('-', $width);
 
-    $currtime=$(get-date).Tostring("HH:mm:ss")
-    Write-Host -ForegroundColor Red $(Get-Location) $hr
+    $currtime=$(get-date).Tostring("HH:mm:ss");
+    Write-Host -ForegroundColor Red $(Get-Location) $hr;
 
-    Write-Host ("PS " + $($currtime) +"==>") -nonewline
-    return " "
+    Write-Host ("PS " + $($currtime) +"==>") -nonewline;
+    return " ";
 }
 
 #------------------------------------------------
 # Misc items.
 #------------------------------------------------
 #Set-PSDebug -Strict
-Set-StrictMode -Version Latest
+Set-StrictMode -Version Latest;
 # The JShell tool, also called REPL (Read Evaluate Print Loop),
 # allows you to execute Java code, getting immediate results.
 $jshell = 'C:\Program Files\Java\jdk-10\bin\jshell.exe';
