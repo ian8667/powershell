@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2019-03-30
+Last updated : 2020-04-18
 
 .LINK
 
@@ -59,10 +59,10 @@ function Get-Parameters {
 
         # Input filename. A 'FileNotFoundException' exception is thrown
         # if the file does not exist.
-        path              = 'C:\Family\rman\CreateMiscBackup.rcv';
+        path              = 'C:\Gash\tmp2700.tmp';
 
         # Output filename. The file will be overwritten if it exists.
-        pathout           = 'C:\Family\powershell\ian.ian';
+        pathout           = 'C:\gash\ian.ian';
 
         # Int32 Struct. This variable determines the bufferSize
         # used by the System.IO.Stream object.
@@ -116,7 +116,7 @@ function Check-parameters {
         } #end scriptblock check1
 
         $check2 = {
-            # Exception thrown if file length is zero bytes.
+            # Exception thrown if input file length is zero bytes.
             param($File)
 
             $msg = "File '$File' must be greater than zero bytes length"
@@ -137,30 +137,16 @@ function Check-parameters {
             # Exception thrown if input and output filenames have the same name
             param($File1, $File2)
 
-            $msg = "Input file '$File1' cannot be the same as output file '$File2'";
+            $msg = "Input and output filenames cannot be the same";
             $errcat = [System.Management.Automation.ErrorCategory]::InvalidData;
             $exception = New-Object -TypeName 'System.ArgumentException' -ArgumentList $msg;
 
             $same = New-Object -TypeName 'System.Management.Automation.ErrorRecord' -ArgumentList `
-                 $exception, 'file names are the same', $errcat, $File;
+                 $exception, $msg, $errcat, $null;
             #$zerobytes.ErrorDetails = $errDetails;
 
             throw $same;
         } #end scriptblock check3
-
-        $check4 = {
-            # Exception thrown if unable to write to the output file
-            param($File1)
-
-            $msg = "Unable to write to output file '$File1'";
-            $errcat = [System.Management.Automation.ErrorCategory]::InvalidData;
-            $exception = New-Object -TypeName 'System.IO.IOException' -ArgumentList $msg;
-
-            $writeerr = New-Object -TypeName 'System.Management.Automation.ErrorRecord' -ArgumentList `
-                 $exception, 'cannot write to file', $errcat, $File;
-
-            throw $writeerr;
-        } #end scriptblock check4
 
     } #end BEGIN block
 
@@ -180,25 +166,57 @@ function Check-parameters {
             Invoke-Command -ScriptBlock $check3 -ArgumentList $Params.path, $Params.pathout;
         }
 
-        # 4. If the output file exists, ensure we can write to it
+        # 4. If the output file exists, ensure we can write to it.
+        # A simple test to see if we can write to the file is to
+        # open the file in write mode. We don’t really want to do
+        # any writing, just checking we can do so. An exception
+        # will occur if we cannot open the file as we wish.
         if (Test-Path -Path $Params.pathout) {
-            $tfile = '';
+            $tfile = [ref]'Undefined';
             $filemode = [System.IO.FileMode]::Open;
             $fileaccess = [System.IO.FileAccess]::Write;
+            $local:fileOK = $true;
 
             try {
                 $tfile = [System.IO.File]::Open($Params.pathout, $filemode, $fileaccess);
-            } catch {
-                Invoke-Command -ScriptBlock $check4 -ArgumentList $Params.pathout;
+            } catch [System.Management.Automation.MethodInvocationException] {
+              # We can't open the file in write mode.
+              $fred = $Error[0];
+              $local:fileOK = $false;
+
+              Write-Output $fred.FullyQualifiedErrorId;
+              Write-Output $fred.Exception.Message;
+              Write-Output "At script linenumber $($fred.InvocationInfo.ScriptLineNumber)";
+              Write-Output $fred.InvocationInfo.Line;
+              Write-Output "Line in error--> $($fred.InvocationInfo.Line)";
+
+              Write-Error -Category 'WriteError' `
+                          -CategoryReason 'Checking we can write to output file' `
+                          -CategoryTargetType 'Output file' `
+                          -ErrorId '101' `
+                          -Message 'Check the output file is not readonly' `
+                          -RecommendedAction 'Check file is not reaonly';
+
+              #throw "$($fred.Exception.Message)";
+            } catch [System.Exception] {
+              # Some other error has occurred.
+              Write-Error -Message $_.Exception.Message `
+                          -ErrorId '102';
+
             } finally {
-                $tfile.Close();
-                $tfile.Dispose();
+              if ($local:fileOK) {
+                   $tfile.Close();
+                   $tfile.Dispose();
+              }
+
+              Remove-Variable -Name 'tfile', 'fileOK';
+              [System.GC]::Collect();
             }
 
-        }
+        } #end IF statement
     }
 
-    END {  }
+    END {}
 }
 #endregion ***** end of function Check-parameters *****
 
@@ -274,7 +292,7 @@ function Get-OutputFilestream {
     # of the file, I will call the SetLength() method and specify
     # a 0 (zero) to tell the file to be 0 bytes and clear the file
     # prior to adding new text. This is analogous to using the
-    # Clear-Content cmdlet.
+    # 'Clear-Content' cmdlet.
     $outStream = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
         $optOut.path, $optOut.mode, $optOut.access, $optOut.share, $optOut.bufferSize, $optOut.options;
     $outStream.SetLength(0);
@@ -320,7 +338,7 @@ try {
   Write-Verbose -Message "Length of input stream $($fis.Length) bytes";
 
   $fos = Get-OutputFilestream -Filename $param.pathout -Buffsize $param.buffersize;
-  Write-Verbose -Message "Output stream $($param.pathout) open";
+  Write-Verbose -Message "Output stream open";
 
   # Find out which is the smallest value. This ensures we don't
   # attempt to move the file position (pointer) before the
@@ -347,13 +365,19 @@ try {
 } catch {
   Write-Error -Message $error[0].Exception.Message;
 } finally {
+  Write-Verbose -Message 'Closing input and output files';
   $fis.Close();
   $fis.Dispose();
+
   $fos.Flush();
   $fos.Close();
   $fos.Dispose();
 
+  Remove-Variable -Name 'fis', 'fos' -Force;
+  [System.GC]::Collect();
+  [System.GC]::WaitForPendingFinalizers();
 }
+
 
 Write-Output "`nFiles used:";
 Write-Output "Input file: $($param.path)";
