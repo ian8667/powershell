@@ -19,7 +19,37 @@ https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/
 Directory: C:\WINDOWS\SYSTEM32
 Robocopy.exe
 
-Last updated : 2020-05-02T22:49:31
+-----
+Robocopy snag: (something to fix)
+
+Robocopy does not copy the root folder
+
+robocopy C:\Family  E:\Backups\Laptop\Backup2020-05-03
+
+This seems to be copying everything but not the root directory
+(Family). In the destination folder I only see subfolders and
+files, but not the root "Family" folder.
+
+I would like to copy the Family folder (root directory) from one
+server to another with all attributes, root directories, and files.
+The command above is copying everything WITHIN the directory but
+not the directory itself.
+
+
+Robocopy does not copy the root folder and its time stamp - it copies
+all subdirectories and files (when the appropriate options are set)
+and there seems to be no option/argument to tell Robocopy you want
+the root folder itself and its timestamp or attributes to be copied
+verbatim also.
+
+So say I want I want to copy C:/Brushes
+
+Robocopy will copy all its subdirectories and files into the
+destination, but not the Brushes folder itself, with all
+associated attributes and timestamp.
+-----
+
+Last updated : 2020-05-03T22:19:19
 Keywords     : robocopy backup copy file
 
 #>
@@ -35,21 +65,21 @@ Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
 $robokopy = 'C:\WINDOWS\SYSTEM32\Robocopy.exe';
-$source = "C:\Family\EmailsSent";
-$dest = "C:\Gash\gashdir";
+$source = "C:\Family";
+$dest = "E:\Backups\Desktop\Backup2020-05-03";
 $logfile = Invoke-Command -ScriptBlock {
   #$mask = '_yyyy-MM-ddTHH-mm-ss';
   $mask = '_yyyy-MM-dd';
   $timestamp = (Get-Date).ToString($mask);
 
-  $log = ("C:\Gash\robocopylog{0}.log" -f $timestamp);
+  $log = ("C:\temp\robocopylog{0}.log" -f $timestamp);
 
   return $log;
 }
 Set-Variable -Name 'robokopy', 'source', 'dest', 'logfile' -Option ReadOnly;
 
 $what = @("*.*", "/MIR");
-$options = @("/E", "/V", "/R:3", "/W:3", "/NP", "/LOG:$logfile");
+$options = @("/E", "/V", "/R:3", "/W:3","/NP", "/DCOPY:DAT", "/LOG:$logfile");
 $cmdArgs = @("$source", "$dest", $what, $options);
 
 # Ensure the destination directory is empty before we do the Robocopy
