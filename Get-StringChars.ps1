@@ -58,7 +58,7 @@ example.
 
 File Name    : Get-StringChars.ps1
 Author       : Ian Molloy
-Last updated : 2020-05-14T12:52:32
+Last updated : 2020-05-14T15:39:50
 
 .LINK
 
@@ -97,12 +97,15 @@ Param (
     [Char]$Letter
 ) #end param
 
+# The numeric values used to determine whether the parameter
+# is upper or lower case are decimal.
+
 [String]$case = '';
 $num = [Byte]$Letter;
 switch ($num) {
     {65..90 -contains $PSItem} {$case = "(uppercase)"; Break}
-    {97..122 -contains $PSItem} {$case = "(lowercase)"; Break }
-    default {$case = ""; Break }
+    {97..122 -contains $PSItem} {$case = "(lowercase)"; Break}
+    default {$case = ""; Break}
 }
 
 return $case;
@@ -171,13 +174,13 @@ return $($sb.ToString());
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-# Validate the parameters supplied. Throw a terminating error
-# if any parameters are invalid.
+# Validate the parameters supplied to the program. Throw a
+# terminating error if any parameters are invalid.
 Invoke-Command -ScriptBlock {
   # The minimum value in array 'CharPositions' should be one (1).
   [Byte]$validate = ($CharPositions | Measure-Object -Minimum).Minimum;
   if ($validate -eq 0) {
-      throw [System.ArgumentOutOfRangeException] "Minimum value allowed for parameter CharPositions is 1"
+      throw [System.ArgumentOutOfRangeException] "Minimum value allowed for parameter CharPositions is 1";
   }
 
   # Make sure the maximum value in array 'CharPositions'
@@ -203,10 +206,12 @@ Write-Output "";
 
 
 # Find and display the characters requested.
-# One is subtracted from the number requested as positions in
+# One is subtracted from the number requested, as positions in
 # the string are 0-based, and the character positions requested
-# (supplied by the user) are 1-based. So if character at position
-# 1 is requested, it will be found at string index 0 not 1.
+# (as supplied by the user) in [System.Byte] array
+# 'CharPositions' are are 1-based. So if the character at
+# position 1 is requested, it will be found at string index
+# 0 not 1.
 foreach ($num in $CharPositions) {
      $letter = $Phrase[$num - 1];
      $case = Get-LetterCase -Letter $letter;
