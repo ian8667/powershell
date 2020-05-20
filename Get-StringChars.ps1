@@ -58,7 +58,7 @@ example.
 
 File Name    : Get-StringChars.ps1
 Author       : Ian Molloy
-Last updated : 2020-05-14T15:39:50
+Last updated : 2020-05-20T18:09:54
 
 .LINK
 
@@ -98,7 +98,7 @@ Param (
 ) #end param
 
 # The numeric values used to determine whether the parameter
-# is upper or lower case are decimal.
+# supplied is upper or lower case are decimal.
 
 [String]$case = '';
 $num = [Byte]$Letter;
