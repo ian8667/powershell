@@ -35,7 +35,13 @@ Is this how you handle these events?
 Handling and raising events
 https://docs.microsoft.com/en-us/dotnet/standard/events/?view=netcore-3.1
 
-Last updated : 2020-05-15T23:05:13
+Handling events:
+AsyncCompletedEventHandler Delegate
+Represents the method that will handle the MethodNameCompleted event of an asynchronous operation.
+https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.asynccompletedeventhandler?view=netcore-3.1
+Is this how I should do it?
+
+Last updated : 2020-05-20T18:04:59
 #>
 
 [CmdletBinding()]
@@ -133,6 +139,8 @@ Job submitted to download the file.
 
 The file will be downloaded asynchronously and an event
 will notify you when the download is complete.
+
+Please be patient
 "@
 
 Get-MsertFile -InputFile $inputFile -OutputFile $outputFile;
