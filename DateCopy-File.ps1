@@ -30,28 +30,28 @@ invoked to obtain the file to copy.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1 myfile.txt
+PS> ./DateCopy-File.ps1 'myfile.txt'
+
+The filename supplied will be copied with the name format of
+myfile_YYYY-MM-DDTHH-MM-SS.txt.
+
+.EXAMPLE
+
+PS> ./DateCopy-File.ps1 -Path 'myfile.txt'
 
 The filename supplied will be copied to a file with the name format
 of myfile_YYYY-MM-DDTHH-MM-SS.txt.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1 -Path myfile.txt
-
-The filename supplied will be copied to a file with the name format
-of myfile_YYYY-MM-DDTHH-MM-SS.txt.
-
-.EXAMPLE
-
-PS> ./DateCopy-File.ps1 myfile.txt -ReadOnly
+PS> ./DateCopy-File.ps1 'myfile.txt' -ReadOnly
 
 The filename supplied will be copied to a file with the name format
 of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1 -Path myfile.txt -ReadOnly
+PS> ./DateCopy-File.ps1 -Path 'myfile.txt' -ReadOnly
 
 The filename supplied will be copied to a file with the name format
 of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
