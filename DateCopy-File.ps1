@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-03-28
+Last updated : 2020-05-26T18:14:30
 
 .LINK
 
@@ -265,10 +265,9 @@ if ($PSBoundParameters.ContainsKey('Path')) {
    # to allow the user to select a file to copy.
    $oldFilename = Get-OldFilename -Boxtitle 'File to copy';
 }
-Set-Variable -Name 'oldFilename' -Option ReadOnly;
 
 $newFilename = Get-NewFilename -OldFilename $oldFilename;
-Set-Variable -Name 'newFilename' -Option ReadOnly;
+Set-Variable -Name 'oldFilename', 'newFilename' -Option ReadOnly;
 
 Write-Output ("`nFile we want to copy: {0}" -f $oldFilename);
 Write-Output ("New filename = {0}" -f $newFilename);
@@ -279,8 +278,15 @@ if (Test-Path -Path $newFilename) {
   # to the current date/time rather than keep the value of the file it
   # was copied from. If we didn't do this, both the original file and the
   # file we've copied will have the same 'LastWriteTime' property. The
-  # original file has the earlier 'LastWriteTime' property.
-  Set-ItemProperty -Path $newFilename -Name LastWriteTime -Value (Get-Date);
+  # original file has the earlier 'LastWriteTime' property. By doing this,
+  # it makes it easier for me to find the file in any output if I execute
+  # the command:
+  # PS> Get-ChildItem -File | Sort-Object -Property LastWriteTime;
+
+  # Ensure the attribute 'IsReadOnly' is set to false to avoid the error:
+  # Access to the path <filename> is denied
+  Set-ItemProperty -Path $newFilename -Name 'IsReadOnly' -Value $false;
+  Set-ItemProperty -Path $newFilename -Name 'LastWriteTime' -Value (Get-Date);
 
   if ($PSBoundParameters.ContainsKey('ReadOnly')) {
      # Set the value of the 'IsReadOnly' property of the file just copied
