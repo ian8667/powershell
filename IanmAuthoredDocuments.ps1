@@ -16,7 +16,7 @@ PS> ./IanmAuthoredDocuments.ps1
 
 File Name    : IanmAuthoredDocuments.ps1
 Author       : Ian Molloy
-Last updated : 2017-02-07
+Last updated : 2020-06-04T21:43:18
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -117,7 +117,7 @@ param (
 #region ***** Function Get-RequiredDocuments *****
 function Get-RequiredDocuments() {
 
-BEGIN {
+Begin {
 
   Add-Type -AssemblyName Microsoft.Office.Interop.Word
 
@@ -156,7 +156,7 @@ BEGIN {
 
 } #end BEGIN block
 
-PROCESS {
+Process {
 
   # Main loop to process our list of files.
   foreach($doc in $docs) {
@@ -220,7 +220,7 @@ PROCESS {
 
 } #end PROCESS block
 
-END {
+End {
 
   Write-Host ("{0} Ian M authored files listed" -f $fileCount);
 

@@ -83,7 +83,7 @@ Param(
       [String]$OutputData
 ) #end param
 
-BEGIN {
+Begin {
 
 $bufSize = 4KB;
 
@@ -111,7 +111,7 @@ $CompressStart = Get-Date;
 Write-Output ('Gzip compress file start: {0}' -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
 } #end BEGIN block
 
-PROCESS {
+Process {
 try {
 
     # The stream to compress.
@@ -147,7 +147,7 @@ try {
 
 } #end PROCESS block
 
-END {
+End {
     $CompressFinish = Get-Date;
     Write-Output ('Gzip compress finish: {0}' -f $CompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
     $tspan = $CompressFinish - $CompressStart;
@@ -181,7 +181,7 @@ Param(
       [String]$OutputData
 ) #end param
 
-BEGIN {
+Begin {
 
 Add-Type -AssemblyName "System.IO.Compression.FileSystem";
 
@@ -192,7 +192,7 @@ $CompressStart = Get-Date;
 Write-Output ("`nZip compress directory start: {0}" -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
 } #end BEGIN block
 
-PROCESS {
+Process {
 
 [System.IO.Compression.ZipFile]::CreateFromDirectory( `
             $InputData, `
@@ -202,7 +202,7 @@ PROCESS {
 
 } #end PROCESS block
 
-END {
+End {
     $CompressFinish = Get-Date;
     Write-Output ('Zip compress finish: {0}' -f $CompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
     $tspan = $CompressFinish - $CompressStart;

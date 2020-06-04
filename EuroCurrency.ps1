@@ -30,7 +30,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : EuroCurrency.ps1
 Author       : Ian Molloy
-Last updated : 2017-07-25
+Last updated : 2020-06-04T21:31:36
 
 .LINK
 
@@ -71,7 +71,7 @@ function Get-Xmldata {
 [OutputType([System.Object[]])]
 param ()
 
-BEGIN {
+Begin {
 
   # The European Central Bank exchange rate data URI which is
   # the source of our data.
@@ -81,7 +81,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
 
   # Create and load the currency data into our XML
   # (System.Xml.XmlDocument) object.
@@ -93,7 +93,7 @@ PROCESS {
 
 }
 
-END {
+End {
 
   return $mydata;
 
@@ -113,7 +113,7 @@ Param (
         $strnum
       ) #end param
 
-BEGIN {
+Begin {
 
   $roundAway = [System.MidpointRounding]::AwayFromZero;
   [System.Double]$dec1 = 0.0;
@@ -127,7 +127,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
 
   # parse and convert the string to a decimal number.
   $retval = [System.Double]::TryParse($strnum, $numStyle, $null, [ref]$dec1);
@@ -137,7 +137,7 @@ PROCESS {
 
 }
 
-END {
+End {
 
   return $dec2;
 
@@ -158,14 +158,14 @@ Param (
         $Currencies
       ) #end param
 
-BEGIN {
+Begin {
 
   $results = $Currencies.GetEnumerator() | Where-Object { $_.Key -in ('GBP') }
   [System.Double]$decstr = 0.0;
 
 }
 
-PROCESS {
+Process {
 
   # deal with GBP currency first.
   Write-Output '';
@@ -189,7 +189,7 @@ PROCESS {
 
 }
 
-END {}
+End {}
 
 }
 #endregion ***** end of function Display-ExchangeRate *****
@@ -200,7 +200,7 @@ function Create-CurrencySymbol {
 [OutputType([System.Management.Automation.PSCustomObject])]
 param ()
 
-BEGIN {
+Begin {
 
   $hash = @{
            EUR      = [char]0x20AC   # Euro symbol
@@ -210,7 +210,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
 
   # In Windows PowerShell 3.0 (and this continues in Windows
   # PowerShell 4.0), it is even easier to create custom objects.
@@ -218,7 +218,7 @@ PROCESS {
   $myObject = New-Object PSObject -Property $hash;
 }
 
-END {
+End {
 
   return $myObject;
 
@@ -243,20 +243,20 @@ Param (
         $gbp
       ) #end param
 
-BEGIN {
+Begin {
 
   [System.Double]$dec = [System.Convert]::ToDouble($Currency);
   [System.Double]$result = 0.0;
 
 }
 
-PROCESS {
+Process {
 
   $result = $dec / $gbp;
 
 }
 
-END {
+End {
 
   return $result;
 
@@ -277,7 +277,7 @@ Param (
         $Currencies
       ) #end param
 
-BEGIN {
+Begin {
 
   [System.Double]$dub = [System.Convert]::ToDouble($Currencies.Get_Item("GBP"));
   Set-Variable -Name gbpDub `
@@ -291,7 +291,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
 
   Foreach ($hh in $Currencies.GetEnumerator()) {
 
@@ -308,7 +308,7 @@ PROCESS {
 
 }
 
-END {
+End {
 
   # Return a 'System.Collections.Hashtable' object containing
   # the converted currencies.
@@ -324,7 +324,7 @@ function Start-MainRoutine {
 [OutputType([System.Void])]
 Param () #end param
 
-BEGIN {
+Begin {
 
   # Get the XML currency data of interest.
   $mydata = Get-Xmldata;
@@ -349,7 +349,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
 
   # Loop through all of the currency rates available in our XML object.
   Foreach ($xmlProperty in $mydata) {
@@ -366,7 +366,7 @@ PROCESS {
 
 }
 
-END {
+End {
 
   Display-ExchangeRate $convertedCurrencies;
 

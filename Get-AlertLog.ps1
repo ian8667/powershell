@@ -64,7 +64,7 @@ function main_routine() {
 ##=============================================
 function Get-OracleInstances() {
 
-BEGIN {
+Begin {
   $sidlist = @();
   $props = @{
        Class = "Win32_Service";
@@ -74,7 +74,7 @@ BEGIN {
    }
 }
 
-PROCESS {
+Process {
    Get-WmiObject @props | foreach-object {
       $longname = $_.Name;
       Write-Verbose "`ndisplay name is now $longname";
@@ -86,7 +86,7 @@ PROCESS {
    }
 }
 
-END {
+End {
   return $sidlist;
 }
 
@@ -116,14 +116,14 @@ Param (
         $ComputerName
       ) #end param
 
-BEGIN {
+Begin {
   [Int32]$timeout = 4000;
   [Boolean]$retval = $true;
 
   $ping = New-Object -TypeName System.Net.NetworkInformation.Ping;
 }
 
-PROCESS {
+Process {
   # -> hostNameOrAddress
   # A String that identifies the computer that is the destination
   # for the ICMP echo message.
@@ -153,7 +153,7 @@ PROCESS {
   }
 }
 
-END {
+End {
   $ping.Dispose();
   Write-Verbose -Message "Returning from function Ping with a value of $retval";
   return $retval;
@@ -177,9 +177,9 @@ END {
 function Get-Script-Info()
 {
 
-BEGIN {}
+Begin {}
 
-PROCESS {
+Process {
   if ($MyInvocation.ScriptName) {
        $p1 = Split-Path -Leaf $MyInvocation.ScriptName;
        $p2 = Split-Path -Parent $MyInvocation.ScriptName;
@@ -189,7 +189,7 @@ PROCESS {
   }
 }
 
-END {}
+End {}
 
 }
 #endregion ********** end of function Get-Script-Info **********
@@ -453,7 +453,7 @@ Param (
         $OracleSid
       ) #end param
 
-BEGIN {
+Begin {
   $retval = "";
   $Regex = [regex]"\d{2}.\d{1}.\d{1}"; # ie 10.2.0, 6 characters.
   $myFilter = ("Name = 'OracleService{0}'" -f $OracleSid);
@@ -465,7 +465,7 @@ BEGIN {
   }
 }
 
-PROCESS {
+Process {
   # d:\oracle\product\10.2.0\db\bin\ORACLE.EXE ORCL1
   Get-WmiObject @props | select PathName |
      ForEach-Object {
@@ -477,7 +477,7 @@ PROCESS {
      }
 }
 
-END {
+End {
   return $retval;
 }
 

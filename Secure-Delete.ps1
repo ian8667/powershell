@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2020-03-27
+Last updated : 2020-06-04T21:58:35
 Keywords     : yes no yesno
 
 .LINK
@@ -48,15 +48,15 @@ Param() #end param
 
 #region ***** Function Get-Filename *****
 function Get-Filename {
-    [CmdletBinding()]
-    Param (
-            [parameter(Mandatory=$true,
-                       HelpMessage="ShowDialog box title")]
-            [ValidateNotNullOrEmpty()]
-            [String]$Title
-          ) #end param
+[CmdletBinding()]
+Param (
+    [parameter(Mandatory=$true,
+               HelpMessage="ShowDialog box title")]
+    [ValidateNotNullOrEmpty()]
+    [String]$Title
+) #end param
 
-    BEGIN {
+    Begin {
       Write-Verbose -Message "Invoking function to obtain the filename to delete";
 
       Add-Type -AssemblyName "System.Windows.Forms";
@@ -76,7 +76,7 @@ function Get-Filename {
       $ofd.DefaultExt = "txt";
     }
 
-    PROCESS {
+    Process {
        if ($ofd.ShowDialog() -eq $myok) {
           $retFilename = $ofd.FileName;
        } else {
@@ -84,7 +84,7 @@ function Get-Filename {
        }
     }
 
-    END {
+    End {
       $ofd.Dispose();
       return $retFilename;
     }
@@ -102,7 +102,7 @@ function Confirm-Delete {
     [String]$FileName
   ) #end param
 
-  BEGIN {
+  Begin {
    $retval = $false;
    $title = "Remove file";
    $yes = New-Object -TypeName 'System.Management.Automation.Host.ChoiceDescription' "&Yes", `
@@ -120,7 +120,7 @@ This action cannot be undone! Please make sure
 "@
   }
 
-  PROCESS {
+  Process {
 
    $options = [System.Management.Automation.Host.ChoiceDescription[]]($no, $yes);
 
@@ -128,7 +128,7 @@ This action cannot be undone! Please make sure
 
   }
 
-  END {
+  End {
 
    switch ($result) {
       0 {$retval = $false; break}  # Response no
@@ -142,15 +142,15 @@ This action cannot be undone! Please make sure
 
 #region ***** Function Delete-File *****
 function Delete-File {
-    [CmdletBinding()]
-    Param (
-            [parameter(Mandatory=$true,
-                       HelpMessage="Filename to delete")]
-            [ValidateNotNullOrEmpty()]
-            [String]$FileName
-          ) #end param
+[CmdletBinding()]
+Param (
+    [parameter(Mandatory=$true,
+               HelpMessage="Filename to delete")]
+    [ValidateNotNullOrEmpty()]
+    [String]$FileName
+) #end param
 
-    BEGIN {
+    Begin {
       Write-Output "Deleting file $($FileName)";
       $objectFile = Get-Item -Path $FileName;
       $fileLen = $objectFile.Length;
@@ -160,7 +160,7 @@ function Delete-File {
 
     }
 
-    PROCESS {
+    Process {
      try {
 
        foreach ($num in 1..3) {
@@ -188,7 +188,7 @@ function Delete-File {
 
     }
 
-    END {
+    End {
       Remove-Variable -Name fileLen, byteArray -Force;
     }
 }

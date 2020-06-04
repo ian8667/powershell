@@ -8,13 +8,13 @@ Param (
         [System.Double]$num
       ) #end param
 
-BEGIN {
+Begin {
   $suffix = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB");
   $index = 0;
   [System.Double]$n = $num;
 }
 
-PROCESS {
+Process {
   while ($n -gt 1kb) {
        $n = $n / 1024;
        $index++;
@@ -22,7 +22,7 @@ PROCESS {
 
 }
 
-END {
+End {
   return ("{0:N4} {1}" -f $n, $suffix[$index]);
 }
 

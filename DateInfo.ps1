@@ -67,7 +67,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2020-03-31
+Last updated : 2020-06-04T21:27:42
 
 .LINK
 
@@ -126,7 +126,7 @@ Param(
 function Show-WeekendingDates
 {
 
-BEGIN {
+Begin {
 
   # Counts the number of weeks as we list them.
   [Byte]$weekCounter = 1;
@@ -164,7 +164,7 @@ BEGIN {
   Write-Output "";
 }
 
-PROCESS {
+Process {
 
   # loop in multiples of 7 days
   $tempDate = $startDate;
@@ -183,7 +183,7 @@ PROCESS {
 
 }
 
-END {
+End {
 
   foreach ($num in 1..3) {Write-Output '';}
   Write-Output ('*' * 30);
@@ -240,7 +240,7 @@ Param (
         $CurrentDate
       ) #end param
 
-BEGIN {
+Begin {
   Write-Verbose -Message "Executing function Get-JulianDate";
 
   [Double]$jd = 0.0;
@@ -258,7 +258,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
   if ($myMonth -in 1,2) {
      $myYear--;
      $myMonth += 12;
@@ -270,7 +270,7 @@ PROCESS {
 
 }
 
-END {
+End {
   Write-Verbose -Message "function Get-JulianDate done";
   return $jd;
 
@@ -292,7 +292,7 @@ END {
 ##=============================================
 function Show-DateInformation() {
 
-BEGIN {
+Begin {
   Write-Verbose -Message "Executing function Show-DateInformation";
 
   foreach ($num in 1..2) {Write-Output ""}
@@ -309,7 +309,7 @@ BEGIN {
   $weekNum = $greg.GetWeekOfYear($time, $rule, $dayofweek);
 }
 
-PROCESS {
+Process {
   # See whether this is a leap year.
   if ([System.DateTime]::IsLeapYear($myDate.Year)) {
     $leap = "True";
@@ -330,7 +330,7 @@ PROCESS {
 
 }
 
-END {
+End {
 
   Write-Output ("Today is {0:dddd, dd MMMM yyyy HH:mm}" -f $myDate);
   Write-Output ("ISO 8601 date/time is {0:s}" -f $myDate);
@@ -361,7 +361,7 @@ END {
 function Get-WeekendingDate
 {
 
-BEGIN {
+Begin {
   $sat = [System.DayOfWeek]::Saturday;
   Set-Variable -Name 'sat' -Option ReadOnly;
   # ie, todays date
@@ -370,7 +370,7 @@ BEGIN {
   $weekday = ($tempDate).DayOfWeek;
 }
 
-PROCESS {
+Process {
   # keep looping until we find the next Saturday from today
   while ($weekday -ne $sat) {
      $tempDate = $tempDate.AddDays(1.0);
@@ -379,7 +379,7 @@ PROCESS {
   }
 }
 
-END {
+End {
   return $tempDate;
 }
 

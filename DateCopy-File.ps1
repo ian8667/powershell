@@ -127,7 +127,7 @@ Param (
         [String]$Boxtitle
       ) #end param
 
-BEGIN {
+Begin {
   Write-Verbose -Message "Invoking function to obtain the to file to copy";
 
   Add-Type -AssemblyName "System.Windows.Forms";
@@ -149,7 +149,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
   if ($ofd.ShowDialog() -eq $myok) {
      $retFilename = $ofd.FileName;
   } else {
@@ -157,7 +157,7 @@ PROCESS {
   }
 }
 
-END {
+End {
   $ofd.Dispose();
   return $retFilename;
 }
@@ -193,7 +193,7 @@ Param (
         [String]$OldFilename
       ) #end param
 
-BEGIN {
+Begin {
   # Date format used to help rename the file from the original
   # filename provided.
   $mask = '_yyyy-MM-ddTHH-mm-ss';
@@ -224,9 +224,9 @@ BEGIN {
 
 }
 
-PROCESS {}
+Process {}
 
-END {
+End {
   return $newFilename;
 }
 

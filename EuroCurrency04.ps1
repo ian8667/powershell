@@ -8,7 +8,7 @@
 
 function foo01 {
 
-BEGIN {
+Begin {
   # Create an XML object to hold our exchange rates data
   $myxml = New-Object xml;
   
@@ -39,14 +39,14 @@ BEGIN {
   $usdSymbol=[char]0x0024;
 }
 
-PROCESS {
+Process {
   # Find the exchange rate data for currency symbol GBP.
   $gbp = $exRates |
        Where-Object { $_.currency -eq 'GBP' } |
        Select-Object -ExpandProperty rate;
 }
 
-END {
+End {
 
   Write-Host ("{0} as of {1}" -f $subject, $ttime);
   Write-Host ("Source of data: {0}" -f $dataSource);

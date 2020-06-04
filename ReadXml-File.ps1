@@ -51,7 +51,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : ReadXml-File.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-12
+Last updated : 2020-06-04T21:46:20
 
 #>
 
@@ -69,7 +69,7 @@ Param (
         [String]$Filename
       ) #end param
 
-BEGIN {
+Begin {
 if (-not (Test-Path -Path $Filename)) {
     Write-Error -Message "Cannot find path '$Filename' because it does not exist" `
      -Category ObjectNotFound `
@@ -93,9 +93,9 @@ $xobj = [System.Xml.XmlReader]::Create($Filename, $xsettings);
 
 }
 
-PROCESS {}
+Process {}
 
-END {
+End {
   return $xobj;
 }
 

@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2020-04-18
+Last updated : 2020-06-04T21:41:42
 
 .LINK
 
@@ -52,7 +52,7 @@ function Get-Parameters {
   [OutputType([System.Management.Automation.PSCustomObject])]
   param ()
 
-  BEGIN {
+  Begin {
     # Change the values in this PSCustomObject object accordingly.
     $object = [PSCustomObject]@{
     PSTypeName = 'Widget';
@@ -83,9 +83,9 @@ function Get-Parameters {
 
   }
 
-  PROCESS {}
+  Process {}
 
-  END {
+  End {
 
     return $object;
 
@@ -104,7 +104,7 @@ function Check-parameters {
       [PSTypeName('Widget')]$Params
     ) #end param
 
-    BEGIN {
+    Begin {
         $check1 = {
           # Exception thrown if the input file does not exist.
           param($File)
@@ -150,7 +150,7 @@ function Check-parameters {
 
     } #end BEGIN block
 
-    PROCESS {
+    Process {
         # 1. Check the input file exists
         if (-not (Test-Path -Path $Params.path) ) {
             Invoke-Command -ScriptBlock $check1 -ArgumentList $Params.path;
@@ -216,7 +216,7 @@ function Check-parameters {
         } #end IF statement
     }
 
-    END {}
+    End {}
 }
 #endregion ***** end of function Check-parameters *****
 
@@ -235,7 +235,7 @@ function Get-InputFilestream {
     [Int32]$Buffsize
   ) #end param
 
-  BEGIN {
+  Begin {
     $opts1 = [PSCustomObject]@{
         path        = $Filename;
         mode        = [System.IO.FileMode]::Open;
@@ -250,9 +250,9 @@ function Get-InputFilestream {
 
   }
 
-  PROCESS {}
+  Process {}
 
-  END {
+  End {
 
     return $inStream;
 
@@ -275,7 +275,7 @@ function Get-OutputFilestream {
     [Int32]$Buffsize
   ) #end param
 
-  BEGIN {
+  Begin {
      $optOut = [PSCustomObject]@{
          path        = $Filename;
          mode        = [System.IO.FileMode]::OpenOrCreate;
@@ -298,9 +298,9 @@ function Get-OutputFilestream {
     $outStream.SetLength(0);
   }
 
-  PROCESS {}
+  Process {}
 
-  END {
+  End {
 
     return $outStream;
 

@@ -52,7 +52,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-11
+Last updated : 2020-06-04T21:15:02
 
 For a carriage return and a new line, use `r`n.
 Special Characters
@@ -136,7 +136,7 @@ Param (
 
   #trap { "An error: $_"; exit 1;}
 
-BEGIN {
+Begin {
   Add-Type -AssemblyName "System.Windows.Forms";
   [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
 
@@ -157,7 +157,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
 
   if ($ofd.ShowDialog() -eq $myok) {
      $retFilename = $ofd.FileNames;
@@ -166,7 +166,7 @@ PROCESS {
   }
 }
 
-END {
+End {
   $ofd.Dispose();
   return $retFilename;
 }
@@ -187,11 +187,11 @@ Param (
    $fList
 ) #end param
 
-BEGIN {
+Begin {
   Write-Host 'inside function Start-MainRoutine';
 }
 
-PROCESS {
+Process {
   # Loop round the array of files and set the Zone.Identifier accordingly.
   foreach ($f in $fList) {
     Write-Verbose -Message "Setting Zone.Identifier for file $f";
@@ -201,7 +201,7 @@ PROCESS {
 
 }
 
-END {}
+End {}
 
 }
 #endregion ***** end of function Start-MainRoutine *****

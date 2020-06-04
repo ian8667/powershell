@@ -67,7 +67,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Holidays.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-11
+Last updated : 2020-06-04T21:38:45
 
 .LINK
 
@@ -116,13 +116,13 @@ Param (
         $HolidayDate
       ) #end param
 
-BEGIN {
+Begin {
   $holDate = [System.DateTime]$HolidayDate;
 }
 
-PROCESS {}
+Process {}
 
-END {
+End {
   return $holDate.DayOfWeek.ToString();
 }
 
@@ -142,13 +142,13 @@ Param (
         $HolidayDate
       ) #end param
 
-BEGIN {
+Begin {
   $dateDifference = ([System.DateTime]::Today - [System.DateTime]$HolidayDate);
   $indicator = '';
   $diffResult = [System.Math]::Sign($dateDifference.Days);
 }
 
-PROCESS {
+Process {
    switch ($diffResult) {
       -1  {$indicator = 'Future'; break;} # the holiday is in the future
        0  {$indicator = 'Today'; break;}  # the holiday is today
@@ -157,7 +157,7 @@ PROCESS {
    }
 }
 
-END {
+End {
   return $indicator;
 }
 
@@ -171,7 +171,7 @@ function Start-MainRoutine {
 [OutputType([System.Void])]
 Param () #end param
 
-BEGIN {
+Begin {
   $uri = "https://www.gov.uk/bank-holidays.json";
   $wantedYear = (Get-Date).Year; # year of interest
   $holidays = Invoke-RestMethod -Uri $uri |
@@ -185,7 +185,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
   $holidays.events |
     Where-Object {$_.date -Match $wantedYear.ToString()} |
     ForEach-Object `
@@ -204,7 +204,7 @@ PROCESS {
 
   }
 
-END {}
+End {}
 
 }
 #endregion ***** end of function Start-MainRoutine *****

@@ -122,7 +122,7 @@ function Uncompress-Gzip {
 #[OutputType([System.Collections.Hashtable])]
 Param () #end param
 
-BEGIN {
+Begin {
 
 # change accordingly
 $file = [PSCustomObject]@{
@@ -159,7 +159,7 @@ $UncompressStart = Get-Date;
 Write-Output ("`nGzip uncompress file start: {0}" -f $UncompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
 } #end BEGIN block
 
-PROCESS {
+Process {
 try {
 
     # The stream to Uncompress.
@@ -193,7 +193,7 @@ try {
 
 } #end PROCESS block
 
-END {
+End {
     $UncompressFinish = Get-Date;
     Write-Output ('uncompress finish: {0}' -f $UncompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
     $tspan = $UncompressFinish - $UncompressStart;
@@ -216,7 +216,7 @@ function Uncompress-Zip {
 #[OutputType([System.Collections.Hashtable])]
 Param () #end param
 
-BEGIN {
+Begin {
 
 # change accordingly
 $file = [PSCustomObject]@{
@@ -235,7 +235,7 @@ $UncompressStart = Get-Date;
 Write-Output ("`nZip uncompress start: {0}" -f $UncompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
 } #end BEGIN block
 
-PROCESS {
+Process {
 
 [System.IO.Compression.ZipFile]::ExtractToDirectory( `
             $file.Input, `
@@ -243,7 +243,7 @@ PROCESS {
 
 } #end PROCESS block
 
-END {
+End {
     $UncompressFinish = Get-Date;
     Write-Output ('Uncompress finish: {0}' -f $UncompressFinish.ToString("yyyy-MM-ddTHH-mm-ss"))
     $tspan = $UncompressFinish - $UncompressStart;
