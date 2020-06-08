@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Compress-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-04-06
+Last updated : 2020-06-08T21:57:09
 
 .LINK
 
@@ -186,7 +186,7 @@ Begin {
 Add-Type -AssemblyName "System.IO.Compression.FileSystem";
 
 $opt = [System.IO.Compression.CompressionLevel]::Optimal;
-$includeBaseDirectory = $false;
+$includeBaseDirectory = $true;
 
 $CompressStart = Get-Date;
 Write-Output ("`nZip compress directory start: {0}" -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
@@ -321,7 +321,7 @@ $ConfigData = @{
     #
     # For gzip files - the (usually text) file to compress
     # specified as an absolute path.
-    Input   = 'C:\Gash\temp'
+    Input   = 'C:\upload'
 
     # Output object.
     # For zip files - the path of the archive (zip file) to be
@@ -330,10 +330,10 @@ $ConfigData = @{
     # For gzip files - the path of the archive (gzip file) to be
     # created, specified as an absolute path. By convention, gzip
     # files have a file extension of either 'gz' or 'gzip'.
-    Output  = 'C:\Family\CurrentContract\SecurityClearance02.zip'
+    Output  = 'C:\Test\IanMolloy_documents.zip'
 
-    # Uses one of the values in enumerated type 'CompressFormat'
-    # to do the compression.
+    # Compression format to use. Uses one of the values in
+    # enumerated type 'CompressFormat' to do the compression.
     Format  = [CompressFormat]::Zip
 }
 Set-Variable -Name 'ConfigData' -Option ReadOnly;
@@ -341,10 +341,16 @@ Set-Variable -Name 'ConfigData' -Option ReadOnly;
 # Check the values in hashtable 'ConfigData' are OK.
 Check-Parameters -Config $ConfigData;
 
+$splat = @{
+  # Splat data for use with functions Compress-Gzip and Compress-Zip.
+  InputData = $ConfigData.Input
+  OutputData = $ConfigData.Output
+}
+
 switch ($ConfigData.Format)
 {
-  "Gzip"   {Compress-Gzip -InputData $ConfigData.Input -OutputData $ConfigData.Output; break;}
-  "Zip"    {Compress-Zip -Input $ConfigData.Input -Output $ConfigData.Output ; break;}
+  "Gzip"   {Compress-Gzip @splat; break;}
+  "Zip"    {Compress-Zip @splat; break;}
 }
 
 ##=============================================
