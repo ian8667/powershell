@@ -33,6 +33,7 @@ No .NET Framework types of objects are output from this script.
 File Name    : compile-csharp.ps1
 Author       : Ian Molloy
 Last updated : 2020-06-11T19:09:43
+Keywords     : csharp c#
 
 .LINK
 
