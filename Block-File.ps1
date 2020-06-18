@@ -52,7 +52,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-04T21:15:02
+Last updated : 2020-06-18T18:16:39
 
 For a carriage return and a new line, use `r`n.
 Special Characters
@@ -108,70 +108,77 @@ Param (
    $Path
 ) #end param
 
-#region ********** Function Get-Filename **********
-#* Function: Get-Filename
-#* Last modified: 2017-02-11
-#* Author: Ian Molloy
-#*
-#* Arguments:
-#* Title - the title displayed on the dialog box window.
-#*
-#* See also:
-#* OpenFileDialog Class.
-#* https://msdn.microsoft.com/en-us/library/system.windows.forms.filedialog(v=vs.110).aspx
-#* =============================================
-#* Purpose:
-#* Displays a standard dialog box that prompts
-#* the user to open a file(s).
-#* =============================================
-function Get-Filename() {
-[CmdletBinding()]
-[OutputType([System.String[]])]
-Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="ShowDialog box title")]
-        [ValidateNotNullOrEmpty()]
-        [String]$Title
-      ) #end param
+#region ***** Function Get-Filename *****
+function Get-Filename {
+  <#
+  .SYNOPSIS
 
-  #trap { "An error: $_"; exit 1;}
+  Display the OpenFileDialog dialog box
 
-Begin {
-  Add-Type -AssemblyName "System.Windows.Forms";
-  [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
+  .DESCRIPTION
 
+  Display the .NET class OpenFileDialog dialog box that prompts
+  the user to open a file
 
-  [System.String[]]$retFilename = $null;
-  $myok = [System.Windows.Forms.DialogResult]::OK;
-  $ofd.AddExtension = $false;
-  $ofd.CheckFileExists = $true;
-  $ofd.CheckPathExists = $true;
-  $ofd.DefaultExt = "";
-  $ofd.Filter = "All files (*.*)|*.*";
-  $ofd.InitialDirectory = "C:\Family\powershell";
-  $ofd.Multiselect = $true;
-  $ofd.ReadOnlyChecked = $true;
-  $ofd.ShowHelp = $false;
-  $ofd.RestoreDirectory = $false;
-  $ofd.Title = $Title; # sets the file dialog box title
+  .PARAMETER Title
 
-}
+  The title displayed on the dialog box window
 
-Process {
+  .LINK
 
-  if ($ofd.ShowDialog() -eq $myok) {
-     $retFilename = $ofd.FileNames;
-  } else {
-     Throw "No file chosen or selected";
+  OpenFileDialog Class.
+  https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?view=netcore-3.1
+  #>
+
+  [CmdletBinding()]
+  Param (
+     [parameter(Mandatory=$true,
+                HelpMessage="ShowDialog box title")]
+     [ValidateNotNullOrEmpty()]
+     [String]$Title
+  ) #end param
+
+  Begin {
+    Write-Verbose -Message "Invoking function to obtain the C# filename to compile";
+
+    Add-Type -AssemblyName "System.Windows.Forms";
+    # Displays a standard dialog box that prompts the user
+    # to open (select) a file.
+    [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
+
+    # The dialog box return value is OK (usually sent
+    # from a button labeled OK). This indicates the
+    # user has selected a file.
+    $myok = [System.Windows.Forms.DialogResult]::OK;
+    $retFilename = "";
+    $ofd.CheckFileExists = $true;
+    $ofd.CheckPathExists = $true;
+    $ofd.ShowHelp = $false;
+    $ofd.Filter = "C# files (*.cs)|*.cs|All files (*.*)|*.*";
+    $ofd.FilterIndex = 1;
+    $ofd.InitialDirectory = "C:\Family\powershell";
+    $ofd.Multiselect = $false;
+    $ofd.RestoreDirectory = $false;
+    $ofd.Title = $Title; # sets the file dialog box title
+    $ofd.DefaultExt = "cs";
+
   }
-}
 
-End {
-  $ofd.Dispose();
-  return $retFilename;
-}
-}
-#endregion ********** End of function getFilename **********
+  Process {
+    if ($ofd.ShowDialog() -eq $myok) {
+       $retFilename = $ofd.FileName;
+    } else {
+       Throw "No file chosen or selected";
+    }
+  }
+
+  End {
+    $ofd.Dispose();
+    return $retFilename;
+  }
+  }
+  #endregion ***** End of function Get-Filename *****
+
 
 #------------------------------------------------------------------------------
 
@@ -187,9 +194,7 @@ Param (
    $fList
 ) #end param
 
-Begin {
-  Write-Host 'inside function Start-MainRoutine';
-}
+Begin {}
 
 Process {
   # Loop round the array of files and set the Zone.Identifier accordingly.

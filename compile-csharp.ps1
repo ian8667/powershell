@@ -8,7 +8,7 @@ Compile a C# file
 Invoke the Microsoft supplied C# compiler 'csc.exe' to compile a
 C# program. The '.exe' output file created will be placed in the
 same directory as the '.cs' file. Only one C# will be compiled at
-a time, compiling multiple '.cs' files is not supported.
+a time. Compiling multiple '.cs' files is not supported.
 
 An internal function is invoked to obtain the name of the C#
 program to compile
@@ -32,8 +32,15 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : compile-csharp.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-11T19:09:43
+Last updated : 2020-06-16T13:51:03
 Keywords     : csharp c#
+
+ScriptBlock which can be used to find the location of the C# compiler.
+
+$sb = {
+$compilerName = 'csc.exe';
+ls -file -Recurse -Filter $compilerName -path 'C:/' -ErrorAction SilentlyContinue;
+}
 
 .LINK
 
@@ -46,38 +53,45 @@ https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?
 C# Compiler (csc.exe)
 https://www.oreilly.com/library/view/net-framework-essentials/0596001657/apds06.html
 
+C# Compiler Options Listed by Category
+https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/listed-by-category
+
+C# Compiler Options Listed Alphabetically
+https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/listed-alphabetically
 #>
 
 [CmdletBinding()]
 Param()
 
 #region ***** Function Get-Filename *****
-#* Function: Get-Filename
-#* Last modified: 2017-02-11
-#* Author: Ian Molloy
-#*
-#* Arguments:
-#* Title - the title displayed on the dialog box window.
-#*
-#* See also:
-#* OpenFileDialog Class.
-#* http://msdn.microsoft.com/en-us/library/system.windows.forms.openfiledialog.aspx
-#* =============================================
-#* Purpose:
-#* Displays a standard dialog box that prompts
-#* the user to open a file. This will be the
-#* C# file to compile.
-#* =============================================
 function Get-Filename {
+<#
+.SYNOPSIS
+
+Display the OpenFileDialog dialog box
+
+.DESCRIPTION
+
+Display the .NET class OpenFileDialog dialog box that prompts
+the user to open a C# file to compile
+
+.PARAMETER Title
+
+The title displayed on the dialog box window
+
+.LINK
+
+OpenFileDialog Class.
+https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?view=netcore-3.1
+#>
+
 [CmdletBinding()]
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="ShowDialog box title")]
-        [ValidateNotNullOrEmpty()]
-        [String]$Title
-      ) #end param
-
-  #trap { "An error: $_"; exit 1;}
+   [parameter(Mandatory=$true,
+              HelpMessage="ShowDialog box title")]
+   [ValidateNotNullOrEmpty()]
+   [String]$Title
+) #end param
 
 Begin {
   Write-Verbose -Message "Invoking function to obtain the C# filename to compile";
@@ -118,7 +132,50 @@ End {
   return $retFilename;
 }
 }
-#endregion ***** End of function getFilename *****
+#endregion ***** End of function Get-Filename *****
+
+#region ***** Function Get-OutputFilename *****
+function Get-OutputFilename {
+<#
+.SYNOPSIS
+
+Get the output filename
+
+.DESCRIPTION
+
+Get the absolute path of the output filename. This is derived
+from the input filename and ensures the '.exe' file created
+will be in the same directory as the '.cs' file compiled
+
+.PARAMETER Path
+
+The C# input filename from which to obtain the output filename
+
+#>
+    
+[CmdletBinding()]
+Param (
+   [parameter(Mandatory=$true,
+              HelpMessage="Input filename")]
+    [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
+    [String]$Path
+) #end param
+    
+Begin {}
+    
+Process {
+  $baseDir = Split-Path -Path $Path -Parent #ie C:\Gash
+  $file = Split-Path -Path $Path -LeafBase  #ie csharp_001
+  $outputfile = Join-Path -Path $baseDir -ChildPath $file;
+  $outputfile = ('{0}.exe' -f $outputfile);
+}
+    
+End {
+  return $outputfile;
+}
+}
+#endregion ***** End of function Get-OutputFilename *****
+
 
 ##=============================================
 ## SCRIPT BODY
@@ -128,19 +185,20 @@ Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
 Write-Output 'Start of compile';
-$file = Get-Filename -Title 'C# file to compile';
+$inputfile = Get-Filename -Title 'C# file to compile';
+$outputfile = Get-OutputFilename -Path $inputfile; # C# .exe filename
 $compile = 'C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe';
-$cmdArgs = @('-nologo', '-optimize+');
+$cmdArgs = @("-out:$outputfile", "-nologo", "-optimize+");
 $mask = 'dddd, dd MMMM yyyy';
-$basedir = Split-Path -Path $file;
-Set-Variable -Name 'file','compile','cmdArgs','mask','basedir' -Option ReadOnly;
+$basedir = Split-Path -Path $inputfile;
+Set-Variable -Name 'inputfile','outputfile','compile','cmdArgs','mask','basedir' -Option ReadOnly;
 Write-Output '';
 
-Write-Output ('Compiling C# file "{0}"' -f (Split-Path -Path $file -Leaf));
+Write-Output ('Compiling C# file "{0}"' -f (Split-Path -Path $inputfile -Leaf));
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
-#& $compile $file -nologo;
-#& $compile $file;
-& $compile $file @cmdArgs;
+#& $compile $inputfile -nologo;
+#& $compile $inputfile;
+& $compile @cmdArgs $inputfile;
 $rc = $LastExitCode;
 Write-Output "Return code = $rc";
 

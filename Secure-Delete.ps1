@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-04T21:58:35
+Last updated : 2020-06-18T22:05:27
 Keywords     : yes no yesno
 
 .LINK
@@ -48,59 +48,87 @@ Param() #end param
 
 #region ***** Function Get-Filename *****
 function Get-Filename {
-[CmdletBinding()]
-Param (
-    [parameter(Mandatory=$true,
-               HelpMessage="ShowDialog box title")]
-    [ValidateNotNullOrEmpty()]
-    [String]$Title
-) #end param
+  <#
+  .SYNOPSIS
 
-    Begin {
-      Write-Verbose -Message "Invoking function to obtain the filename to delete";
+  Display the OpenFileDialog dialog box
 
-      Add-Type -AssemblyName "System.Windows.Forms";
-      [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
+  .DESCRIPTION
 
-      $myok = [System.Windows.Forms.DialogResult]::OK;
-      $retFilename = "";
-      $ofd.CheckFileExists = $true;
-      $ofd.CheckPathExists = $true;
-      $ofd.ShowHelp = $false;
-      $ofd.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
-      $ofd.FilterIndex = 1;
-      $ofd.InitialDirectory = "C:\Family\Ian";
-      $ofd.Multiselect = $false;
-      $ofd.RestoreDirectory = $false;
-      $ofd.Title = $Title; # sets the file dialog box title
-      $ofd.DefaultExt = "txt";
+  Display the .NET class OpenFileDialog dialog box that prompts
+  the user to open a C# file to compile
+
+  .PARAMETER Title
+
+  The title displayed on the dialog box window
+
+  .LINK
+
+  OpenFileDialog Class.
+  https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?view=netcore-3.1
+  #>
+
+  [CmdletBinding()]
+  Param (
+     [parameter(Mandatory=$true,
+                HelpMessage="ShowDialog box title")]
+     [ValidateNotNullOrEmpty()]
+     [String]$Title
+  ) #end param
+
+  Begin {
+    Write-Verbose -Message "Invoking function to obtain the C# filename to compile";
+
+    Add-Type -AssemblyName "System.Windows.Forms";
+    # Displays a standard dialog box that prompts the user
+    # to open (select) a file.
+    [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
+
+    # The dialog box return value is OK (usually sent
+    # from a button labeled OK). This indicates the
+    # user has selected a file.
+    $myok = [System.Windows.Forms.DialogResult]::OK;
+    $retFilename = "";
+    $ofd.CheckFileExists = $true;
+    $ofd.CheckPathExists = $true;
+    $ofd.ShowHelp = $false;
+    $ofd.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+    $ofd.FilterIndex = 1;
+    $ofd.InitialDirectory = "C:\Family\Ian";
+    $ofd.Multiselect = $false;
+    $ofd.RestoreDirectory = $false;
+    $ofd.Title = $Title; # sets the file dialog box title
+    $ofd.DefaultExt = "txt";
+
+  }
+
+  Process {
+    if ($ofd.ShowDialog() -eq $myok) {
+       $retFilename = $ofd.FileName;
+    } else {
+       Throw "No file chosen or selected";
     }
+  }
 
-    Process {
-       if ($ofd.ShowDialog() -eq $myok) {
-          $retFilename = $ofd.FileName;
-       } else {
-          Throw "No file chosen or selected";
-       }
-    }
-
-    End {
-      $ofd.Dispose();
-      return $retFilename;
-    }
+  End {
+    $ofd.Dispose();
+    return $retFilename;
+  }
 }
 #endregion ***** End of function Get-Filename *****
 
+#------------------------------------------------------------------------------
+
 #region ***** function Confirm-Delete *****
 function Confirm-Delete {
-  [CmdletBinding()]
-  [OutputType([System.Boolean])]
-  Param (
+[CmdletBinding()]
+[OutputType([System.Boolean])]
+Param (
     [parameter(Mandatory=$true,
                HelpMessage="Filename about to be deleted")]
     [ValidateNotNullOrEmpty()]
     [String]$FileName
-  ) #end param
+) #end param
 
   Begin {
    $retval = $false;
@@ -139,6 +167,8 @@ This action cannot be undone! Please make sure
   }
 }
 #endregion ***** end of function Confirm-Delete *****
+
+#------------------------------------------------------------------------------
 
 #region ***** Function Delete-File *****
 function Delete-File {
@@ -212,7 +242,7 @@ Invoke-Command -ScriptBlock {
 }
 
 # Get the filename to delete
-$Path = Get-Filename 'Filename to delete';
+$Path = Get-Filename -Title 'Filename to delete';
 if (Confirm-Delete $Path) {
    Delete-File $Path;
 } else {
