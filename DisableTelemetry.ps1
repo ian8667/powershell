@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-12T12:35:00
+Last updated : 2020-06-14T18:23:07
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -40,6 +40,11 @@ PS> Start-Process -FilePath 'pwsh.exe' -ArgumentList $myArgs -Verb RunAs;
 
 To create and run an elevated (admin) session.
 PS> Start-Process -FilePath 'pwsh.exe' -Verb RunAs;
+
+To run a single PowerShell command in an elevated (admin) window.
+In this example we're going to run the 'Remove-Item' cmdlet.
+PS> $argList = "-Command Remove-Item -Path 'C:\\IanmTools\\GitRepos\\powershell' -Recurse -Force";
+PS> Start-Process -FilePath 'pwsh' -ArgumentList $argList -Verb RunAs
 
 .LINK
 
