@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-14T18:23:07
+Last updated : 2020-07-02T13:29:26
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -97,6 +97,8 @@ $tasklist = @{
   'GoogleUpdateTaskMachineUA' = '\'
   'OneDrive Standalone Update Task-S-1-5-21-619814707-1675325165-3821842880-1001' = '\'
   'Overseer' = '\Avast Software\'
+  'MicrosoftEdgeUpdateTaskMachineCore' = '\'
+  'MicrosoftEdgeUpdateTaskMachineUA' = '\'
 }
 Set-Variable -Name 'tasklist' -Option ReadOnly;
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
