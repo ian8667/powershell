@@ -109,8 +109,8 @@ Param (
 
   $dirInfo = New-Object -TypeName 'System.IO.DirectoryInfo' -ArgumentList $Directory;
   #Returns an enumerable collection of files (if any) in the
-  #current directory. From this, we'll count how many there
-  #are
+  #current directory. From this, we'll count how many files
+  #there are
   $filecount = $dirInfo.EnumerateFiles();
 
   return [System.Linq.Enumerable]::Count($filecount);
