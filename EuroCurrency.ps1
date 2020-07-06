@@ -42,7 +42,7 @@ instead of the full version - 40 US dollars.
 Summary
 
 Currency code - NZD (New Zealand dollar)
-Currency symbol - $
+Currency symbol (or currency sign) - $
 
 .EXAMPLE
 
@@ -185,27 +185,28 @@ if ($allData.StatusCode -ne 200) {
     Write-Error -Message 'Problems with the data';
 }
 
+#Currency codes of interest
+[String[]]$cCodes = @('AUD','NZD','USD');
+
 #Get the currency rates from the json object
 $rates = $allData.Content | ConvertFrom-Json | Select-Object -ExpandProperty rates;
 
-Set-Variable -Name 'address','uri','allData','rates' -Option ReadOnly;
+Set-Variable -Name 'address','uri','allData','rates','cCodes' -Option ReadOnly;
 
 #GBP to EUR
 $gbp = 1 / $rates.gbp;
 Set-Variable -Name 'gbp' -Option ReadOnly;
 Display-ExchangeRate -CurrencyCode 'EUR' -CurrencyValue $gbp;
 
-#GBP to AUD
-Display-ExchangeRate -CurrencyCode 'AUD' -CurrencyValue ($gbp * $rates.AUD);
-
-#GBP to NZD
-Display-ExchangeRate -CurrencyCode 'NZD' -CurrencyValue ($gbp * $rates.NZD);
-
-#GBP to USD
-Display-ExchangeRate -CurrencyCode 'USD' -CurrencyValue ($gbp * $rates.USD);
+#Process our currency codes of interest
+foreach ($code in $cCodes) {
+    Write-Output '';
+    Write-Verbose -Message "Country code: GBP to $code";
+    Display-ExchangeRate -CurrencyCode $code -CurrencyValue ($gbp * $rates.$code);
+}
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Output 'All done now';
 ##=============================================
-## END OF SCRIPT: new_euro.ps1
+## END OF SCRIPT: EuroCurrency.ps1
 ##=============================================
