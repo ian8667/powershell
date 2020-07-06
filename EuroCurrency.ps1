@@ -12,6 +12,38 @@ for the euro and administers monetary policy of the eurozone, which
 consists of 19 EU member states and is one of the largest currency areas
 in the world.
 
+ISO 4217 Currency Codes
+
+Every world currency has an assigned code(ie NZD), used on currency
+exchange markets, and a currency code symbol (ie $) which is typically
+used when pricing goods in a store, or dishes in a restaurant for
+example. The International Organization for Standardization (ISO)
+publishes a list of standard currency codes referred to as the
+ISO 4217 code list.
+
+The first two letters of the code are the two letters of the
+ISO 3166-1 alpha-2 country codes (which are also used as the basis
+for national top-level domains on the Internet) and the third is
+usually the initial of the currency itself. So Japan's currency code
+is JPY, JP for Japan and Y for yen.
+
+Currency codes are composed of a country's two-character Internet
+country code plus a third character denoting the currency unit. For
+example, the Canadian Dollar code (CAD) is made up of Canada's
+Internet code ("CA") plus a currency designator ("D").
+
+The currency code for (Australian) Dollars is AUD, and the currency
+symbol is $. Currency symbols are part of the Unicode point range
+from 20A0 to 20CF. Currency symbols are a quick and easy way to show
+specific currency names in a written form. It’s a convenient shorthand,
+replacing the words with a graphic symbol for ease - for example $40
+instead of the full version - 40 US dollars.
+
+Summary
+
+Currency code - NZD (New Zealand dollar)
+Currency symbol - $
+
 .EXAMPLE
 
 ./EuroCurrency.ps1
@@ -30,23 +62,24 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : EuroCurrency.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-04T21:31:36
+Last updated : 2020-07-06T18:47:29
+
+System.Numerics.Complex
+Returns the multiplicative inverse of a complex number.
+$recip = [System.Numerics.Complex]::Reciprocal(0.25);
+$recip.real;
+or
+for example, 1 / 0.25.
+
+Sample output:
+
+1 GBP£ = EUR€ 1.1096
+
+1 GBP£ = NZD$ 1.909
+1 GBP£ = USD$ 1.2455
+1 GBP£ = AUD$ 1.7948
 
 .LINK
-
-Hashtable Class
-Represents a collection of key/value pairs that are organized based on the hash code of the key.
-https://msdn.microsoft.com/en-us/library/system.collections.hashtable(v=vs.110).aspx
-
-Approved Verbs for Windows PowerShell Commands
-https://msdn.microsoft.com/en-us/library/ms714428(v=vs.85).aspx#Similar Verbs for Different Actions
-
-Get-Verb
-The Get-Verb function gets verbs that are approved for use in Windows PowerShell commands.
-https://msdn.microsoft.com/en-us/powershell/reference/5.0/microsoft.powershell.core/functions/get-verb
-
-Strongly Encouraged Development Guidelines
-https://msdn.microsoft.com/en-us/library/dd878270(v=vs.85).aspx
 
 European Central Bank
 https://www.ecb.europa.eu/home/html/index.en.html
@@ -58,322 +91,74 @@ OANDA Corporation is a registered Futures Commission Merchant and
 Retail Foreign Exchange Dealer
 https://www.oanda.com/
 
-About Reserved Words
-https://msdn.microsoft.com/en-us/powershell/reference/5.1/microsoft.powershell.core/about/about_reserved_words
+Currency Symbol
+https://www.investopedia.com/terms/c/currency-symbol.asp
+
+Invoke-WebRequest
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/invoke-webrequest?view=powershell-7
+
+About Functions Advanced Parameters
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-7
+
+Strongly Encouraged Development Guidelines
+https://msdn.microsoft.com/en-us/library/dd878270(v=vs.85).aspx
 
 #>
+
 [CmdletBinding()]
-Param () #end param
+Param() #end param
 
-#region ***** function Get-Xmldata *****
-function Get-Xmldata {
-[CmdletBinding()]
-[OutputType([System.Object[]])]
-param ()
-
-Begin {
-
-  # The European Central Bank exchange rate data URI which is
-  # the source of our data.
-  $ecbURL="http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-
-  #$ecbURL='C:/family/powershell/Data/ecb_fx_data.xml';
-
-}
-
-Process {
-
-  # Create and load the currency data into our XML
-  # (System.Xml.XmlDocument) object.
-  $xmldata = New-Object xml; # TypeName: System.Xml.XmlDocument
-  $xmldata.Load($ecbURL);
-
-  # Get the portion of the XML document of interest.
-  $mydata = $xmldata.Envelope.Cube.Cube.Cube; # TypeName: System.Object[]
-
-}
-
-End {
-
-  return $mydata;
-
-}
-}
-#endregion ***** end of function Get-Xmldata *****
-
-#region ***** function Convert-ToDecimal *****
-function Convert-ToDecimal {
-[CmdletBinding()]
-[OutputType([System.Double])]
-Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $strnum
-      ) #end param
-
-Begin {
-
-  $roundAway = [System.MidpointRounding]::AwayFromZero;
-  [System.Double]$dec1 = 0.0;
-  [System.Double]$dec2 = 0.0;
-  [System.Int32]$decPlaces = 4;
-  Set-Variable -Name $decPlaces -Option ReadOnly;
-  [System.Boolean]$retval = $false;
-  $numStyle = [System.Globalization.NumberStyles]::AllowDecimalPoint -bor
-              [System.Globalization.NumberStyles]::AllowLeadingWhite -bor
-              [System.Globalization.NumberStyles]::AllowTrailingWhite;
-
-}
-
-Process {
-
-  # parse and convert the string to a decimal number.
-  $retval = [System.Double]::TryParse($strnum, $numStyle, $null, [ref]$dec1);
-
-  # round the decimal number to the required decimal places.
-  $dec2 = [System.Math]::Round($dec1, $decPlaces);
-
-}
-
-End {
-
-  return $dec2;
-
-}
-
-}
-#endregion ***** end of function Convert-ToDecimal *****
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** function Display-ExchangeRate *****
 function Display-ExchangeRate {
 [CmdletBinding()]
-[OutputType([System.Void])]
-Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [System.Collections.Hashtable]
-        $Currencies
-      ) #end param
+param (
+    [Parameter(Position=0,
+               Mandatory=$true,
+               HelpMessage="Currency symbol or currency sign")]
+    [ValidateSet('AUD','EUR','NZD','USD')]
+    [String]$CurrencyCode,
 
-Begin {
+    [Parameter(Position=1,
+               Mandatory=$true,
+               HelpMessage="Value of the currency code concerned")]
+    [ValidateRange("Positive")]
+    [Double]$CurrencyValue
+) #end param
 
-  $results = $Currencies.GetEnumerator() | Where-Object { $_.Key -in ('GBP') }
-  [System.Double]$decstr = 0.0;
+    begin {
 
-}
+        $CurrencySign = @{
+            EUR     = [char]0x20AC   # Euro sign
+            GBP     = [char]0x00A3   # GBP (pound) sign
+            DOLLAR  = [char]0x0024   # Dollar sign
+        }
+        switch ($CurrencyCode) {
+            'EUR' {$sign = $CurrencySign.EUR; break;}
+            default {$sign = $CurrencySign.DOLLAR; break;}
+        }
 
-Process {
+    }
 
-  # deal with GBP currency first.
-  Write-Output '';
-  $decstr = Convert-ToDecimal $results.Value;
-  Write-Output ('1 GBP{0} = EUR{1} {2} ' -f $CurrSymbol.GBP, $CurrSymbol.EUR, $decstr);
-  # removing the GBP symbol from the hashtable will allow us to
-  # iterate over the remaining items as they are 'dollar' currencies.
-  $Currencies.Remove("GBP");
-  Write-Output '';
+    process {
+        Write-Output ('1 GBP{0} = {1}{2} {3:N4}' -f `
+           $CurrencySign.GBP, `
+           $CurrencyCode, `
+           $sign, `
+           $CurrencyValue);
 
-  # iterate over the remaining entries in the hashtable.
-  Foreach ($hh in $Currencies.GetEnumerator()) {
+    }
 
-      $decstr = Convert-ToDecimal $hh.Value;
-      Write-Output ('1 GBP{0} = {1}{2} {3}' -f `
-                    $CurrSymbol.GBP, `
-                    $hh.Name, `
-                    $CurrSymbol.DOLLAR, `
-                    $decstr);
-  } #end Foreach loop
-
-}
-
-End {}
-
+    end {}
 }
 #endregion ***** end of function Display-ExchangeRate *****
 
-#region ***** function Create-CurrencySymbol *****
-function Create-CurrencySymbol {
-[CmdletBinding()]
-[OutputType([System.Management.Automation.PSCustomObject])]
-param ()
-
-Begin {
-
-  $hash = @{
-           EUR      = [char]0x20AC   # Euro symbol
-           GBP      = [char]0x00A3   # GBP (pound) symbol
-           DOLLAR   = [char]0x0024   # Dollar symbol
-          }
-
-}
-
-Process {
-
-  # In Windows PowerShell 3.0 (and this continues in Windows
-  # PowerShell 4.0), it is even easier to create custom objects.
-  #$myObject = [PSCustomObject]$hash;
-  $myObject = New-Object PSObject -Property $hash;
-}
-
-End {
-
-  return $myObject;
-
-}
-
-}
-#endregion ***** end of function Create-CurrencySymbol *****
-
-#region ***** function Other-Currency *****
-function Other-Currency {
-[CmdletBinding()]
-Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $Currency,
-        [parameter(Mandatory=$true,
-                   Position=1)]
-        [ValidateNotNullOrEmpty()]
-        [System.Double]
-        $gbp
-      ) #end param
-
-Begin {
-
-  [System.Double]$dec = [System.Convert]::ToDouble($Currency);
-  [System.Double]$result = 0.0;
-
-}
-
-Process {
-
-  $result = $dec / $gbp;
-
-}
-
-End {
-
-  return $result;
-
-}
-
-}
-#endregion ***** end of function Other-Currency *****
-
-#region ***** function Convert-Currencies *****
-function Convert-Currencies {
-[CmdletBinding()]
-[OutputType([System.Collections.Hashtable])]
-Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [System.Collections.Hashtable]
-        $Currencies
-      ) #end param
-
-Begin {
-
-  [System.Double]$dub = [System.Convert]::ToDouble($Currencies.Get_Item("GBP"));
-  Set-Variable -Name gbpDub `
-               -Value $dub `
-               -Description 'The value of the EUR to GBP' `
-               -Option ReadOnly;
-
-  # Create an empty System.Collections.Hashtable object to
-  # hold the currencies when converted.
-  $converted = @{}
-
-}
-
-Process {
-
-  Foreach ($hh in $Currencies.GetEnumerator()) {
-
-    switch ($hh.Name) {
-          "GBP" {$result = [System.Numerics.Complex]::Reciprocal($gbpDub)
-                 $converted.Add($hh.Name,$result.Real);
-                 break;}
-          default {$result = Other-Currency $hh.Value $gbpDub;
-                   $converted.Add($hh.Name,$result);
-                   break;}
-    } #end switch statement
-
-  } #end Foreach loop
-
-}
-
-End {
-
-  # Return a 'System.Collections.Hashtable' object containing
-  # the converted currencies.
-  return $converted;
-
-}
-}
-#endregion ***** end of function Convert-Currencies *****
-
-#region ***** function Start-MainRoutine *****
-function Start-MainRoutine {
-[CmdletBinding()]
-[OutputType([System.Void])]
-Param () #end param
-
-Begin {
-
-  # Get the XML currency data of interest.
-  $mydata = Get-Xmldata;
-
-  # Define some character currency symbols.
-  $CurrSymbol = Create-CurrencySymbol;
-
-  # The list of wanted currency symbols that we are interested in.
-  $wantedSymbols = @('USD','GBP','AUD','NZD');
-  Set-Variable -Name wantedSymbols `
-               -Description 'The list of wanted currency symbols' `
-               -Option ReadOnly;
-
-  # Empty hash table where we eventually store our wanted
-  # currency rates once they are converted.
-  #
-  # So the hash table key/value pairs will eventually look
-  # like:
-  # @{ <name>, <value>; } ie
-  # @{ <currency symbol>, <value of that currency to the Euro>; }
-  $myhash = @{}
-
-}
-
-Process {
-
-  # Loop through all of the currency rates available in our XML object.
-  Foreach ($xmlProperty in $mydata) {
-
-      # If this is a wanted currency make a note of it. Otherwise
-      # ignore it as we don't want it.
-      if ($xmlProperty.currency -in $wantedSymbols) {
-          $myhash.Add($xmlProperty.currency, $xmlProperty.rate);
-      }
-
-  } #end Foreach loop
-
-  $convertedCurrencies = Convert-Currencies $myhash;
-
-}
-
-End {
-
-  Display-ExchangeRate $convertedCurrencies;
-
-}
-
-}
-#endregion ***** end of function Start-MainRoutine *****
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
@@ -382,24 +167,45 @@ End {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-Clear-Host;
-Write-Output '';
-Write-Output 'Currency exchange rates from the European Central Bank';
-Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
-Invoke-Command -ScriptBlock {
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+$address = 'https://api.exchangeratesapi.io/latest';
+$uri = New-Object -TypeName System.Uri -ArgumentList $address;
 
-   Write-Output '';
-   $script = $MyInvocation.MyCommand.Name;
-   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
-
+$splat = @{
+    # Splat data for use with Invoke-WebRequest cmdlet.
+    Uri               = $uri
+    Method            = 'Get'
+    TimeoutSec        = 5
+    MaximumRetryCount = 5
+    RetryIntervalSec  = 3
+}
+$allData = Invoke-WebRequest @splat;
+if ($allData.StatusCode -ne 200) {
+    #Problems with the data
+    Write-Error -Message 'Problems with the data';
 }
 
-Start-MainRoutine;
+#Get the currency rates from the json object
+$rates = $allData.Content | ConvertFrom-Json | Select-Object -ExpandProperty rates;
 
-Write-Output '';
-Write-Output 'End of output';
+Set-Variable -Name 'address','uri','allData','rates' -Option ReadOnly;
 
+#GBP to EUR
+$gbp = 1 / $rates.gbp;
+Set-Variable -Name 'gbp' -Option ReadOnly;
+Display-ExchangeRate -CurrencyCode 'EUR' -CurrencyValue $gbp;
+
+#GBP to AUD
+Display-ExchangeRate -CurrencyCode 'AUD' -CurrencyValue ($gbp * $rates.AUD);
+
+#GBP to NZD
+Display-ExchangeRate -CurrencyCode 'NZD' -CurrencyValue ($gbp * $rates.NZD);
+
+#GBP to USD
+Display-ExchangeRate -CurrencyCode 'USD' -CurrencyValue ($gbp * $rates.USD);
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+Write-Output 'All done now';
 ##=============================================
-## END OF SCRIPT: EuroCurrency.ps1
+## END OF SCRIPT: new_euro.ps1
 ##=============================================
