@@ -8,7 +8,7 @@ Blocks a file via a 'Zone.Identifier' Alternate Data Stream
 
 'Blocks' files by setting the Zone.Identifier alternate data stream,
 which has a value of "3" to indicate as if it was downloaded from the
-Internet. Effectively this is the reverse of the Unblock-File cmdlet
+Internet. Effectively this is the reverse of the 'Unblock-File' cmdlet
 which removes the Zone.Identifier alternate data stream.
 
 The NTFS file system includes support for Alternate Data Streams (ADS).
@@ -36,9 +36,13 @@ to obtain the file(s) to block.
 
 .EXAMPLE
 
-./Block-File.ps1 file1.txt, file2.txt
+./Block-File.ps1 'file1.txt', 'file2.txt'
 
 The file(s) supplied as parameters will be blocked.
+
+.EXAMPLE
+
+./Block-File.ps1 -Path 'filename.txt'
 
 .INPUTS
 
@@ -52,20 +56,24 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-18T18:16:39
+Last updated : 2020-07-08T13:59:20
 
 For a carriage return and a new line, use `r`n.
 Special Characters
 `r    Carriage return
 `n    New line
-PS> Set-Content -Path fred.txt -Stream 'Zone.Identifier' -Value "[ZoneTransfer]`r`nZoneId=3"
+PS> Set-Content -Path 'fred.txt' -Stream 'Zone.Identifier' -Value "[ZoneTransfer]`r`nZoneId=3"
 
-Set-Content -Path ian.ian -Stream 'Zone.Identifier' -Value '[ZoneTransfer]'
-Add-Content -Path ian.ian -Stream 'Zone.Identifier' -Value 'ZoneId=3'
-Get-Content –Path fred.txt -Stream zone.identifier
+Set-Content -Path 'ian.ian' -Stream 'Zone.Identifier' -Value '[ZoneTransfer]'
+Add-Content -Path 'ian.ian' -Stream 'Zone.Identifier' -Value 'ZoneId=3'
+Get-Content –Path 'fred.txt' -Stream zone.identifier
 Get-Item -Path fred.txt -Stream zone*
 
 .LINK
+
+AlternateStreamData Class
+Represents alternate stream data retrieved from a file
+https://docs.microsoft.com/en-us/dotnet/api/system.management.automation.internal.alternatestreamdata?view=powershellsdk-1.1.0
 
 How NTFS Works
 https://technet.microsoft.com/en-us/library/cc781134(v=ws.10).aspx
@@ -93,10 +101,37 @@ DataObject Class
 Namespace:   System.Windows.Forms
 https://msdn.microsoft.com/en-us/library/system.windows.forms.dataobject(v=vs.110).aspx
 
-Unblock-File
+The Unblock-File cmdlet
 Unblocks files that were downloaded from the Internet.
-https://docs.microsoft.com/en-us/powershell/module/Microsoft.PowerShell.Utility/Unblock-File?view=powershell-5.1
+https://docs.microsoft.com/en-us/powershell/module/Microsoft.PowerShell.Utility/Unblock-File?view=powershell-7.1
 
+Alternate Data Streams in NTFS(2)
+https://docs.microsoft.com/en-us/archive/blogs/askcore/alternate-data-streams-in-ntfs
+
+System.Management.Automation.ScriptBlock
+Search for files with an alternate data stream (ADS)
+$sb = {
+
+Begin {
+  $path = 'c:/gash';
+}
+
+Process {
+  Get-ChildItem -file -Path $path |
+  foreach {Get-Item -Path $_.FullName -Stream *;} |
+    Where-Object -property stream -ne -value ':$DATA' |
+    Format-List filename, stream, length;
+}
+
+End {
+  Write-Output 'alternate data stream search complete';
+}
+
+} #end of ScriptBlock
+Submit as a background job:
+$job = Start-ThreadJob -ScriptBlock $sb -Name 'adssearch';
+or
+$job = Start-Job -ScriptBlock $sb -Name 'adssearch';
 #>
 
 [CmdletBinding()]
@@ -107,6 +142,10 @@ Param (
    [String[]]
    $Path
 ) #end param
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** Function Get-Filename *****
 function Get-Filename {
@@ -154,13 +193,13 @@ function Get-Filename {
     $ofd.CheckFileExists = $true;
     $ofd.CheckPathExists = $true;
     $ofd.ShowHelp = $false;
-    $ofd.Filter = "C# files (*.cs)|*.cs|All files (*.*)|*.*";
+    $ofd.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
     $ofd.FilterIndex = 1;
     $ofd.InitialDirectory = "C:\Family\powershell";
     $ofd.Multiselect = $false;
     $ofd.RestoreDirectory = $false;
     $ofd.Title = $Title; # sets the file dialog box title
-    $ofd.DefaultExt = "cs";
+    $ofd.DefaultExt = "txt";
 
   }
 
@@ -179,11 +218,28 @@ function Get-Filename {
   }
   #endregion ***** End of function Get-Filename *****
 
-
 #------------------------------------------------------------------------------
 
 #region ***** function Start-MainRoutine *****
 function Start-MainRoutine {
+  <#
+  .SYNOPSIS
+
+  Process files selected
+
+  .DESCRIPTION
+
+  Loop through each of the files in the array supplied as
+  a parameter and set the 'Zone.Identifier' alternate data
+  stream. No action is taken if the file concerned alrady
+  has a 'Zone.Identifier' alternate data stream except to
+  write a warning to the console to this effect.
+  
+  .PARAMETER fList
+
+  List of file(s) to process
+  #>
+
 [CmdletBinding()]
 [OutputType([System.Void])]
 Param (
@@ -194,14 +250,27 @@ Param (
    $fList
 ) #end param
 
-Begin {}
+Begin {
+  [String[]]$zones = '';
+}
 
 Process {
   # Loop round the array of files and set the Zone.Identifier accordingly.
-  foreach ($f in $fList) {
-    Write-Verbose -Message "Setting Zone.Identifier for file $f";
-    Set-Content -Path $f -Stream 'Zone.Identifier' -Value '[ZoneTransfer]'
-    Add-Content -Path $f -Stream 'Zone.Identifier' -Value 'ZoneId=3'
+  foreach ($file in $fList) {
+    Write-Verbose -Message "Setting Zone.Identifier for file $file";
+
+    #Make sure the file does not already have a Zone.Identifier. Returns an
+    #object of the type:
+    #TypeName: System.Management.Automation.Internal.AlternateStreamData
+    $zones = (Get-Item $file -Stream *).Stream;
+
+    if ($zones -contains 'Zone.Identifier') {
+      Write-Warning -Message "File $file already has a Zone.Identifier.`nNo further action taken";
+    } else {
+      Set-Content -Path $file -Stream 'Zone.Identifier' -Value '[ZoneTransfer]';
+      Add-Content -Path $file -Stream 'Zone.Identifier' -Value 'ZoneId=3';
+    }
+
   }
 
 }
@@ -211,7 +280,9 @@ End {}
 }
 #endregion ***** end of function Start-MainRoutine *****
 
-#------------------------------------------------------------------------------
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
@@ -221,7 +292,7 @@ Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
 Write-Output '';
-Write-Output 'Blocking file(s) using the Zone.Identifier stream';
+Write-Output "Blocking file(s) using the Alternate Data Stream 'Zone.Identifier'";
 Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
 [System.String[]]$files = $null;
 Invoke-Command -ScriptBlock {
@@ -238,13 +309,13 @@ if ($PSBoundParameters.ContainsKey('Path')) {
    $files = $Path;
 } else {
   # No files supplied to the program. Get some to work with.
-  $files = Get-Filename 'File(s) to block';
+  $files = Get-Filename -Title 'File(s) to block';
 }
 
-Start-MainRoutine $files;
+Start-MainRoutine -fList $files;
 
 Write-Output '';
-Write-Output 'End of output';
+Write-Output 'All done now';
 
 ##=============================================
 ## END OF SCRIPT: Block-File.ps1
