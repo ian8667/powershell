@@ -21,28 +21,28 @@ Last updated: 10 July 2020
 ##===========================================
 
 $sb = {
-    <#
-    Oldest and newest file.
-    Scriptblock to find the oldest and newest LastWriteTime of files
-    in a directory. No recursion is done so only the start (initial)
-    directory is looked at.
-    #>
-    
+<#
+Oldest and newest file.
+Scriptblock to find the oldest and newest LastWriteTime of files
+in a directory. No recursion is done so only the start (initial)
+directory is looked at.
+#>
+
 Begin {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
         Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
-    
+
         $path = 'C:\Gash'; # <-- Change accordingly.
         Set-Variable -Name 'path' -Description "Search directory for the scriptblock" -Option ReadOnly;
-    
+
         $oldDate = [System.DateTime]::MaxValue;
         $newDate = [System.DateTime]::MinValue;
         $oldFilename = '';
         $newFilename = '';
         [UInt32]$fileCounter = 0;
-    
+
         Write-Output "`nLooking for the oldest and newest LastWriteTime of files";
         Write-Output ("Directory looked at (with no recursion): {0}" -f $path);
 }
@@ -63,7 +63,7 @@ Process {
         }
     } #end ForEach-Object block
 }
-    
+
 End {
     if ($fileCounter -eq 0) {
        Write-Warning -Message 'No files found in directory';
@@ -192,89 +192,89 @@ Begin {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-        Write-Output ("`nScriptBlock started on {0}" -f (Get-Date -Format 's'));
+    Write-Output ("`nScriptBlock started on {0}" -f (Get-Date -Format 's'));
 
-        # Change values in this hash table as appropriate. In effect,
-        # these are used as configuration data.
-        $config = @{
-            # Number of days to look back. Has to be a negative number.
-            olddays = -3;
+    # Change values in this hash table as appropriate. In effect,
+    # these are used as configuration data.
+    $config = @{
+        # Number of days to look back. Has to be a negative number.
+        olddays = -3;
 
-            # Directory where the search for files will look. No
-            # recursion is carried out.
-            startHere = 'C:\gash';
+        # Directory where the search for files will look. No
+        # recursion is carried out.
+        startHere = 'C:\gash';
 
-            # Output file where the results of the search will be written.
-            # The 'New-TemporaryFile' cmdlet creates a file tmp<NNNN>.tmp,
-            # where <NNNN> is a random hexadecimal number in your TEMP
-            # folder. The location of the temp folder in question can be
-            # found with the command "<variable>.FullName" or the static
-            # method "[System.IO.Path]::GetTempPath()". This static method
-            # returns the path of the current user's temporary folder.
-            outputpath = New-TemporaryFile;
+        # Output file where the results of the search will be written.
+        # The 'New-TemporaryFile' cmdlet creates a file tmp<NNNN>.tmp,
+        # where <NNNN> is a random hexadecimal number in your TEMP
+        # folder. The location of the temp folder in question can be
+        # found with the command "<variable>.FullName" or the static
+        # method "[System.IO.Path]::GetTempPath()". This static method
+        # returns the path of the current user's temporary folder.
+        outputpath = New-TemporaryFile;
 
-            # Filter used to look for files.
-            # EXAMPLE 1
-            # To list text files: "Filter" = '*.txt';
-            # EXAMPLE 2
-            # To list 'ian' files: "Filter" = '*.ian';
-            # EXAMPLE 3
-            # To list all files: "Filter" = '*';
-            Filter = '*';
+        # Filter used to look for files.
+        # EXAMPLE 1
+        # To list text files: "Filter" = '*.txt';
+        # EXAMPLE 2
+        # To list 'ian' files: "Filter" = '*.ian';
+        # EXAMPLE 3
+        # To list all files: "Filter" = '*';
+        Filter = '*';
 
-            # true if we should look for files older than our cut-off date;
-            # false otherwise.
-            olderFiles = $false;
+        # true if we should look for files older than our cut-off date;
+        # false otherwise.
+        olderFiles = $false;
 
-        } #end of config data
+    } #end of config data
 
-        # Ensure $config.olddays is a negative number
-        $config.olddays = [System.Math]::Abs($config.olddays) * -1;
+    # Ensure $config.olddays is a negative number
+    $config.olddays = [System.Math]::Abs($config.olddays) * -1;
 
-        # Create the cut-off date now we know how many days to look back.
-        $cutoffDate = (Get-Date).AddDays($config.olddays);
-        Set-Variable -Name 'config', 'cutoffDate' -Option ReadOnly;
+    # Create the cut-off date now we know how many days to look back.
+    $cutoffDate = (Get-Date).AddDays($config.olddays);
+    Set-Variable -Name 'config', 'cutoffDate' -Option ReadOnly;
 
-        if ($config.olderFiles) {
-            # Look for files older than the cut-off date.
-            $wheresb = {$_.LastWriteTime -lt $cutoffDate}
-            $msg = 'older';
-        } else {
-            # Look for files newer (more recent) than the cut-off date.
-            $wheresb = {$_.LastWriteTime -gt $cutoffDate}
-            $msg = 'newer';
-        }
+    if ($config.olderFiles) {
+        # Look for files older than the cut-off date.
+        $wheresb = {$_.LastWriteTime -lt $cutoffDate}
+        $msg = 'older';
+    } else {
+        # Look for files newer (more recent) than the cut-off date.
+        $wheresb = {$_.LastWriteTime -gt $cutoffDate}
+        $msg = 'newer';
+    }
 
-        $dateMask = 'dd MMMM yyyy';
+    $dateMask = 'dd MMMM yyyy';
 
-        # Show (and confirm) which directory we're looking in.
-        Write-Output "`nLooking for files $($msg) than $($config.olddays) days";
-        Write-Output "Directory looked in is $($config.startHere)";
-        Write-Output ("Cut-off date used: {0}" -f $($cutoffDate.ToString($dateMask)) );
-        Write-Output ("Filter used: {0}" -f $($config.Filter));
-        Write-Output ('*' * 45);
-        Write-Output "";
+    # Show (and confirm) which directory we're looking in.
+    Write-Output "`nLooking for files $($msg) than $($config.olddays) days";
+    Write-Output "Directory looked in is $($config.startHere)";
+    Write-Output ("Cut-off date used: {0}" -f $($cutoffDate.ToString($dateMask)) );
+    Write-Output ("Filter used: {0}" -f $($config.Filter));
+    Write-Output ('*' * 45);
+    Write-Output "";
 } #end BEGIN block
 
 Process {
 
-        $splat = @{
-            Path   = $config.startHere;
-            Filter = $config.Filter;
-            File   = $true;
-        }
-        Get-ChildItem @splat |
-            Where-Object $wheresb |
-            Tee-Object -FilePath $config.outputpath;
+    $splat = @{
+        Path   = $config.startHere;
+        Filter = $config.Filter;
+        File   = $true;
+    }
+    Get-ChildItem @splat |
+        Where-Object $wheresb |
+        Tee-Object -FilePath $config.outputpath;
 
 } #end PROCESS block
 
 End {
 
-        Write-Output "";
-        Write-Output ('*' * 45);
-        Write-Output "See also output file $($config.outputpath.FullName)";
-        Write-Output ("`nAll done now at {0}" -f (Get-Date -Format 's'));
+    Write-Output "";
+    Write-Output ('*' * 45);
+    Write-Output "See also output file $($config.outputpath.FullName)";
+    Write-Output ("`nAll done now at {0}" -f (Get-Date -Format 's'));
 } #end END block
 
 } #end of ScriptBlock
