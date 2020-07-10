@@ -4,12 +4,12 @@ Collection of scriptblocks.
 This text file is a collection of useful ScriptBlocks
 (System.Management.Automation.ScriptBlock) which can be
 used with PowerShell background jobs and the Start-Job
-and Start-ThreadJob cmdlet.
+or Start-ThreadJob cmdlet.
 
-See also the Start-Job cmdlet parameter 'ScriptBlock'
-and 'Start-ThreadJob'.
+See also the Start-Job/Start-ThreadJob cmdlet parameter
+'ScriptBlock'.
 
-Last updated: 2020-06-04T19:16:51
+Last updated: 10 July 2020
 #-------------------------------------------------
 
 
@@ -21,27 +21,30 @@ Last updated: 2020-06-04T19:16:51
 ##===========================================
 
 $sb = {
-<#
-Oldest and newest file.
-Scriptblock to find the oldest and newest LastWriteTime of files
-in a directory. No recursion is done so only the start (initial)
-directory is looked at.
-#>
-
+    <#
+    Oldest and newest file.
+    Scriptblock to find the oldest and newest LastWriteTime of files
+    in a directory. No recursion is done so only the start (initial)
+    directory is looked at.
+    #>
+    
 Begin {
-    Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
-    $path = 'C:\Gash\gashdir'; # <-- Change accordingly.
-    Set-Variable -Name 'path' -Description "Search directory for the scriptblock" -Option ReadOnly;
-
-    $oldDate = [System.DateTime]::MaxValue;
-    $newDate = [System.DateTime]::MinValue;
-    $oldFilename = '';
-    $newFilename = '';
-    [UInt32]$fileCounter = 0;
-
-    Write-Output "`nLooking for the oldest and newest LastWriteTime of files";
-    Write-Output ("Directory looked at (with no recursion): {0}" -f $path);
+        Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
+    
+        $path = 'C:\Gash'; # <-- Change accordingly.
+        Set-Variable -Name 'path' -Description "Search directory for the scriptblock" -Option ReadOnly;
+    
+        $oldDate = [System.DateTime]::MaxValue;
+        $newDate = [System.DateTime]::MinValue;
+        $oldFilename = '';
+        $newFilename = '';
+        [UInt32]$fileCounter = 0;
+    
+        Write-Output "`nLooking for the oldest and newest LastWriteTime of files";
+        Write-Output ("Directory looked at (with no recursion): {0}" -f $path);
 }
 
 Process {
@@ -60,7 +63,7 @@ Process {
         }
     } #end ForEach-Object block
 }
-
+    
 End {
     if ($fileCounter -eq 0) {
        Write-Warning -Message 'No files found in directory';
@@ -80,7 +83,8 @@ End {
     Write-Output "";
 }
 
-} #end of scriptblock
+
+} #end of ScriptBlock
 
 ##===========================================
 ## New item
@@ -106,15 +110,18 @@ PowerShell background job using the Start-Job cmdlet.
 #>
 
 Begin {
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
   $datetimeMask = 'yyyy-MM-ddTHH-mm-ss';
   $ProcessStart = Get-Date;
   Write-Output ('Text file line numbering start: {0}' -f $ProcessStart.ToString($datetimeMask))
 
-  $BasePath = 'C:\gash';
+  $BasePath = 'C:\gash';  # <-- Change accordingly.
   Set-Location -Path $BasePath;
   $myfile = @{
-      'Input' = Join-Path -Path $BasePath -ChildPath 'gash01.txt';
-      'Output' = Join-Path -Path $BasePath -ChildPath 'gash02.txt';
+      'Input' = Join-Path -Path $BasePath -ChildPath 'gash01.txt';   # <-- Change accordingly.
+      'Output' = Join-Path -Path $BasePath -ChildPath 'gash02.txt';  # <-- Change accordingly.
   }
 
   [UInt16]$lineCounter = 0;
@@ -161,7 +168,7 @@ End {
 
 }
 
-} #end of scriptblock
+} #end of ScriptBlock
 
 ##===========================================
 ## New item
@@ -182,88 +189,193 @@ TypeName: System.Management.Automation.ScriptBlock
 #>
 
 Begin {
-    Write-Output ("`nScriptBlock started on {0}" -f (Get-Date -Format 's'));
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
-    # Change values in this hash table as appropriate. In effect,
-    # these are used as configuration data.
-    $config = @{
-        # Number of days to look back. Has to be a negative number.
-        olddays = -3;
+        Write-Output ("`nScriptBlock started on {0}" -f (Get-Date -Format 's'));
 
-        # Directory where the search for files will look. No
-        # recursion is carried out.
-        startHere = 'C:\gash';
+        # Change values in this hash table as appropriate. In effect,
+        # these are used as configuration data.
+        $config = @{
+            # Number of days to look back. Has to be a negative number.
+            olddays = -3;
 
-        # Output file where the results of the search will be written.
-        # The 'New-TemporaryFile' cmdlet creates a file tmp<NNNN>.tmp,
-        # where <NNNN> is a random hexadecimal number in your TEMP
-        # folder. The location of the temp folder in question can be
-        # found with the command "<variable>.FullName" or the static
-        # method "[System.IO.Path]::GetTempPath()". This static method
-        # returns the path of the current user's temporary folder.
-        outputpath = New-TemporaryFile;
+            # Directory where the search for files will look. No
+            # recursion is carried out.
+            startHere = 'C:\gash';
 
-        # Filter used to look for files.
-        # EXAMPLE 1
-        # To list text files: "Filter" = '*.txt';
-        # EXAMPLE 2
-        # To list 'ian' files: "Filter" = '*.ian';
-        # EXAMPLE 3
-        # To list all files: "Filter" = '*';
-        Filter = '*';
+            # Output file where the results of the search will be written.
+            # The 'New-TemporaryFile' cmdlet creates a file tmp<NNNN>.tmp,
+            # where <NNNN> is a random hexadecimal number in your TEMP
+            # folder. The location of the temp folder in question can be
+            # found with the command "<variable>.FullName" or the static
+            # method "[System.IO.Path]::GetTempPath()". This static method
+            # returns the path of the current user's temporary folder.
+            outputpath = New-TemporaryFile;
 
-        # true if we should look for files older than our cut-off date;
-        # false otherwise.
-        olderFiles = $false;
+            # Filter used to look for files.
+            # EXAMPLE 1
+            # To list text files: "Filter" = '*.txt';
+            # EXAMPLE 2
+            # To list 'ian' files: "Filter" = '*.ian';
+            # EXAMPLE 3
+            # To list all files: "Filter" = '*';
+            Filter = '*';
 
-    } #end of config data
+            # true if we should look for files older than our cut-off date;
+            # false otherwise.
+            olderFiles = $false;
 
-    # Ensure $config.olddays is a negative number
-    $config.olddays = [System.Math]::Abs($config.olddays) * -1;
+        } #end of config data
 
-    # Create the cut-off date now we know how many days to look back.
-    $cutoffDate = (Get-Date).AddDays($config.olddays);
-    Set-Variable -Name 'config', 'cutoffDate' -Option ReadOnly;
+        # Ensure $config.olddays is a negative number
+        $config.olddays = [System.Math]::Abs($config.olddays) * -1;
 
-    if ($config.olderFiles) {
-        # Look for files older than the cut-off date.
-        $wheresb = {$_.LastWriteTime -lt $cutoffDate}
-        $msg = 'older';
-    } else {
-        # Look for files newer (more recent) than the cut-off date.
-        $wheresb = {$_.LastWriteTime -gt $cutoffDate}
-        $msg = 'newer';
-    }
+        # Create the cut-off date now we know how many days to look back.
+        $cutoffDate = (Get-Date).AddDays($config.olddays);
+        Set-Variable -Name 'config', 'cutoffDate' -Option ReadOnly;
 
-    $dateMask = 'dd MMMM yyyy';
+        if ($config.olderFiles) {
+            # Look for files older than the cut-off date.
+            $wheresb = {$_.LastWriteTime -lt $cutoffDate}
+            $msg = 'older';
+        } else {
+            # Look for files newer (more recent) than the cut-off date.
+            $wheresb = {$_.LastWriteTime -gt $cutoffDate}
+            $msg = 'newer';
+        }
 
-    # Show (and confirm) which directory we're looking in.
-    Write-Output "`nLooking for files $($msg) than $($config.olddays) days";
-    Write-Output "Directory looked in is $($config.startHere)";
-    Write-Output ("Cut-off date used: {0}" -f $($cutoffDate.ToString($dateMask)) );
-    Write-Output ("Filter used: {0}" -f $($config.Filter));
-    Write-Output ('*' * 45);
-    Write-Output "";
+        $dateMask = 'dd MMMM yyyy';
+
+        # Show (and confirm) which directory we're looking in.
+        Write-Output "`nLooking for files $($msg) than $($config.olddays) days";
+        Write-Output "Directory looked in is $($config.startHere)";
+        Write-Output ("Cut-off date used: {0}" -f $($cutoffDate.ToString($dateMask)) );
+        Write-Output ("Filter used: {0}" -f $($config.Filter));
+        Write-Output ('*' * 45);
+        Write-Output "";
 } #end BEGIN block
 
 Process {
 
-    $splat = @{
-        Path = $config.startHere;
-        Filter = $config.Filter;
-        File = $true;
-    }
-    Get-ChildItem @splat |
-        Where-Object $wheresb |
-        Tee-Object -FilePath $config.outputpath;
+        $splat = @{
+            Path   = $config.startHere;
+            Filter = $config.Filter;
+            File   = $true;
+        }
+        Get-ChildItem @splat |
+            Where-Object $wheresb |
+            Tee-Object -FilePath $config.outputpath;
 
 } #end PROCESS block
 
 End {
 
-    Write-Output "";
-    Write-Output ('*' * 45);
-    Write-Output "See also output file $($config.outputpath.FullName)";
-    Write-Output ("`nAll done now at {0}" -f (Get-Date -Format 's'));
+        Write-Output "";
+        Write-Output ('*' * 45);
+        Write-Output "See also output file $($config.outputpath.FullName)";
+        Write-Output ("`nAll done now at {0}" -f (Get-Date -Format 's'));
 } #end END block
-} #end of scriptblock
+
+} #end of ScriptBlock
+
+##===========================================
+## New item
+## Looking for files.
+## 25 June 2020
+##===========================================
+
+$sb = {
+<#
+Looking for a file(s).
+Looking for a file when I don't where it is located.
+#>
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+Get-Date -Format 's';
+
+$file = 'milk*'; #File(s) of interest
+$path = 'c:/';   #Start directory
+Write-Output "Looking for file(s) $file starting with directory $path";
+Get-ChildItem -Path $path -Filter $file -Recurse -File -ErrorAction SilentlyContinue;
+
+Get-Date -Format 's';
+} #end of ScriptBlock
+
+
+##===========================================
+## New item
+## Calculate the hash of a file using a filestream
+## and .NET libraries.
+## 9 July 2020
+##===========================================
+
+$sb = {
+<#
+Compute the hash of a file using a filestream
+and .NET libraries.
+
+The acceptable hash function values are:
+SHA1, SHA256, SHA384, SHA512 OR MD5
+
+See also:
+o System.Security.Cryptography Namespace.
+o Get-FileHash cmdlet
+#>
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+#Acceptable hash function values
+enum HashFunction {
+  SHA1
+  SHA256
+  SHA384
+  SHA512
+  MD5
+}
+
+$filename = 'C:\Gash\ian.ian';      # <-- Change accordingly. File to hash
+[HashFunction]$algoChoice = 'MD5';  # <-- Change accordingly. Hash function to use
+switch ($algoChoice) {
+  'SHA1'   {$algo = 'System.Security.Cryptography.SHA1CryptoServiceProvider'
+            break;}
+  'SHA256' {$algo = 'System.Security.Cryptography.SHA256CryptoServiceProvider'
+            break;}
+  'SHA384' {$algo = 'System.Security.Cryptography.SHA384CryptoServiceProvider'
+            break;}
+  'SHA512' {$algo = 'System.Security.Cryptography.SHA512CryptoServiceProvider'
+            break;}
+  'MD5'    {$algo = 'System.Security.Cryptography.MD5CryptoServiceProvider'
+            break;}
+}
+
+$hashAlgo = New-Object -TypeName $algo;
+
+#TypeName: System.IO.FileInfo
+$file = Get-Item -Path $filename;
+
+#Creates a read-only filestream.
+$stream = $file.OpenRead();
+Write-Output "Length in bytes of the input stream: $($stream.Length)";
+
+#Computes the hash value for the specified Stream object and
+#return the computed hash code as a Byte[] array
+$hashArray = $hashAlgo.ComputeHash($stream);
+
+#Converts the numeric value of each element of the specified
+#array of bytes to its equivalent hexadecimal string
+#representation.
+$bitc = [System.BitConverter]::ToString($hashArray).Replace('-','');
+
+Write-Output "The size, in bits, of the computed hash code: $($hashAlgo.HashSize)";
+Write-Output "$algoChoice hash for file $filename is :`n$bitc";
+
+# -----
+$hashAlgo.Dispose();
+$stream.Close();
+$stream.Dispose();
+
+Write-Output 'All done now';
+
+} #end of ScriptBlock
