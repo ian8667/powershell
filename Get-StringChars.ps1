@@ -58,7 +58,7 @@ example.
 
 File Name    : Get-StringChars.ps1
 Author       : Ian Molloy
-Last updated : 2020-05-20T18:09:54
+Last updated : 2020-07-13T11:10:27
 
 .LINK
 
@@ -86,6 +86,10 @@ Param (
     [Byte[]]$CharPositions
 ) #end param
 
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
 #region ***** function Get-LetterCase *****
 function Get-LetterCase {
 [CmdletBinding()]
@@ -98,19 +102,22 @@ Param (
 ) #end param
 
 # The numeric values used to determine whether the parameter
-# supplied is upper or lower case are decimal.
+# supplied is upper or lower case are decimal values.
 
 [String]$case = '';
 $num = [Byte]$Letter;
 switch ($num) {
-    {65..90 -contains $PSItem} {$case = "(uppercase)"; Break}
-    {97..122 -contains $PSItem} {$case = "(lowercase)"; Break}
+    {48..57 -contains $PSItem} {$case = "(digit)"; Break}      #digits 0 - 9
+    {65..90 -contains $PSItem} {$case = "(uppercase)"; Break}  #characters A - Z
+    {97..122 -contains $PSItem} {$case = "(lowercase)"; Break} #characters a - z
     default {$case = ""; Break}
 }
 
 return $case;
 }
 #endregion ***** end of function Get-LetterCase *****
+
+#----------------------------------------------------------
 
 #region ***** function Indicate-Positions *****
 function Indicate-Positions {
@@ -168,9 +175,14 @@ return $($sb.ToString());
 }
 #endregion ***** end of function Indicate-Positions *****
 
-#--------------------------------------------------------------------
-# Main routine starts here
-#--------------------------------------------------------------------
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
+##=============================================
+## SCRIPT BODY
+## Main routine starts here
+##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
@@ -200,7 +212,7 @@ Write-Output ("`nPhrase supplied: {0}     ({1} characters)" -f `
 
 # Show which character positiions we're looking for in the
 # input string supplied.
-Write-Output ("Looking for characters at positions: {0}" -f `
+Write-Output ("Looking for characters at positions: {0}  (1-based)" -f
               [System.String]::Join(", ", $CharPositions));
 Write-Output "";
 
