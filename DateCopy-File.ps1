@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-05-26T18:14:30
+Last updated : 2020-07-13T22:24:17
 
 .LINK
 
@@ -78,11 +78,17 @@ https://www.iso.org/iso-8601-date-and-time-format.html
 ISO 8601 Data elements and interchange formats
 https://en.wikipedia.org/wiki/ISO_8601
 
-Namespace:   System.IO.Path Class
+Namespace: System.IO.Path Class
 https://msdn.microsoft.com/en-us/library/system.io.path(v=vs.110).aspx
 
 Microsoft.PowerShell.Management
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-5.1
+
+MD5 message-digest algorithm
+https://en.wikipedia.org/wiki/MD5
+
+The MD5 Message-Digest Algorithm
+https://www.ietf.org/rfc/rfc1321.txt
 
 #>
 
@@ -99,6 +105,10 @@ Param (
    [Switch]
    $ReadOnly
 ) #end param
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** Function Get-OldFilename *****
 #* Function: Get-OldFilename
@@ -163,6 +173,8 @@ End {
 }
 }
 #endregion ***** End of function Get-OldFilename *****
+
+#----------------------------------------------------------
 
 #region ***** Function Get-NewFilename *****
 #* Function: Get-NewFilename
@@ -232,6 +244,10 @@ End {
 
 }
 #endregion ***** End of function Get-NewFilename *****
+
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
