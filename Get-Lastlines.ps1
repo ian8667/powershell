@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-04T21:41:42
+Last updated : 2020-07-19T12:53:20
 
 .LINK
 
@@ -45,6 +45,10 @@ https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/abo
 
 [CmdletBinding()]
 Param () #end param
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** function Get-Parameters *****
 function Get-Parameters {
@@ -59,10 +63,10 @@ function Get-Parameters {
 
         # Input filename. A 'FileNotFoundException' exception is thrown
         # if the file does not exist.
-        path              = 'C:\Gash\tmp2700.tmp';
+        path              = 'C:\Test\small_sampledata.txt';
 
         # Output filename. The file will be overwritten if it exists.
-        pathout           = 'C:\gash\ian.ian';
+        pathout           = 'C:\gash\gashfile.txt';
 
         # Int32 Struct. This variable determines the bufferSize
         # used by the System.IO.Stream object.
@@ -77,7 +81,7 @@ function Get-Parameters {
         # So if you're interested in the last 15 Kb of the file,
         # for example, set this variable as:
         # seekPos           = [System.Convert]::ToInt64(15KB);
-        seekPos           = [System.Convert]::ToInt64(2KB);
+        seekPos           = [System.Convert]::ToInt64(5KB);
 
     }
 
@@ -92,6 +96,8 @@ function Get-Parameters {
   }
 }
 #endregion ***** end of function Get-Parameters *****
+
+#----------------------------------------------------------
 
 #region ***** function Check-parameters *****
 function Check-parameters {
@@ -220,6 +226,8 @@ function Check-parameters {
 }
 #endregion ***** end of function Check-parameters *****
 
+#----------------------------------------------------------
+
 #region ***** function Get-InputFilestream *****
 function Get-InputFilestream {
   [CmdletBinding()]
@@ -259,6 +267,8 @@ function Get-InputFilestream {
   }
 }
 #endregion ***** end of function Get-InputFilestream *****
+
+#----------------------------------------------------------
 
 #region ***** function Get-OutputFilestream *****
 function Get-OutputFilestream {
@@ -307,6 +317,10 @@ function Get-OutputFilestream {
   }
 }
 #endregion ***** end of function Get-OutputFilestream *****
+
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
