@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Compress-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-08T21:57:09
+Last updated : 2020-07-23T17:14:22
 
 .LINK
 
@@ -65,6 +65,10 @@ archive file to a specified destination folder.
 [CmdletBinding()]
 Param() #end param
 
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
 #region ***** function Compress-Gzip *****
 function Compress-Gzip {
 [CmdletBinding()]
@@ -87,26 +91,6 @@ Begin {
 
 $bufSize = 4KB;
 
-$optIn = [PSCustomObject]@{
-    # Input file options
-    path        = $InputData;
-    mode        = [System.IO.FileMode]::Open;
-    access      = [System.IO.FileAccess]::Read;
-    share       = [System.IO.FileShare]::Read;
-    bufferSize  = $bufSize;
-    options     = [System.IO.FileOptions]::SequentialScan;
-}
-
-$optOut = [PSCustomObject]@{
-    # Output file options
-    path        = $OutputData;
-    mode        = [System.IO.FileMode]::Create;
-    access      = [System.IO.FileAccess]::Write;
-    share       = [System.IO.FileShare]::None;
-    bufferSize  = $bufSize;
-    options     = [System.IO.FileOptions]::None;
-}
-
 $CompressStart = Get-Date;
 Write-Output ('Gzip compress file start: {0}' -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
 } #end BEGIN block
@@ -114,21 +98,59 @@ Write-Output ('Gzip compress file start: {0}' -f $CompressStart.ToString("yyyy-M
 Process {
 try {
 
+    #
     # The stream to compress.
-    $fis = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
-      $optIn.path, $optIn.mode, $optIn.access, $optIn.share, $optIn.bufferSize, $optIn.options;
-
-    $fos = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
-      $optOut.path, $optOut.mode, $optOut.access, $optOut.share, $optOut.bufferSize, $optOut.options;
-
-    $gzipOut = [PSCustomObject]@{
-        stream    = $fos;
-        mode      = [System.IO.Compression.CompressionMode]::Compress;
-        leaveOpen = $false;
+    #
+    $myargs = @(
+        #Constructor arguments - input stream
+        $InputData #path
+        [System.IO.FileMode]::Open #mode - FileMode
+        [System.IO.FileAccess]::Read #access - FileAccess
+        [System.IO.FileShare]::Read #share - FileShare
+        $bufSize #bufferSize - Int32
+        [System.IO.FileOptions]::SequentialScan #options - FileOptions
+    )
+    $parameters = @{
+        #General parameters
+        TypeName = 'System.IO.FileStream'
+        ArgumentList = $myargs
     }
+    $fis = New-Object @parameters;
 
-    $gzipStream = New-Object -typeName 'System.IO.Compression.GzipStream' -ArgumentList `
-      $gzipOut.stream, $gzipOut.mode, $gzipOut.leaveOpen;
+    #
+    # The output stream
+    #
+    $myargs = @(
+        #Constructor arguments - output stream
+        $OutputData #path
+        [System.IO.FileMode]::Create #mode - FileMode
+        [System.IO.FileAccess]::Write #access - FileAccess
+        [System.IO.FileShare]::None #share - FileShare
+        $bufSize #bufferSize - Int32
+        [System.IO.FileOptions]::None #options - FileOptions
+    )
+    $parameters = @{
+        #General parameters
+        TypeName = 'System.IO.FileStream'
+        ArgumentList = $myargs
+    }
+    $fos = New-Object @parameters;
+
+    #
+    #Create the Gzip stream
+    #
+    $myargs = @(
+        #Constructor arguments
+        $fos #stream
+        [System.IO.Compression.CompressionMode]::Compress #mode - compression mode
+        $false #leaveOpen
+    )
+    $parameters = @{
+        #General parameters
+        TypeName = 'System.IO.Compression.GzipStream'
+        ArgumentList = $myargs
+    }
+    $gzipStream = New-Object @parameters;
 
     $fis.CopyTo($gzipStream, $bufSize);
 
@@ -163,6 +185,8 @@ End {
 }
 #endregion ***** end of function Compress-Gzip *****
 
+#----------------------------------------------------------
+
 #region ***** function Compress-Zip *****
 function Compress-Zip {
 [CmdletBinding()]
@@ -194,7 +218,7 @@ Write-Output ("`nZip compress directory start: {0}" -f $CompressStart.ToString("
 
 Process {
 
-[System.IO.Compression.ZipFile]::CreateFromDirectory( `
+   [System.IO.Compression.ZipFile]::CreateFromDirectory( `
             $InputData, `
             $OutputData, `
             $opt, `
@@ -217,6 +241,8 @@ End {
 
 }
 #endregion ***** end of function Compress-Zip *****
+
+#----------------------------------------------------------
 
 #region ***** function Check-Parameters *****
 function Check-Parameters {
@@ -298,6 +324,10 @@ if ($Config.Format -eq 'Gzip') {
 } #end function
 #endregion ***** end of function Check-Parameters *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
@@ -321,7 +351,7 @@ $ConfigData = @{
     #
     # For gzip files - the (usually text) file to compress
     # specified as an absolute path.
-    Input   = 'C:\upload'
+    Input   = 'C:\temp'
 
     # Output object.
     # For zip files - the path of the archive (zip file) to be
@@ -330,11 +360,11 @@ $ConfigData = @{
     # For gzip files - the path of the archive (gzip file) to be
     # created, specified as an absolute path. By convention, gzip
     # files have a file extension of either 'gz' or 'gzip'.
-    Output  = 'C:\Test\IanMolloy_documents.zip'
+    Output  = 'C:\Gash\TestZiped.zip'
 
     # Compression format to use. Uses one of the values in
     # enumerated type 'CompressFormat' to do the compression.
-    Format  = [CompressFormat]::Zip
+    Format  = [CompressFormat]::Zip;
 }
 Set-Variable -Name 'ConfigData' -Option ReadOnly;
 
