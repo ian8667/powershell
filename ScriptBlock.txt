@@ -9,7 +9,7 @@ or Start-ThreadJob cmdlet.
 See also the Start-Job/Start-ThreadJob cmdlet parameter
 'ScriptBlock'.
 
-Last updated: 10 July 2020
+Last updated: 25 July 2020
 #-------------------------------------------------
 
 
@@ -32,19 +32,19 @@ Begin {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-        Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
+    Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
 
-        $path = 'C:\Gash'; # <-- Change accordingly.
-        Set-Variable -Name 'path' -Description "Search directory for the scriptblock" -Option ReadOnly;
+    $path = 'C:\Gash'; # <-- Change accordingly.
+    Set-Variable -Name 'path' -Description "Search directory for the scriptblock" -Option ReadOnly;
 
-        $oldDate = [System.DateTime]::MaxValue;
-        $newDate = [System.DateTime]::MinValue;
-        $oldFilename = '';
-        $newFilename = '';
-        [UInt32]$fileCounter = 0;
+    $oldDate = [System.DateTime]::MaxValue;
+    $newDate = [System.DateTime]::MinValue;
+    $oldFilename = '';
+    $newFilename = '';
+    [UInt32]$fileCounter = 0;
 
-        Write-Output "`nLooking for the oldest and newest LastWriteTime of files";
-        Write-Output ("Directory looked at (with no recursion): {0}" -f $path);
+    Write-Output "`nLooking for the oldest and newest LastWriteTime of files";
+    Write-Output ("Directory looked at (with no recursion): {0}" -f $path);
 }
 
 Process {
@@ -282,7 +282,7 @@ End {
 ##===========================================
 ## New item
 ## Looking for files.
-## 25 June 2020
+## 25 July 2020
 ##===========================================
 
 $sb = {
@@ -295,14 +295,15 @@ $ErrorActionPreference = "Stop";
 
 Get-Date -Format 's';
 
-$file = 'milk*'; #File(s) of interest
-$path = 'c:/';   #Start directory
-Write-Output "Looking for file(s) $file starting with directory $path";
-Get-ChildItem -Path $path -Filter $file -Recurse -File -ErrorAction SilentlyContinue;
+$file = 'gitconfig';  #File(s) of interest. Wildcards not required
+$path = 'C:\Users\ianm7';  #Start directory
+Write-Output "Looking for file(s) containing '$file' starting with directory $path";
+Get-ChildItem -Path $path -Recurse -File -ErrorAction SilentlyContinue |
+  Where-Object -Property 'Name' -Match -Value $file;
 
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Get-Date -Format 's';
 } #end of ScriptBlock
-
 
 ##===========================================
 ## New item
