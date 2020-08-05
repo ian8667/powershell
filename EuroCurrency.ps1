@@ -62,7 +62,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : EuroCurrency.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-06T18:47:29
+Last updated : 2020-08-02T22:45:00
 
 System.Numerics.Complex
 Returns the multiplicative inverse of a complex number.
@@ -129,7 +129,7 @@ param (
     [Double]$CurrencyValue
 ) #end param
 
-    begin {
+    Begin {
 
         $CurrencySign = @{
             EUR     = [char]0x20AC   # Euro sign
@@ -143,7 +143,7 @@ param (
 
     }
 
-    process {
+    Process {
         Write-Output ('1 GBP{0} = {1}{2} {3:N4}' -f `
            $CurrencySign.GBP, `
            $CurrencyCode, `
@@ -152,7 +152,7 @@ param (
 
     }
 
-    end {}
+    End {}
 }
 #endregion ***** end of function Display-ExchangeRate *****
 
@@ -166,6 +166,19 @@ param (
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Currency rates and GBP';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 $address = 'https://api.exchangeratesapi.io/latest';

@@ -125,7 +125,6 @@ https://docs.microsoft.com/en-us/dotnet/api/system.text.regularexpressions.match
 
 #>
 
-
 [CmdletBinding()]
 Param (
    [parameter(Position=0,
@@ -134,6 +133,10 @@ Param (
    [String]
    $NetstatDatafile
 ) #end param
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** Function Get-Hostname2 *****
 function Get-Hostname2 {
@@ -158,11 +161,11 @@ The IP address to resolve to a host name.
 [CmdletBinding()]
 [OutputType([System.String])]
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="Foreign Address")]
-        [ValidateNotNullOrEmpty()]
-        [String]$IpAddress
-      ) #end param
+    [parameter(Mandatory=$true,
+               HelpMessage="Foreign Address")]
+    [ValidateNotNullOrEmpty()]
+    [String]$IpAddress
+) #end param
 
   $timeout = 750; # milliseconds timeout
   $iasyncresult = [System.Net.Dns]::BeginGetHostEntry($IpAddress, $null, $null);
@@ -182,6 +185,8 @@ Param (
   return $retval;
 }
 #endregion ***** End of function Get-Hostname2 *****
+
+#----------------------------------------------------------
 
 #region ***** Function Get-Hostname *****
 function Get-Hostname {
@@ -203,11 +208,11 @@ The foreign address from which to extract the IP address.
 [CmdletBinding()]
 [OutputType([System.String])]
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="Foreign Address")]
-        [ValidateNotNullOrEmpty()]
-        [String]$ForeignAddress
-      ) #end param
+    [parameter(Mandatory=$true,
+               HelpMessage="Foreign Address")]
+    [ValidateNotNullOrEmpty()]
+    [String]$ForeignAddress
+) #end param
 
   $IPv4_regex = "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}";
   $m = $ForeignAddress | Select-String -Pattern $IPv4_regex;
@@ -225,6 +230,9 @@ Param (
 }
 #endregion ***** End of function Get-Hostname *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
@@ -233,9 +241,22 @@ Param (
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
+Clear-Host;
+
 [String]$hname = '';
 
-Clear-Host;
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'netstat and active TCP connections';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 if ($PSBoundParameters.ContainsKey('NetstatDatafile')) {
    # A file containing netstat data has been supplied.

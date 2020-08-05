@@ -67,7 +67,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Holidays.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-04T21:38:45
+Last updated : 2020-08-03T22:54:14
 
 .LINK
 
@@ -104,6 +104,10 @@ https://www.sapien.com/blog/2015/02/18/troubleshooting-comment-based-help/
 [CmdletBinding()]
 Param () #end param
 
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
 #region ***** function Get-DayOfWeek *****
 function Get-DayOfWeek {
 [CmdletBinding()]
@@ -129,6 +133,7 @@ End {
 }
 #endregion ***** end of function Get-DayOfWeek *****
 
+#----------------------------------------------------------
 
 #region ***** function Get-PastFuture *****
 function Get-PastFuture {
@@ -164,6 +169,7 @@ End {
 }
 #endregion ***** end of function Get-PastFuture *****
 
+#----------------------------------------------------------
 
 #region ***** function Start-MainRoutine *****
 function Start-MainRoutine {
@@ -209,6 +215,10 @@ End {}
 }
 #endregion ***** end of function Start-MainRoutine *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
@@ -216,11 +226,13 @@ End {}
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-Write-Output ("`nToday is {0:dddd, dd MMMM yyyy}" -f (Get-Date));
-
 Invoke-Command -ScriptBlock {
 
    Write-Output '';
+   Write-Output 'UK holidays';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
    $script = $MyInvocation.MyCommand.Name;
    $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
    Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);

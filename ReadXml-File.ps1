@@ -51,23 +51,27 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : ReadXml-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-04T21:46:20
+Last updated : 2020-08-04T22:23:26
 
 #>
 
 [CmdletBinding()]
 Param () #end param
 
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
 #region ***** Function Get-XmlReader *****
 function Get-XmlReader {
 [CmdletBinding()]
 [OutputType([System.Xml.XmlReader])]
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="XML file to read")]
-        [ValidateNotNullOrEmpty()]
-        [String]$Filename
-      ) #end param
+    [parameter(Mandatory=$true,
+               HelpMessage="XML file to read")]
+    [ValidateNotNullOrEmpty()]
+    [String]$Filename
+) #end param
 
 Begin {
 if (-not (Test-Path -Path $Filename)) {
@@ -102,6 +106,10 @@ End {
 }
 #endregion ***** End of function Get-XmlReader *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
@@ -109,12 +117,27 @@ End {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-New-Variable -Name 'inputXML' -Value 'C:\Family\ian\note.xml' -Option Constant `
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Read and interpret XML files';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+
+New-Variable -Name 'inputXML' -Value 'C:\Gash\gash.xml' -Option Constant `
              -Description 'XML file to process';
 New-Variable -Name indentInc -Value 4 -Option Constant `
              -Description 'Amount by which text is indented/decremented by';
 $xmlline = New-Object -TypeName 'System.Text.StringBuilder' -ArgumentList 100;
-$xreader = Get-XmlReader $inputXML;
+$xreader = Get-XmlReader -Filename $inputXML;
 # An start element tag, ie <item>.
 $element = [System.Xml.XmlNodeType]::Element;
 # An end element tag ie ie </item>.

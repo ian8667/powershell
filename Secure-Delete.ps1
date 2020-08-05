@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-18T22:05:27
+Last updated : 2020-08-05T10:18:57
 Keywords     : yes no yesno
 
 .LINK
@@ -45,6 +45,10 @@ https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryp
 
 [CmdletBinding()]
 Param() #end param
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** Function Get-Filename *****
 function Get-Filename {
@@ -224,6 +228,10 @@ Param (
 }
 #endregion ***** End of function Delete-File *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
@@ -234,17 +242,20 @@ $ErrorActionPreference = "Stop";
 Invoke-Command -ScriptBlock {
 
    Write-Output '';
-   Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
+   Write-Output 'Secure deletion of file';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
    $script = $MyInvocation.MyCommand.Name;
    $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Output ('Running script {0} in directory {1}' -f $script, $scriptPath);
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
 
 }
 
 # Get the filename to delete
 $Path = Get-Filename -Title 'Filename to delete';
-if (Confirm-Delete $Path) {
-   Delete-File $Path;
+if (Confirm-Delete -FileName $Path) {
+   Delete-File -FileName $Path;
 } else {
    Write-Warning -Message "`nFile $($Path) not deleted at user request";
 }

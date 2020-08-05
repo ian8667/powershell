@@ -31,7 +31,7 @@ System.IO.FileInfo
 
 File Name    : StreamInputOutput.ps1
 Author       : Ian Molloy
-Last updated : 2013-08-11
+Last updated : 2020-08-05T12:54:29
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -52,15 +52,26 @@ FileInfo Class
 http://msdn.microsoft.com/en-us/library/system.io.fileinfo.aspx
 #>
 
-[cmdletbinding()]
-Param ()
+[CmdletBinding()]
+Param() #end param
 
 $inrec="";
 $counter=0;
 $infile="C:\junk\gashinputfile.txt";
 $outfile="C:\junk\gashoutputfile.txt";
 
-Write-Host "Demonstration program using .NET objects to achieve file input/output";
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Demonstration program using .NET objects to achieve file input/output';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 $input = New-Object -TypeName System.IO.StreamReader($infile);
 $outStream = New-Object -TypeName System.IO.FileStream(
@@ -79,7 +90,6 @@ while ($inrec -ne $null) {
    $inrec = $input.ReadLine();
 }
 
-
 $input.Close();
 $input.Dispose();
 $output.Flush();
@@ -88,13 +98,12 @@ $output.Dispose();
 
 
 $filelen = New-Object -TypeName System.IO.FileInfo($outfile);
-Write-Host "File $($outfile.ToString()) has length $($filelen.length) bytes";
+Write-Output "File $($outfile.ToString()) has length $($filelen.length) bytes";
 
-
-Write-Host "Lines written: $counter";
-Write-Host "Files used:";
-Write-Host ("Input file: {0}`nOutput file: {1}" -f $infile, $outfile);
-Write-Host "All done now";
+Write-Output "Lines written: $counter";
+Write-Output "Files used:";
+Write-Output ("Input file: {0}`nOutput file: {1}" -f $infile, $outfile);
+Write-Output "All done now";
 ##=============================================
 ## END OF SCRIPT: StreamInputOutput.ps1
 ##=============================================

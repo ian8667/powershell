@@ -56,7 +56,7 @@ Additional Notes, eg:
 
 File Name    : Get-ServerInfo.ps1
 Author       : Ian Molloy
-Last updated : 2013-05-27
+Last updated : 2020-08-04T15:18:35
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -79,15 +79,19 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/dd878348(v=vs.85).aspx
 
 [cmdletbinding()]
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="Enter the computer name to check",
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $ComputerName
-      ) #end param
+    [parameter(Mandatory=$true,
+               HelpMessage="Enter the computer name to check",
+               Position=0)]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $ComputerName
+) #end param
 
-#region ********** function Show-OsInfo **********
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
+#region ***** function Show-OsInfo *****
 ##=============================================
 ## Function: Show-OsInfo
 ## Created: 2013-05-27
@@ -100,7 +104,8 @@ Param (
 ## See also: Using the Get-Service Cmdlet
 ## http://technet.microsoft.com/en-us/library/ee176858.aspx
 ##=============================================
-function Show-OsInfo() {
+function Show-OsInfo {
+[CmdletBinding()]
 
    $params=@{
       ComputerName = $ComputerName
@@ -159,9 +164,11 @@ function Show-OsInfo() {
    Write-Output "Current date/time: $dd";
 
 }
-#endregion ********** end of function Show-OsInfo **********
+#endregion ***** end of function Show-OsInfo *****
 
-#region ********** function Show-OracleProcesses **********
+#----------------------------------------------------------
+
+#region ***** function Show-OracleProcesses *****
 ##=============================================
 ## Function: Show-OracleProcesses
 ## Created: 2013-05-25
@@ -175,7 +182,8 @@ function Show-OsInfo() {
 ## See also: Using the Get-Service Cmdlet
 ## http://technet.microsoft.com/en-us/library/ee176858.aspx
 ##=============================================
-function Show-OracleProcesses() {
+function Show-OracleProcesses {
+[CmdletBinding()]
 
   $svcStopped = 0;
   $svcRunning = 0;
@@ -215,9 +223,11 @@ function Show-OracleProcesses() {
   Write-Output "Non-running processes: $svcStopped";
 
 }
-#endregion ********** end of function Show-OracleProcesses **********
+#endregion ***** end of function Show-OracleProcesses *****
 
-#region ********** function Get-Script-Info **********
+#----------------------------------------------------------
+
+#region ***** function Get-Script-Info *****
 ##=============================================
 ## Function: Get-Script-Info
 ## Created: 2013-05-25
@@ -228,8 +238,9 @@ function Show-OracleProcesses() {
 ## where the script is running from.
 ## Returns: N/A
 ##=============================================
-function Get-Script-Info()
-{
+function Get-Script-Info {
+[CmdletBinding()]
+
    if ($MyInvocation.ScriptName) {
        $p1 = Split-Path -Leaf $MyInvocation.ScriptName;
        $p2 = Split-Path -Parent $MyInvocation.ScriptName;
@@ -239,9 +250,11 @@ function Get-Script-Info()
    }
 
 }
-#endregion ********** end of function Get-Script-Info **********
+#endregion ***** end of function Get-Script-Info *****
 
-#region ********** function PrintBlankLines **********
+#----------------------------------------------------------
+
+#region ***** function PrintBlankLines *****
 #*=============================================
 #* Function: PrintBlankLines
 #* Created: 2013-05-25
@@ -253,13 +266,14 @@ function Get-Script-Info()
 #* Returns:
 #* N/A
 #*=============================================
-function PrintBlankLines() {
+function PrintBlankLines {
+[CmdletBinding()]
 param (
-        [parameter(Position=0,
-                   Mandatory=$true)]
-        [ValidateRange(1,15)]
-        [Int32]$lines
-      ) #end param
+    [parameter(Position=0,
+               Mandatory=$true)]
+    [ValidateRange(1,15)]
+    [Int32]$lines
+) #end param
 
   $myarray = 1..$lines;
   for ($m=0; $m -lt $myarray.length; $m++) {
@@ -268,9 +282,11 @@ param (
   Write-Output $myarray;
   
 }
-#endregion ********** end of function PrintBlankLines **********
+#endregion ***** end of function PrintBlankLines *****
 
-#region ********** function Get-DiskSpace **********
+#----------------------------------------------------------
+
+#region ***** function Get-DiskSpace *****
 ##=============================================
 ## Function: Get-DiskSpace
 ## Created: 2013-05-25
@@ -280,7 +296,9 @@ param (
 ## Purpose: displays disk space for the computer being checked.
 ## Returns: N/A
 ##=============================================
-function Get-DiskSpace() {
+function Get-DiskSpace {
+[CmdletBinding()]
+
   New-Variable -Name spaceUnit -Value "1GB" -Option Constant;
 
   $dtype = DATA {
@@ -350,9 +368,11 @@ function Get-DiskSpace() {
       Select-Object -Property $name, $drivetype, $size, $free, $used, $pcfree, $pcused | Format-Table
 
 }
-#endregion ********** end of function Get-DiskSpace **********
+#endregion ***** end of function Get-DiskSpace *****
 
-#region ********** function ping **********
+#----------------------------------------------------------
+
+#region ***** function ping *****
 #*=============================================
 #* Function: Ping
 #* Created: 2013-05-25
@@ -365,16 +385,15 @@ function Get-DiskSpace() {
 #* true if and only if the computer supplied as a parameter
 #* is online; false otherwise
 #*=============================================
-function Ping
-{
+function Ping {
 [cmdletbinding()]
 Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $ComputerName
-      ) #end param
+    [parameter(Mandatory=$true,
+               Position=0)]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $ComputerName
+) #end param
 
   [Int32]$timeout = 2000;
   [Boolean]$retval = true;
@@ -405,9 +424,11 @@ Param (
   return $retval;
 
 } # end of Ping
-#endregion ********** end of function ping **********
+#endregion ***** end of function ping *****
 
-#region ********** function main_routine **********
+#----------------------------------------------------------
+
+#region ***** function main_routine *****
 ##=============================================
 ## Function: main_routine
 ## Created: 2013-05-25
@@ -418,7 +439,8 @@ Param (
 ## other function calls together.
 ## Returns: N/A
 ##=============================================
-function main_routine() {
+function main_routine {
+[CmdletBinding()]
 
   if ($PSBoundParameters['Verbose']) {
      Write-Host "doing some verbose things";
@@ -439,12 +461,32 @@ function main_routine() {
   }
 
 }
-#endregion ********** end of function main_routine **********
+#endregion ***** end of function main_routine *****
+
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
 ## MAIN ROUTINE STARTS HERE
 ##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Server information';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
 main_routine;
 ##=============================================
 ## END OF SCRIPT: Get-ServerInfo.ps1

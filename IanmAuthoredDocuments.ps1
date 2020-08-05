@@ -16,7 +16,7 @@ PS> ./IanmAuthoredDocuments.ps1
 
 File Name    : IanmAuthoredDocuments.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-04T21:43:18
+Last updated : 2020-08-04T18:06:06
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -87,11 +87,12 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/dd878348(v=vs.85).aspx
 
 #>
 
-[cmdletbinding()]
-Param (
-) #end param
+[CmdletBinding()]
+Param () #end param
 
-#------------------------------------------------------------------------------
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** Function printBlanklines *****
 #
@@ -99,13 +100,14 @@ Param (
 # Parameters:
 # lines - the number of blank lines to print.
 #
-function printBlanklines() {
+function printBlanklines {
+[CmdletBinding()]
 param (
-        [parameter(Position=0,
-                   Mandatory=$true)]
-        [ValidateRange(1,15)]
-        [System.SByte]$lines
-      ) #end param
+    [parameter(Position=0,
+               Mandatory=$true)]
+    [ValidateRange(1,15)]
+    [System.SByte]$lines
+) #end param
 
   1..$lines | ForEach-Object {Write-Host '' }
 
@@ -115,19 +117,24 @@ param (
 #------------------------------------------------------------------------------
 
 #region ***** Function Get-RequiredDocuments *****
-function Get-RequiredDocuments() {
+function Get-RequiredDocuments {
+[CmdletBinding()]
+Param () #end param
 
 Begin {
 
-  Add-Type -AssemblyName Microsoft.Office.Interop.Word
+  #Add-Type -AssemblyName 'Microsoft.Office.Interop.Word';
+  $dllFile = 'C:\Windows\assembly\GAC_MSIL\Microsoft.Office.Interop.Word\15.0.0.0__71e9bce111e9429c\Microsoft.Office.Interop.Word.dll';
+  Add-Type -LiteralPath $dllFile;
 
+  #Microsoft.Office.Interop.Word.ApplicationClass
   $application = New-Object -ComObject word.application;
   $application.Visible = $false;
   $binding = "System.Reflection.BindingFlags" -as [type]
   #[ref]$SaveOption = "microsoft.office.interop.word.WdSaveOptions" -as [type]
   # Get a list of files to look at.
-  #$startDir = 'H:\Ian\docs';
-  $startDir = 'G:\IS\System Notes\Oracle';
+  #$startDir = 'H:\Ian\docs'; # <-- Change accordingly
+  $startDir = 'C:\Gash'; # <-- Change accordingly
   # The property(s) we want to extract from our Word document files.
   $AryProperties = @("Author","Comments");
   [System.Int16]$fileCount = 0;
@@ -143,24 +150,25 @@ Begin {
   $OriginalFormat = [Microsoft.Office.Interop.Word.WdOriginalFormat]::wdWordDocument;
   $RouteDocument = $false;
 
-  printBlanklines 2;
-  Write-Host 'Looking for MS Word documents written Ian M. Please wait ...';
-  Write-Host ('Start directory used is {0}' -f $startDir);
-  printBlanklines 3;
+  [System.Linq.Enumerable]::Repeat("", 2); #blanklines
+  Write-Output 'Looking for MS Word documents written by Ian M. Please wait ...';
+  Write-Output ('Start directory used is {0}' -f $startDir);
+  [System.Linq.Enumerable]::Repeat("", 3); #blanklines
 
   # Get list of files to process using the start directory determined
   # by variable '$startDir'.
-  $docs = Get-childitem -Path $startDir -Recurse -Filter $fileFilter;
-  Write-Host ('{0} files to process' -f $docs.Count);
-  printBlanklines 2;
+  $docs = Get-ChildItem -Path $startDir -Recurse -Filter $fileFilter;
+  Write-Output ('{0} files to process' -f $docs.Count);
+  [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
 } #end BEGIN block
 
 Process {
 
-  # Main loop to process our list of files.
+  # Main loop to process our list of MS Word files found.
   foreach($doc in $docs) {
 
+    Write-Output ('Processing file {0}' -f $doc.Name);
 
     # Open the document for processing.
     # For details of 'openDoc' see 'Document members'
@@ -174,7 +182,7 @@ Process {
 
       # Inner loop to obtain the required document properties for the currently
       # open file. We do this by iterating over the array '$AryProperties'. This
-    # tells us which properties to extract from the document.
+      # tells us which properties to extract from the document.
       foreach($p in $AryProperties) {
 
          Try {
@@ -202,7 +210,7 @@ Process {
           # Print the information collected for the document of interest.
           $printName = $false;
           $docProperties = New-Object PSObject -Property $objHash;
-          Write-Host ("( {0} )" -f $fileCount);
+          Write-Output ("( {0} )" -f $fileCount);
           Write-Output $docProperties | Format-List *
       }
 
@@ -210,7 +218,9 @@ Process {
       # ready for the next document in our list.
       # Documents.Close method
       # https://msdn.microsoft.com/en-us/library/microsoft.office.interop.word.documents.close.aspx
-      $openDoc.close([ref]$SaveChanges, [ref]$OriginalFormat, [ref]$RouteDocument);
+
+      #$openDoc.close([ref]$SaveChanges, [ref]$OriginalFormat, [ref]$RouteDocument);
+      $openDoc.close($SaveChanges, $OriginalFormat, $RouteDocument);
       [System.Runtime.InteropServices.Marshal]::ReleaseComObject($BuiltinProperties) | Out-Null
       [System.Runtime.InteropServices.Marshal]::ReleaseComObject($openDoc) | Out-Null
 
@@ -222,7 +232,8 @@ Process {
 
 End {
 
-  Write-Host ("{0} Ian M authored files listed" -f $fileCount);
+  [System.Linq.Enumerable]::Repeat("", 2); #blanklines
+  Write-Output ("{0} Ian M authored files listed" -f $fileCount);
 
   # Clean up and close.
   $application.Quit();
@@ -235,9 +246,29 @@ End {
 }
 #endregion ***** End of function Get-RequiredDocuments *****
 
-#------------------------------------------------------------------------------
-# Main routine starts here
-#------------------------------------------------------------------------------
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
+##=============================================
+## SCRIPT BODY
+## Main routine starts here
+##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Display Ian M authored MS Word documents';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 Get-RequiredDocuments;
 

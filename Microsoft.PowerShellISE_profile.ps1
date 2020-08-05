@@ -2,19 +2,17 @@
 # My local Powershell configuration file.
 # Microsoft.PowerShellISE_profile.ps1
 #
-# Last updated: 28 July 2018
+# Last updated: 2020-08-04T22:12:01
 #------------------------------------------------
 
 # Source: http://dougfinke.com/blog/index.php/2009/02/03/powershell-ise-cream/
 Function Expand-Alias {
 
-  $content=$psise.CurrentOpenedFile.Editor.text
+  $content=$psise.CurrentOpenedFile.Editor.text;
 
   [System.Management.Automation.PsParser]::Tokenize($content, [ref] $null) |
-
     Where { $_.Type -eq 'Command'} |
-
-    Sort StartLine, StartColumn -Desc | Do-Expansion
+    Sort StartLine, StartColumn -Desc | Do-Expansion;
 
 }
 
@@ -27,16 +25,16 @@ Function Expand-CurrentAlias {
 
     Where { $_.Type -eq 'Command'} |
        Where { $CaretColumn -eq $_.StartColumn -OR
-            $CaretColumn -eq $_.EndColumn} | Do-Expansion
+            $CaretColumn -eq $_.EndColumn} | Do-Expansion;
 
 }
 
 Filter Do-Expansion {
 
     if ($_.Content -eq '?') {
-        $result = Get-Command '`?' -CommandType Alias
+        $result = Get-Command '`?' -CommandType Alias;
     } else {
-        $result = Get-Command $_.Content -CommandType Alias -ErrorAction SilentlyContinue
+        $result = Get-Command $_.Content -CommandType Alias -ErrorAction SilentlyContinue;
     }
 
     if($result) {
@@ -59,21 +57,21 @@ Filter Do-Expansion {
 #------------------------------------------------
 # Create some aliases.
 #------------------------------------------------
-Set-Alias -Name 'view' -Value 'C:\windows\system32\notepad.exe' -Description 'Alias for notepad'
-Set-Alias -Name 'vi' -Value 'C:\windows\system32\notepad.exe' -Description 'Alias for notepad'
+Set-Alias -Name 'view' -Value 'C:\windows\system32\notepad.exe' -Description 'Alias for notepad';
+Set-Alias -Name 'vi' -Value 'C:\windows\system32\notepad.exe' -Description 'Alias for notepad';
 
 #------------------------------------------------
 # Go to our preferred startup location.
 #------------------------------------------------
-Set-Location -Path 'C:\Family\powershell'
-Clear-Host
+Set-Location -Path 'C:\Family\powershell';
+Clear-Host;
 
 #------------------------------------------------
 # Welcome message and initial setup.
 #------------------------------------------------
-Write-Host "You are now entering PowerShell : " $env:Username
-Get-Date
-Write-Host "We're currently in directory $(Get-Location)"
+Write-Host "You are now entering PowerShell : " $env:Username;
+Get-Date;
+Write-Host "We're currently in directory $(Get-Location)";
 
 #------------------------------------------------
 # Create some functions.
@@ -97,7 +95,7 @@ function prompt
 #------------------------------------------------
 # Misc items.
 #------------------------------------------------
-Set-PSDebug -Strict
+Set-PSDebug -Strict;
 
 # Once you've written a number of PowerShell scripts, you
 # might find it useful to collect them in one place and

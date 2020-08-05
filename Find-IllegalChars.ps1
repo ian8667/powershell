@@ -38,7 +38,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Find-IllegalChars.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-25
+Last updated : 2020-08-03T22:29:10
 
 .LINK
 
@@ -49,6 +49,10 @@ https://blogs.technet.microsoft.com/heyscriptingguy/2017/01/31/psscriptanalyzer-
 
 [CmdletBinding()]
 Param () #end param
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** Function Get-Filename *****
 function Get-Filename {
@@ -61,7 +65,7 @@ Param (
         [String]$Boxtitle
       ) #end param
 
-BEGIN {
+Begin {
   Write-Verbose -Message "Invoking function to obtain the to file to examine";
 
   Add-Type -AssemblyName "System.Windows.Forms";
@@ -83,7 +87,7 @@ BEGIN {
 
 }
 
-PROCESS {
+Process {
   if ($ofd.ShowDialog() -eq $myok) {
      $retFilename = $ofd.FileName;
   } else {
@@ -91,12 +95,14 @@ PROCESS {
   }
 }
 
-END {
+End {
   $ofd.Dispose();
   return $retFilename;
 }
 }
 #endregion ***** End of function Get-Filename *****
+
+#----------------------------------------------------------
 
 #region ***** function Get-Filestream *****
 function Get-Filestream {
@@ -110,7 +116,7 @@ Param (
        [String]$Filename
       ) #end param
 
-  BEGIN {
+  Begin {
 
     [String]$inf = Get-Filename 'File to examine';
 
@@ -128,14 +134,16 @@ Param (
 
   }
 
-  PROCESS {}
+  Process {}
 
-  END {
+  End {
     return $fis;
   }
 
 } #end function Get-Filestream
 #endregion ***** end of function Get-Filestream *****
+
+#----------------------------------------------------------
 
 #region ***** function Main-Routine *****
 function Main-Routine {
@@ -143,7 +151,7 @@ function Main-Routine {
     [OutputType([System.Void])]
     Param () #end param
 
-        BEGIN {
+        Begin {
           $sourceFile = Get-Filestream 'Filename to check';
           $fname = $sourceFile.Name;
           Set-Variable -Name "sourceFile" -Option ReadOnly `
@@ -168,7 +176,7 @@ function Main-Routine {
           [UInt16]$errorBytes = 0;
         }
 
-        PROCESS {
+        Process {
 
           try {
                $bytesRead = $sourceFile.Read($dataBuffer, 0, $dataBuffer.Length);
@@ -193,7 +201,7 @@ function Main-Routine {
 
         }
 
-        END {
+        End {
           Write-Output '';
           Write-Output ('Target file {0}' -f $fname);
           Write-Output ('Characters in error: {0}' -f $errorBytes);
@@ -201,6 +209,10 @@ function Main-Routine {
 
 } #end function Main-Routine
 #endregion ***** end of function Main-Routine *****
+
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
@@ -210,13 +222,15 @@ Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
-    Write-Output '';
-    Write-Output ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
 
-    $script = $MyInvocation.MyCommand.Name;
-    $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-    Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
-    Write-Output '';
+   Write-Output '';
+   Write-Output 'Find illegal characters';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
 
 }
 

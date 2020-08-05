@@ -35,7 +35,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Split-File.ps1
 Author       : Ian Molloy
-Last updated : 2019-08-08
+Last updated : 2020-08-05T11:37:30
 
 .LINK
 
@@ -65,6 +65,10 @@ http://msdn.microsoft.com/en-us/library/system.io.stream.close.aspx
 [CmdletBinding()]
 Param()
 
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
 #region ***** function DisplayInBytes *****
 function DisplayInBytes($num)
 {
@@ -82,6 +86,9 @@ function DisplayInBytes($num)
 }
 #endregion ***** end of function DisplayInBytes *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
@@ -90,7 +97,20 @@ function DisplayInBytes($num)
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-New-Variable -Name INPUTFILE -Value "C:\test\tmpA885.tmp" -Option Constant `
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Split large text file into chunks';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+New-Variable -Name INPUTFILE -Value "C:\test\small_sampledata.txt" -Option Constant `
              -Description 'Input text file to be split up into smaller files';
 
 New-Variable -Name CHUNKSIZE -Value 5MB -Option Constant `
@@ -105,7 +125,7 @@ New-Variable -Name EOF -Value 0 -Option Constant `
 # Opens an existing file for reading.
 # Returns: FileStream, A read-only FileStream on the specified path.
 $sourceFile = [System.IO.File]::OpenRead($INPUTFILE);
-Write-Host "`nReading from input file $INPUTFILE";
+Write-Output "`nReading from input file $INPUTFILE";
 $len = DisplayInBytes  (get-item $INPUTFILE).length
 Write-Output ("Input file length {0}" -f $len);
 

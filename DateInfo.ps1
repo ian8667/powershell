@@ -8,7 +8,7 @@ Displays date related information
 Displays date related information such as the current date/time,
 ISO 8601 date/time, day number and week number.
 
-.PARAMETER WeekEnding
+.PARAMETER WeekEndingDates
 
 A 'switch' parameter which determines whether to display the end of
 week date in the format of YYYY-MM-DD and a list of these week end
@@ -20,6 +20,9 @@ This was included for a recent contract I had where I needed the end
 of week date for my time sheet. Using this script saves me having to
 work out the date myself. Having a list of dates will help me if ever
 I need to check any date submitted on my timesheets.
+
+The end date of the first week of the contract (Saturday) is set in
+function 'Show-WeekendingDates'.
 
 .EXAMPLE
 
@@ -36,7 +39,7 @@ DayNumber    WeekNumber   JulianDate   LeapYear
 
 .EXAMPLE
 
-PS> .\DateInfo.ps1 -WeekEnding
+PS> .\DateInfo.ps1 -WeekEndingDates
 
 
 Today is Monday, 02 January 2017 16:26
@@ -67,7 +70,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-04T21:27:42
+Last updated : 2020-08-02T22:06:48
 
 .LINK
 
@@ -97,6 +100,9 @@ http://aa.usno.navy.mil/data/docs/JulianDate.php
 Week numbers:
 http://www.epochconverter.com/weeks/2016
 
+Formatting Date Strings with PowerShell
+https://devblogs.microsoft.com/scripting/formatting-date-strings-with-powershell/
+
 #>
 
 [CmdletBinding()]
@@ -104,7 +110,7 @@ Param(
     [parameter(Position=0,
                Mandatory=$false,
                HelpMessage="Determines whether to display week ending information")]
-    [Switch]$WeekEnding
+    [Switch]$WeekEndingDates
 ) #end param
 
 #-------------------------------------------------
@@ -123,23 +129,26 @@ Param(
 ##
 ## Returns: N/A
 ##=============================================
-function Show-WeekendingDates
-{
+function Show-WeekendingDates {
+[CmdletBinding()]
+Param() #end param
 
 Begin {
 
   # Counts the number of weeks as we list them.
-  [Byte]$weekCounter = 1;
+  [Byte]$weekCounter = 0;
 
   # Puts a blank line in the output every N lines depending
-  # upon the value of this variable.
+  # upon the value of this variable. I feel that having a
+  # blank line every now again makes the output easier to
+  # read.
   [Byte]$blockSize = 5;
 
-  # End date of the first week of the contract. This
-  # date should be, for example, the Saturday of the
-  # end of the first week on the contract. This date
-  # should be earlier than the end date.
-  $startDate = Get-Date -Year 2019 -Month 11 -Day 30;
+  # End date of the first week of the contract. This date
+  # should be, for example, the Saturday of the end of the
+  # first week on the contract. This date should be earlier
+  # than the end date.
+  $startDate = Get-Date -Year 2020 -Month 6 -Day 20;
 
   # The end date is determined to be the current date, whatever
   # today is. Our output will finish when it gets to this date.
@@ -155,7 +164,7 @@ Begin {
   # Check the start date is a Saturday. Throw a terminating
   # error if this is not the case.
   if (([System.DayOfWeek]::Saturday) -ne $startDate.DayOfWeek) {
-    throw "Start date $($startDate) must be a Saturday";
+    throw "Start date used of $($startDate.ToString('dd MMMM yyyy')) must be a Saturday";
   }
 
   Set-Variable -Name 'blockSize', 'startDate', 'endDate' -Option ReadOnly;
@@ -169,6 +178,7 @@ Process {
   # loop in multiples of 7 days
   $tempDate = $startDate;
   do {
+   $weekCounter++;
 
     Write-Output ("Week {0}, ending on {1}" -f $weekCounter, $tempDate.ToString("yyyy-MM-dd"));
 
@@ -177,7 +187,7 @@ Process {
        Write-Output "";
     }
     $tempDate = $tempDate.AddDays(7.0);
-    $weekCounter++;
+    #$weekCounter++;
 
   } until ($tempDate -gt $endDate);
 
@@ -185,10 +195,9 @@ Process {
 
 End {
 
-  foreach ($num in 1..3) {Write-Output '';}
+  [System.Linq.Enumerable]::Repeat("", 3); #blanklines
   Write-Output ('*' * 30);
 
-  $weekCounter--;
   Write-Output ('Weeks listed: {0}' -f $weekCounter.ToString());
   Write-Output ("Start date used: {0}" -f $startDate.ToString("dddd, dd MMMM yyyy"));
 
@@ -196,6 +205,8 @@ End {
 
 } #end function Show-WeekendingDates
 #endregion ***** end of function Show-WeekendingDates *****
+
+#----------------------------------------------------------
 
 #region ********** function Get-JulianDate **********
 ##=============================================
@@ -233,12 +244,12 @@ End {
 function Get-JulianDate {
 [cmdletbinding()]
 Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [DateTime]
-        $CurrentDate
-      ) #end param
+    [parameter(Mandatory=$true,
+               Position=0)]
+    [ValidateNotNullOrEmpty()]
+    [DateTime]
+    $CurrentDate
+) #end param
 
 Begin {
   Write-Verbose -Message "Executing function Get-JulianDate";
@@ -278,6 +289,8 @@ End {
 }
 #endregion ********** end of function Get-JulianDate **********
 
+#----------------------------------------------------------
+
 #region ********** function Show-DateInformation **********
 ##=============================================
 ## Function: Show-DateInformation
@@ -290,12 +303,14 @@ End {
 ##
 ## Returns: N/A
 ##=============================================
-function Show-DateInformation() {
+function Show-DateInformation {
+[CmdletBinding()]
+Param() #end param
 
 Begin {
   Write-Verbose -Message "Executing function Show-DateInformation";
 
-  foreach ($num in 1..2) {Write-Output ""}
+  [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
   $myDate = Get-Date;
 
@@ -344,6 +359,8 @@ End {
 }
 #endregion ***** end of function Show-DateInformation *****
 
+#----------------------------------------------------------
+
 #region ***** function Get-WeekendingDate *****
 ##=============================================
 ## Function: Get-WeekendingDate
@@ -358,16 +375,17 @@ End {
 ##
 ## Returns: the week ending date
 ##=============================================
-function Get-WeekendingDate
-{
+function Get-WeekendingDate {
+[CmdletBinding()]
+Param() #end param
 
 Begin {
   $sat = [System.DayOfWeek]::Saturday;
   Set-Variable -Name 'sat' -Option ReadOnly;
-  # ie, todays date
+
   $tempDate = Get-Date;
-  # see what day of the week today is
-  $weekday = ($tempDate).DayOfWeek;
+  # see what day of the week variable $tempDate is
+  $weekday = $tempDate.DayOfWeek;
 }
 
 Process {
@@ -375,7 +393,7 @@ Process {
   while ($weekday -ne $sat) {
      $tempDate = $tempDate.AddDays(1.0);
 
-     $weekday = ($tempDate).DayOfWeek;
+     $weekday = $tempDate.DayOfWeek;
   }
 }
 
@@ -397,11 +415,22 @@ End {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-Write-Verbose -Message "Starting script $($MyInvocation.Mycommand)";
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Date related information';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 Show-DateInformation;
 
-if ($WeekEnding.IsPresent) {
+if ($WeekEndingDates.IsPresent) {
   # A Boolean: true if the parameter was specified on the
   # command line; otherwise, false.
   Show-WeekendingDates;
@@ -411,7 +440,7 @@ if ($WeekEnding.IsPresent) {
   Write-Output ($msg -f $WeekEnd.ToString("dddd dd MMMM yyyy"));
 }
 
-Write-Verbose -Message "All done now!";
+Write-Output "All done now!";
 Write-Output "";
 ##=============================================
 ## END OF SCRIPT: DateInfo.ps1

@@ -57,7 +57,7 @@ Additional Notes, eg:
 
 File Name    : Show-OracleServices.ps1
 Author       : Ian Molloy
-Last updated : 2013-06-05
+Last updated : 2020-08-05T11:12:36
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -80,15 +80,19 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/dd878348(v=vs.85).aspx
 
 [cmdletbinding()]
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="Enter the computer name to look at",
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $ComputerName
-      ) #end param
+    [parameter(Mandatory=$true,
+               HelpMessage="Enter the computer name to look at",
+               Position=0)]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $ComputerName
+) #end param
 
-#region ********** function ping **********
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
+#region ***** function ping *****
 #*=============================================
 #* Function: Ping
 #* Created: 2013-05-25
@@ -110,16 +114,15 @@ Param (
 #* and data resulting from a (Ping) Send or SendAsync operation.
 #* http://msdn.microsoft.com/en-us/library/system.net.networkinformation.pingreply.aspx
 #*=============================================
-function Ping
-{
+function Ping {
 [cmdletbinding()]
 Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $ComputerName
-      ) #end param
+    [parameter(Mandatory=$true,
+               Position=0)]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $ComputerName
+) #end param
 
   [Int32]$timeout = 4000;
   [Boolean]$retval = true;
@@ -153,7 +156,9 @@ Param (
 } # end of Ping
 #endregion ********** end of function ping **********
 
-#region ********** function Show-OracleSvcs **********
+#----------------------------------------------------------
+
+#region ***** function Show-OracleSvcs *****
 ##=============================================
 ## Function: Show-OracleSvcs
 ## Created: 2013-06-05
@@ -173,13 +178,15 @@ Param (
 ## and stopped services.
 ## http://technet.microsoft.com/library/hh849804.aspx
 ##=============================================
-function Show-OracleSvcs() {
+function Show-OracleSvcs {
+[CmdletBinding()]
+Param() #end param
 
   $svcStopped = 0;
   $svcRunning = 0;
 
-  Write-Output "Looking for Oracle services (if any)";
-  $colItems = Get-Service -Name Oracle*;
+  #Write-Output "Looking for Oracle services (if any)";
+  $colItems = Get-Service -Name 'Oracle*';
 
   # Column headers.
   Write-Output "";
@@ -212,13 +219,34 @@ function Show-OracleSvcs() {
   }
 
 }
-#endregion ********** end of function Show-OracleSvcs **********
+#endregion ***** end of function Show-OracleSvcs *****
+
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
 ## MAIN ROUTINE STARTS HERE
 ##=============================================
-Write-Verbose -Message "Looking for Oracle services on computer $ComputerName";
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Oracle related MS Windows services';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+Write-Output "Looking for Oracle services on computer $ComputerName";
 if (Ping($ComputerName)) {
   Show-OracleSvcs;
 } else {

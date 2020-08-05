@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-19T12:53:20
+Last updated : 2020-08-03T23:01:57
 
 .LINK
 
@@ -329,7 +329,18 @@ function Get-OutputFilestream {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = 'Stop';
 
-Write-Output "Getting last few bytes of a file";
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Getting last few bytes (lines) of a file';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 $param = Get-Parameters;
 Set-Variable -Name "param" -Option ReadOnly -Description "Contains program parameters";
@@ -392,8 +403,7 @@ try {
   [System.GC]::WaitForPendingFinalizers();
 }
 
-
-Write-Output "`nFiles used:";
+Write-Output "`nFiles used";
 Write-Output "Input file: $($param.path)";
 Write-Output "Output file: $($param.pathout)";
 

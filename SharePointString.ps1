@@ -42,7 +42,7 @@ Additional Notes, eg:
 
 File Name    : SharePointString.ps1
 Author       : Ian Molloy
-Last updated : 2018-06-23
+Last updated : 2020-08-05T10:34:03
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -70,44 +70,30 @@ https://www.iso.org/iso-8601-date-and-time-format.html
 [cmdletbinding()]
 Param () #end param
 
-#region ********** function Get-Script-Info **********
-##=============================================
-## Function: Get-Script-Info
-## Created: 2013-05-25
-## Author: Ian Molloy
-## Arguments: none
-##=============================================
-## Purpose: displays the script name and folder from
-## where the script is running from.
-##
-## Returns: N/A
-##=============================================
-function Get-Script-Info()
-{
-   if ($MyInvocation.ScriptName) {
-       $p1 = Split-Path -Leaf $MyInvocation.ScriptName;
-       $p2 = Split-Path -Parent $MyInvocation.ScriptName;
-       Write-Host "`nExecuting script ""$p1"" in folder ""$p2""";
-   } else {
-      $MyInvocation.MyCommand.Definition;
-   }
-
-}
-#endregion ********** end of function Get-Script-Info **********
-
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
 Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
-Get-Script-Info;
+Invoke-Command -ScriptBlock {
 
-Write-Verbose -Message "Calling function Get-DateString";
+   Write-Output '';
+   Write-Output 'String date/time';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
 $str = Get-Date -format "yyyy-MM-dd_hh-mm-ss";
 Write-Output "`nSuggested string to use within a filename could be, $str`n";
 
-Write-Verbose -Message "All done now!";
+Write-Output "All done now!";
 ##=============================================
 ## END OF SCRIPT: SharePointString.ps1
 ##=============================================

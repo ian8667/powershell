@@ -109,10 +109,9 @@ At line:1 char:43
     + FullyQualifiedErrorId : ParameterArgumentValidationError,WorkTimes.ps1
 
 
-
 File Name    : WorkTimes.ps1
 Author       : Ian Molloy
-Last updated : 2013-06-25
+Last updated : 2020-08-05T13:37:53
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -135,47 +134,47 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/dd878348(v=vs.85).aspx
 
 [cmdletbinding()]
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="Enter the start time (HH:MM)",
-                   Position=0)]
-        [ValidatePattern("\d{2}:\d{2}")]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $StartTime,
+    [parameter(Mandatory=$true,
+               HelpMessage="Enter the start time (HH:MM)",
+               Position=0)]
+    [ValidatePattern("\d{2}:\d{2}")]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $StartTime,
 
-        [parameter(Mandatory=$false,
-                   HelpMessage="Enter the end time (HH:MM)",
-                   Position=1,
-                   ParameterSetName="Set1")]
-        [ValidatePattern("\d{2}:\d{2}")]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $EndTime,
+    [parameter(Mandatory=$false,
+               HelpMessage="Enter the end time (HH:MM)",
+               Position=1,
+               ParameterSetName="Set1")]
+    [ValidatePattern("\d{2}:\d{2}")]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $EndTime,
 
-        [parameter(Mandatory=$false,
-                   HelpMessage="Enter the elapsed time (HH:MM)",
-                   ParameterSetName="Set2")]
-        [ValidatePattern("\d{2}:\d{2}")]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $AddTime,
+    [parameter(Mandatory=$false,
+               HelpMessage="Enter the elapsed time (HH:MM)",
+               ParameterSetName="Set2")]
+    [ValidatePattern("\d{2}:\d{2}")]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $AddTime,
 
-        [parameter(Mandatory=$false,
-                   ParameterSetName="Set3")]
-        [switch]
-        $GoHomeNow,
+    [parameter(Mandatory=$false,
+               ParameterSetName="Set3")]
+    [switch]
+    $GoHomeNow,
 
-        [parameter(Mandatory=$false,
-                   ParameterSetName="Set4")]
-        [switch]
-        $HomeTime
-      ) #end param
+    [parameter(Mandatory=$false,
+               ParameterSetName="Set4")]
+    [switch]
+    $HomeTime
+) #end param
 
 #-------------------------------------------------
 # Start of functions
 #-------------------------------------------------
 
-#region ********** function Show-TimeDifference **********
+#region ***** function Show-TimeDifference *****
 ##=============================================
 ## Function: Show-TimeDifference
 ## Created: 2013-06-19
@@ -194,7 +193,11 @@ Param (
 ## Note:
 ## This function relies upon the parameters $StartTime, $EndTime.
 ##=============================================
-function Show-TimeDifference() {
+function Show-TimeDifference {
+[CmdletBinding()]
+#[OutputType([System.Collections.Hashtable])]
+Param() #end param
+
   Write-Verbose -Message "This is function Show-TimeDifference";
 
   New-Variable -Name timeFormat -Value "HH:mm" -Option Constant -Scope Local;
@@ -235,9 +238,11 @@ function Show-TimeDifference() {
                -f $timeDiff.hours, $timeDiff.minutes);
 
 }
-#endregion ********** end of function Show-TimeDifference **********
+#endregion ***** end of function Show-TimeDifference *****
 
-#region ********** function Show-TimeWorked **********
+#----------------------------------------------------------
+
+#region ***** function Show-TimeWorked *****
 ##=============================================
 ## Function: Show-TimeWorked
 ## Created: 2013-06-19
@@ -260,7 +265,11 @@ function Show-TimeDifference() {
 ## Note:
 ## This function relies upon the parameters $StartTime, $AddTime.
 ##=============================================
-function Show-TimeWorked() {
+function Show-TimeWorked {
+[CmdletBinding()]
+#[OutputType([System.Collections.Hashtable])]
+Param() #end param
+
   Write-Verbose -Message "This is function Show-TimeWorked";
 
   New-Variable -Name timeFormat -Value "HH:mm" -Option Constant -Scope Local;
@@ -292,9 +301,11 @@ function Show-TimeWorked() {
   Out-String -InputObject $userTimes -Width 50;
 
 }
-#endregion ********** end of function Show-TimeWorked **********
+#endregion ***** end of function Show-TimeWorked *****
 
-#region ********** function Show-RightNow **********
+#----------------------------------------------------------
+
+#region ***** function Show-RightNow *****
 ##=============================================
 ## Function: Show-RightNow
 ## Created: 2013-06-19
@@ -314,7 +325,11 @@ function Show-TimeWorked() {
 ## Note:
 ## This function relies upon the parameters $StartTime, $GoHomeNow.
 ##=============================================
-function Show-RightNow() {
+function Show-RightNow {
+[CmdletBinding()]
+#[OutputType([System.Collections.Hashtable])]
+Param() #end param
+
   Write-Verbose -Message "This is function Show-RightNow";
 
   New-Variable -Name timeFormat -Value "HH:mm" -Option Constant -Scope Local;
@@ -336,9 +351,9 @@ function Show-RightNow() {
   Out-String -InputObject $userTimes -Width 50;
 
 }
-#endregion ********** end of function Show-RightNow **********
+#endregion ***** end of function Show-RightNow *****
 
-#region ********** function Show-WorkingDay **********
+#region ***** function Show-WorkingDay *****
 ##=============================================
 ## Function: Show-WorkingDay
 ## Created: 2013-06-19
@@ -361,7 +376,11 @@ function Show-RightNow() {
 ## Note:
 ## This function relies upon the parameters $StartTime, $HomeTime.
 ##=============================================
-function Show-WorkingDay() {
+function Show-WorkingDay {
+[CmdletBinding()]
+#[OutputType([System.Collections.Hashtable])]
+Param() #end param
+
   Write-Verbose -Message "This is function Show-WorkingDay";
 
   New-Variable -Name timeFormat -Value "HH:mm" -Option Constant -Scope Local;
@@ -389,9 +408,11 @@ function Show-WorkingDay() {
   Write-Host "Excludes lunch times";
 
 }
-#endregion ********** end of function Show-WorkingDay **********
+#endregion ***** end of function Show-WorkingDay *****
 
-#region ********** function main_routine **********
+#----------------------------------------------------------
+
+#region ***** function main_routine *****
 ##=============================================
 ## Function: main_routine
 ## Created: 2013-06-22
@@ -403,7 +424,10 @@ function Show-WorkingDay() {
 ##
 ## Returns: N/A
 ##=============================================
-function main_routine() {
+function main_routine {
+[CmdletBinding()]
+#[OutputType([System.Collections.Hashtable])]
+Param() #end param
 
 Switch ($PSCmdlet.ParameterSetName)
 {
@@ -450,8 +474,24 @@ Write-Output "`nCurrent date/time is: $dd";
 
 ##=============================================
 ## SCRIPT BODY
-## MAIN ROUTINE STARTS HERE
+## Main routine starts here
 ##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Calulate work related times';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
 if ($PSBoundParameters.ContainsKey('Verbose'))
 {
     Write-Verbose -Message "Starting script $($MyInvocation.Mycommand)";

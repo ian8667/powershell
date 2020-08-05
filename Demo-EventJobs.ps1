@@ -80,7 +80,7 @@ Summary: Bruce Payette shows how to manage event subscriptions
 with Windows PowerShell.
 https://devblogs.microsoft.com/scripting/manage-event-subscriptions-with-powershell/
 
-Last updated: 2020-05-15T22:39:34
+Last updated: 2020-08-02T22:27:06
 #>
 
 [CmdletBinding()]
@@ -92,6 +92,21 @@ Param()
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Demonstration of background jobs and events';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
 $sb = {
 # ScriptBlock which is passed to parameter 'ScriptBlock' of
@@ -107,7 +122,7 @@ Get-ChildItem -Path 'C:\Temp' -Directory;
 Start-Sleep -Seconds 20.0;
 Write-Host 'scriptblock test complete';
 Get-Date -Format 's';
-}
+} #end ScriptBlock sb
 
 $ActionBlock = {
 # ScriptBlock passed to parameter 'Action' of cmdlet
@@ -157,8 +172,10 @@ if ($e -in $mystatus) {
 
 } #end ScriptBlock ActionBlock
 
+Set-Variable -Name 'sb', 'ActionBlock' -Option ReadOnly;
+
 # Create our test job name
-$num = Get-Random -Minimum 10 -Maximum 250;
+$num = Get-Random -Minimum 10 -Maximum 300;
 $jobname = ('TestJob{0}' -f $num.ToString());
 
 Write-Host ('Submitting job {0}' -f $jobname);
@@ -203,5 +220,5 @@ $reg = Register-ObjectEvent @splat;
 #$reg | Format-List -Property *;
 
 ##=============================================
-## END OF SCRIPT: Demo-Classes.ps1
+## END OF SCRIPT: Demo-EventJobs.ps1
 ##=============================================

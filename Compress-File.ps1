@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Compress-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-23T17:14:22
+Last updated : 2020-07-26T22:32:05
 
 .LINK
 
@@ -334,6 +334,19 @@ if ($Config.Format -eq 'Gzip') {
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Gzip/Zip compression of file';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 enum CompressFormat
 {

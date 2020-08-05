@@ -49,7 +49,9 @@ destination, but not the Brushes folder itself, with all
 associated attributes and timestamp.
 -----
 
-Last updated : 2020-05-03T22:19:19
+File Name    : Robocopy.ps1
+Author       : Ian Molloy
+Last updated : 2020-08-04T22:32:53
 Keywords     : robocopy backup copy file
 
 #>
@@ -123,7 +125,7 @@ $splat = @{
    Get-Error;
 }
 
-Write-Output 'end of test';
+Write-Output 'All done now';
 
 ##=============================================
 ## END OF SCRIPT: Robocopy.ps1

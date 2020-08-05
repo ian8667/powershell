@@ -109,9 +109,11 @@ Param () #end param
 function Ask-Continue {
 <#
 .SYNOPSIS
+
 Asks whether log files have been copied to the local computer
 
 .DESCRIPTION
+
 Seeks confirmation from the user whether it's OK to continue. If
 the response is no, a warning message is issued asking for the
 files to be copied and to try running the program again.
@@ -563,5 +565,5 @@ if ($response -eq $yes) {
 $VerbosePreference = "SilentlyContinue";
 
 ##=============================================
-## END OF SCRIPT: ???.ps1
+## END OF SCRIPT: zz.ps1
 ##=============================================

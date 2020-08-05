@@ -39,7 +39,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : ianm_setenv.ps1
 Author       : Ian Molloy
-Last updated : 2019-08-10
+Last updated : 2020-08-04T18:00:02
 Keywords     : oracle environment variable setenv
 
 .LINK
@@ -69,15 +69,28 @@ Param () #end param
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Create Oracle related MS Windows environment variables';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
 # Allows us to count the number of environment variables
 # created.
 [Byte]$envCounter = 0;
 
-# Environment variables to create
+# Environment variables to create. Change accordingly
 $params =  @{
   'ORACLE_SID'      = 'ORCL';
-  'ORACLE_HOME'     = 'C:\Family\EmailsSent\contents';
-  'AGENT_HOME'     = 'C:\Family\EmailsSent\agent10g';
+  'ORACLE_HOME'     = 'C:\Test\t2\t2';
+  'AGENT_HOME'      = 'C:\Test\t2\t2';
   'NLS_DATE_FORMAT' = 'RRRR-MM-DD HH24:MI:SS';
 }
 
@@ -95,7 +108,7 @@ if (Test-Path -Path $oh) {
 
     Set-Variable -Name 'params' -Option ReadOnly;
 } else {
-    throw [System.IO.DirectoryNotFoundException] "Oracle Home $oh not found.";
+    throw [System.IO.DirectoryNotFoundException] "Oracle Home $oh not found";
 }
 
 

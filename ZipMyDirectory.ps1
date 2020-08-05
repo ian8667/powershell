@@ -36,7 +36,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : ZipMyDirectory.ps1
 Author       : Ian Molloy
-Last updated : 2018-08-11
+Last updated : 2020-08-05T13:46:14
 
 .LINK
 
@@ -50,8 +50,7 @@ https://docs.microsoft.com/en-us/powershell/module/Microsoft.PowerShell.Archive/
 #>
 
 [CmdletBinding()]
-Param (
-) #end param
+Param () #end param
 
 ##=============================================
 ## SCRIPT BODY
@@ -59,6 +58,19 @@ Param (
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Zip files in a directory';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 #
 # Change the next two constants accordingly.
@@ -69,7 +81,7 @@ New-Variable -Name 'destinationFile' -Value 'C:\Test\gashfile.zip'  -Option Cons
              -Description 'The path of the archive (ZIP file) to be created';
 
 If (Test-Path -Path $destinationFile) {
-    # By removing the file if it exists, we avoid the error
+    # By removing the file if it exists, we avoid the error:
     # Exception calling "CreateFromDirectory" with "4" argument(s): "The file 'C:\Test\gashfile.zip' already exists."
     Remove-Item -Path $destinationFile;
 }

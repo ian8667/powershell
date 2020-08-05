@@ -7,16 +7,16 @@
 ## Parameters:
 ## ComputerName - the hostname to check.
 ##
-## Last updated: 13:46 24/11/2009
+## Last updated: 2020-08-04T16:23:11
 ############################################################
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="Enter the remote computer name",
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $ComputerName
-      ) #end param
+    [parameter(Mandatory=$true,
+               HelpMessage="Enter the remote computer name",
+               Position=0)]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $ComputerName
+) #end param
 
 #################################################
 
@@ -25,10 +25,9 @@ $snags=$false
 
 #################################################
 
-
-#*=====================================================
-#* Function listings
-#*=====================================================
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #
 # Prints a character a number of times on the same line.
@@ -36,12 +35,15 @@ $snags=$false
 # char - the character to print.
 # num - the number of times the character shall be printed.
 #
-function printcharacter() {
+function printcharacter {
+[CmdletBinding()]
+
 param([string]$char, [Int32]$num)
   foreach ($cc in 1..$num) {Write-Host $char -NoNewline}
   $host.UI.WriteLine()
 }
 
+#----------------------------------------------------------
 
 #
 # Prints a title with a line of characters above and below
@@ -49,7 +51,8 @@ param([string]$char, [Int32]$num)
 # Parameters:
 # title - the title to print.
 #
-function printtitle() {
+function printtitle {
+[CmdletBinding()]
 param([string]$title)
   $len=$title.length
   printcharacter "=" $len
@@ -57,24 +60,28 @@ param([string]$title)
   printcharacter "=" $len
 }
 
+#----------------------------------------------------------
 
 #
 # Prints blank lines.
 # Parameters:
 # lines - the number of blank lines to print.
 #
-function blanklines() {
+function blanklines {
+[CmdletBinding()]
 param([Int32]$lines)
   # or $host.UI.WriteLine() ?
   # or [console]::WriteLine() ?
   foreach ($num in 1..$lines) {$host.UI.WriteLine()}
 }
 
+#----------------------------------------------------------
 
 #
 # Carries out the checks required.
 #
-function doChecks() {
+function doChecks {
+[CmdletBinding()]
 
   #
   # Ping the hostname given.
@@ -165,19 +172,35 @@ function doChecks() {
 
 }
 
-#*=====================================================
-#* End of function listings
-#*=====================================================
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
-#
-# Main routine starts here.
-#
+##=============================================
+## SCRIPT BODY
+## Main routine starts here
+##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Carry out some tests on the selected server';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+doChecks;
+
 blanklines 2
-printtitle "Carrying out some checks on host $computer"
-[system.datetime]::now
+Write-Output "All done now for host $computer!";
 
-doChecks
-
-blanklines 2
-Write-Host "All done now for host $computer!"
-
+##=============================================
+## END OF SCRIPT: gridchecks.ps1
+##=============================================

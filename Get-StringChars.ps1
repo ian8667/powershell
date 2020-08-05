@@ -58,7 +58,7 @@ example.
 
 File Name    : Get-StringChars.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-13T11:10:27
+Last updated : 2020-08-04T15:25:42
 
 .LINK
 
@@ -185,6 +185,19 @@ return $($sb.ToString());
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Get characters from phrase or word';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 # Validate the parameters supplied to the program. Throw a
 # terminating error if any parameters are invalid.

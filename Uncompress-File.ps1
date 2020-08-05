@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Uncompress-File.ps1
 Author       : Ian Molloy
-Last updated : 2019-05-06
+Last updated : 2020-08-05T13:14:22
 
 .LINK
 
@@ -56,23 +56,27 @@ https://docs.microsoft.com/en-us/dotnet/standard/io/how-to-compress-and-extract-
 [CmdletBinding()]
 Param () #end param
 
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
 #region ***** function Check-Gzipfiles *****
 function Check-Gzipfiles {
 [CmdletBinding()]
 [OutputType([System.Double])]
 Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateScript({Test-Path -Path $_})]
-        [System.String]
-        $InputFile,
+    [parameter(Mandatory=$true,
+               Position=0)]
+    [ValidateScript({Test-Path -Path $_})]
+    [System.String]
+    $InputFile,
 
-        [parameter(Mandatory=$true,
-                   Position=1)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $OutputFile
-      ) #end param
+    [parameter(Mandatory=$true,
+               Position=1)]
+    [ValidateNotNullOrEmpty()]
+    [System.String]
+    $OutputFile
+) #end param
 
   if ($InputFile -eq $OutputFile)
   {
@@ -82,24 +86,25 @@ Param (
 }
 #endregion ***** end of function Check-Gzipfiles *****
 
+#----------------------------------------------------------
 
 #region ***** function Check-Zipfiles *****
 function Check-Zipfiles {
 [CmdletBinding()]
 [OutputType([System.Double])]
 Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateScript({Test-Path -Path $_})]
-        [System.String]
-        $InputFile,
+    [parameter(Mandatory=$true,
+               Position=0)]
+    [ValidateScript({Test-Path -Path $_})]
+    [System.String]
+    $InputFile,
 
-        [parameter(Mandatory=$true,
-                   Position=1)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $OutDirectory
-      ) #end param
+    [parameter(Mandatory=$true,
+               Position=1)]
+    [ValidateNotNullOrEmpty()]
+    [System.String]
+    $OutDirectory
+) #end param
 
   if ((Get-Item $OutDirectory).PSIsContainer -ne $true)
   {
@@ -115,6 +120,7 @@ Param (
 }
 #endregion ***** end of function Check-Zipfiles *****
 
+#----------------------------------------------------------
 
 #region ***** function Uncompress-Gzip *****
 function Uncompress-Gzip {
@@ -209,6 +215,7 @@ End {
 }
 #endregion ***** end of function Uncompress-Gzip *****
 
+#----------------------------------------------------------
 
 #region ***** function Uncompress-Zip *****
 function Uncompress-Zip {
@@ -259,12 +266,29 @@ End {
 }
 #endregion ***** end of function Uncompress-Zip *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Uncompress (expand) file';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 enum CompressFormat 
 {

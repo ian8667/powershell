@@ -79,8 +79,8 @@ $ErrorActionPreference = "Stop";
 $TempFile = New-TemporaryFile;
 
 $config = @{
-   Inputfile   = 'C:\test\small_sampledata.txt';
-   Outputfile  = $TempFile.FullName;
+   Inputfile   = 'C:\test\small_sampledata.txt';  # <-- Change accordingly
+   Outputfile  = $TempFile.FullName;              # <-- Change accordingly
 }
 
 # If we've used the New-TemporaryFile cmdlet to create a
@@ -116,8 +116,7 @@ Write-Output "`nRunning program on $($dateMask)";
 Write-Output "Line numbering file $($config.Inputfile)";
 Write-Output "Input file length is $($reader.BaseStream.Length) bytes";
 
-try
-{
+try {
 
    do {
        $counter++;
@@ -128,20 +127,17 @@ try
        $sb.Clear() | Out-Null;
    } until ($reader.EndOfStream)
 
-}
-catch [Exception]
-{
+} catch [Exception] {
     $Error[0].Exception.Message;
     # As we've hit an error, the output file is no use
     # to us now.
     Remove-Item -Path $TempFile -Force;
-}
-finally
-{
+} finally {
    Write-Output "`nCleaning up ..."
    # clean-up things
    $reader.Close();
    $reader.Dispose();
+
    $writer.Flush();
    $writer.Close();
    $writer.Dispose();

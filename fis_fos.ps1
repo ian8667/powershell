@@ -41,7 +41,7 @@ PS C:\> help Get-EventLog -ShowWindow
 
 File Name    : fis_fos.ps1
 Author       : Ian Molloy
-Last updated : 2018-07-22
+Last updated : 2020-08-03T22:38:49
 
 .LINK
 
@@ -61,11 +61,31 @@ https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/abo
 #>
 
 [CmdletBinding()]
-Param () #end param
+Param() #end param
 
-$bufSize = 10KB;
+##=============================================
+## SCRIPT BODY
+## Main routine starts here
+##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'fis/fos copy file';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+$bufSize = 4KB;
 $optIn = [PSCustomObject]@{
-    path        = 'C:\test\gashInput01.txt';
+    path        = 'C:\Test\small_sampledata.txt';
     mode        = [System.IO.FileMode]::Open;
     access      = [System.IO.FileAccess]::Read;
     share       = [System.IO.FileShare]::Read;

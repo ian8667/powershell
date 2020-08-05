@@ -64,7 +64,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Find-BottomFolder.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-04T14:31:15
+Last updated : 2020-08-03T22:17:03
 
 .LINK
 
@@ -129,7 +129,20 @@ Param (
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-$startDir = 'C:\Gash\gashdir';  # <-- Change accordingly
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Finding the bottom folder';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+$startDir = 'C:\temp';  # <-- Change accordingly
 #Get a recursive list directories starting from our start directory.
 $dirlist = Get-ChildItem -Recurse -Directory -Path $startDir;
 Set-Variable -Name 'startDir', 'dirlist' -Option ReadOnly;

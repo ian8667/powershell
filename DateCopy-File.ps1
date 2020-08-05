@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-13T22:24:17
+Last updated : 2020-07-26T22:38:02
 
 .LINK
 
@@ -258,12 +258,14 @@ $ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
 
-   Write-Host '';
-   Write-Host ('Today is {0:dddd, dd MMMM yyyy}' -f (Get-Date));
+   Write-Output '';
+   Write-Output 'Date and copy of file';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
 
    $script = $MyInvocation.MyCommand.Name;
    $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Host ('Running script {0} in directory {1}' -f $script,$scriptPath);
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
 
 }
 

@@ -80,8 +80,8 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Browse-Logfiles.ps1
 Author       : Ian Molloy
-Last updated : 2019-04-22
-Keywords     : rman log file
+Last updated : 2020-07-26T15:26:35
+Keywords     : rman log file oracle
 
 .LINK
 
@@ -104,14 +104,19 @@ https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/abo
 [CmdletBinding()]
 Param () #end param
 
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** function Ask-Continue *****
 function Ask-Continue {
 <#
 .SYNOPSIS
+
 Asks whether log files have been copied to the local computer
 
 .DESCRIPTION
+
 Seeks confirmation from the user whether it's OK to continue. If
 the response is no, a warning message is issued asking for the
 files to be copied and to try running the program again.
@@ -141,17 +146,21 @@ $retval = [System.Windows.Forms.MessageBox]::Show($text, $caption, $buttons, $ic
 }
 #endregion ***** end of function Ask-Continue *****
 
+#----------------------------------------------------------
 
 #region ***** function Create-Node *****
 function Create-Node {
 <#
 .SYNOPSIS
+
 Creates a new TreeNode object
 
 .DESCRIPTION
+
 Creates the next node to be inserted into the tree.
 
 .PARAMETER NameOfNode
+
 Contains the absolute path to a log file or directory the script
 is looking at. Used to populate the following TreeNode Class
 properties: Name, Text and Tag.
@@ -179,6 +188,7 @@ logfile nodes. This information is ignored for all other nodes.
 }
 #endregion ***** end of function Create-Node *****
 
+#----------------------------------------------------------
 
 #region ***** function Get-Directory *****
 function Get-Directory {
@@ -214,6 +224,8 @@ by an earlier process.
     return $ret;
 }
 #endregion ***** end of function Get-Directory *****
+
+#----------------------------------------------------------
 
 #region ***** function GenerateForm *****
 function GenerateForm {
@@ -543,12 +555,29 @@ $form1.ShowDialog() | Out-Null;
 } #End Function
 #endregion ***** end of function GenerateForm *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Browse Oracle RMAN log files';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 #Check first we have some RMAN log files to view.
 $response = Ask-Continue;

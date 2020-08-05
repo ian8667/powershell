@@ -49,7 +49,7 @@
 #
 # File Name    : Demo-Classes.ps1
 # Author       : Ian Molloy
-# Last updated : 2017-07-27
+# Last updated : 2020-08-02T22:23:26
 #
 class TopT {
     # Properties
@@ -89,6 +89,20 @@ class Bott : TopT {
 ## Main routine starts here
 ##=============================================
 
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'PowerShell class demonstration';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Host 'Creating the class object';
 $me = [Bott]::new();
 Write-Host 'Done';

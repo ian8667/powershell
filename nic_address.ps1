@@ -87,24 +87,24 @@
 #* Purpose:
 #* Pings the IP address supplied
 #*=============================================
-function pingAddress() {
+function pingAddress {
 [cmdletbinding()]
 Param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="IP address to ping")]
-        [ValidateNotNullOrEmpty()]
-        [String]$ipaddress,
+    [parameter(Mandatory=$true,
+               HelpMessage="IP address to ping")]
+    [ValidateNotNullOrEmpty()]
+    [String]$ipaddress,
 
-        [parameter(Mandatory=$true,
-                   HelpMessage="Message to print with the address")]
-        [ValidateNotNullOrEmpty()]
-        [String]$msg
-      ) #end param
+    [parameter(Mandatory=$true,
+               HelpMessage="Message to print with the address")]
+    [ValidateNotNullOrEmpty()]
+    [String]$msg
+) #end param
 
   #Write-Host "Pinging an address of $ipaddress"
   $pping = New-Object System.Net.NetworkInformation.Ping;
   $rslt = $pping.Send($ipaddress);
-  if ($rslt.Status.ToString() –eq "Success")
+  if ($rslt.Status.ToString() -eq "Success")
   {
        Write-Host "ping worked with $msg $ipaddress" -ForegroundColor Green;
        $global:pingOk++;
@@ -117,9 +117,11 @@ Param (
   Write-Host "";
 
 }
-#endregion ********** End of function pingAddress **********
+#endregion ***** End of function pingAddress *****
 
-#region ********** Function getAddress **********
+#----------------------------------------------------------
+
+#region ***** Function getAddress *****
 #* Function: getAddress
 #* Created: 2011-12-22
 #* Author: Ian Molloy
@@ -140,7 +142,9 @@ Param (
 #*    o Subnet mask
 #*    o Default gateway
 #*=============================================
-function getAddress() {
+function getAddress {
+[CmdletBinding()]
+Param() #end param
 
   $filter = "DHCPEnabled = 'True'";
   $namespace = "root\CimV2";
@@ -177,13 +181,18 @@ function getAddress() {
   }
 
 }
-#endregion ********** End of function getAddress **********
+#endregion ***** End of function getAddress *****
 
-#region ********** script body **********
-#*=============================================
-#* SCRIPT BODY
-#* MAIN ROUTINE STARTS HERE
-#*=============================================
+#----------------------------------------------------------
+
+#region ***** script body *****
+##=============================================
+## SCRIPT BODY
+## Main routine starts here
+##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
 [Int32]$global:pingOk=0;
 [Int32]$global:pingFail=0;
 

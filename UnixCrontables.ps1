@@ -4,6 +4,13 @@
 # This program is also an example of creating XML files from PowerShell.
 #
 
+[CmdletBinding()]
+Param() #end param
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
 function Write-Dataline($xwriter, $cronbits, $id) {
 
   $xwriter.WriteStartElement("Line");
@@ -28,6 +35,8 @@ write-output ("error thing = $($cronbits.ErrorRedirect)");
   $xwriter.WriteFullEndElement();     # <-- Close element ''Line''.
 
 } #end function Write-Dataline
+
+#----------------------------------------------------------
 
 function Close-XmlFile($xwriter) {
 
@@ -60,7 +69,6 @@ function Get-Lineparts($str) {
     $pos = New-Object psobject -Property $props;
   } #end begin
 
-
   process {
 
     # Get the date/time part of the cron line.
@@ -82,12 +90,13 @@ function Get-Lineparts($str) {
 
   } #end process
 
-
   end {
     return $cronbits;
   } #end end
 
 } #end function Get-Lineparts
+
+#----------------------------------------------------------
 
 function Set-XmlWriterSettings {
 
@@ -106,6 +115,8 @@ function Set-XmlWriterSettings {
   return $xsettings;
 
 } #end function Set-XmlWriterSettings
+
+#----------------------------------------------------------
 
 function Set-XmlFile {
 
@@ -139,10 +150,29 @@ function Set-XmlFile {
 
 } #end function Set-XmlFile
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
-# ------------------------
-# Main routine starts here
-# ------------------------
+##=============================================
+## SCRIPT BODY
+## Main routine starts here
+##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Create XML file from Unix command crontab';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 $counter=0;
 $infile="C:\ian\PowerShell\single_line.txt";
@@ -169,5 +199,8 @@ $input.Dispose();
 
 Close-XmlFile($xwriter);
 
-Write-Host "`nRecords read: $counter";
-Write-Host "The date is $ymd";
+Write-Output "`nRecords read: $counter";
+Write-Output "The date is $ymd";
+##=============================================
+## END OF SCRIPT: UnixCrontables.ps1
+##=============================================

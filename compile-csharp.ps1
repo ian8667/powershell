@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : compile-csharp.ps1
 Author       : Ian Molloy
-Last updated : 2020-06-16T13:51:03
+Last updated : 2020-07-26T15:34:29
 Keywords     : csharp c#
 
 ScriptBlock which can be used to find the location of the C# compiler.
@@ -62,6 +62,10 @@ https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-optio
 
 [CmdletBinding()]
 Param()
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
 
 #region ***** Function Get-Filename *****
 function Get-Filename {
@@ -134,6 +138,8 @@ End {
 }
 #endregion ***** End of function Get-Filename *****
 
+#----------------------------------------------------------
+
 #region ***** Function Get-OutputFilename *****
 function Get-OutputFilename {
 <#
@@ -176,6 +182,9 @@ End {
 }
 #endregion ***** End of function Get-OutputFilename *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
@@ -184,6 +193,20 @@ End {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Compile C# file';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Output 'Start of compile';
 $inputfile = Get-Filename -Title 'C# file to compile';
 $outputfile = Get-OutputFilename -Path $inputfile; # C# .exe filename

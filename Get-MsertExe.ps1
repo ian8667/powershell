@@ -41,15 +41,19 @@ Represents the method that will handle the MethodNameCompleted event of an async
 https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.asynccompletedeventhandler?view=netcore-3.1
 Is this how I should do it?
 
-Last updated : 2020-05-20T18:04:59
+Last updated : 2020-08-04T14:29:34
 #>
 
 [CmdletBinding()]
 Param()
 
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
 #region ***** Function Get-MsertFile *****
 function Get-MsertFile {
-  [CmdletBinding()]
+[CmdletBinding()]
   #[OutputType([System.Collections.Hashtable])]
   Param (
       [parameter(Mandatory=$true,
@@ -87,7 +91,7 @@ function Get-MsertFile {
     $EventSubscriber | Unregister-Event -Force;
     Write-Host "Cleanup done";
 
-  } #end $ActionBlock
+  } #end of scriptblock $ActionBlock
 
   # Ensure we don't have this SourceIdentifier left over
   # from any previous sessions. Otherwise we get a
@@ -120,6 +124,10 @@ function Get-MsertFile {
 } #end of function
 #endregion ***** End of function Get-MsertFile *****
 
+#----------------------------------------------------------
+# End of functions
+#----------------------------------------------------------
+
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
@@ -127,6 +135,20 @@ function Get-MsertFile {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
+Invoke-Command -ScriptBlock {
+
+   Write-Output '';
+   Write-Output 'Get Microsoft Safety Scanner scan tool msert.exe';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   Write-Output ('Today is {0}' -f $dateMask);
+
+   $script = $MyInvocation.MyCommand.Name;
+   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 # URL of the resource to download.
 $inputFile = 'http://definitionupdates.microsoft.com/download/definitionupdates/safetyscanner/amd64/msert.exe';
 
