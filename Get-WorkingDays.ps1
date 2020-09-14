@@ -1,7 +1,7 @@
 <#
 
-Calculate remaining work days on the contract (last
-working day of contract).
+Calculate the number of working days (excluding holidays and
+weekends) between two dates
 
 System.DateTime - CompareTo(DateTime)
 Example: $tempDate.CompareTo($endDate);
@@ -16,9 +16,18 @@ Greater than zero - $tempDate is later than $endDate, or value is null.
 
 File Name    : Get-WorkingDays.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-04T15:49:18
-Keywords     : last working day contract
+Last updated : 2020-08-31T12:20:25
+Keywords     : count working days
 
+[System.Enum]::GetNames( [System.DayOfWeek] )
+
+Shall I use an object like this?
+$Dates = [PSCustomObject]@{
+  Start = Get-Date -Year 2020 -Month 02 -Day 17
+  End   = Get-Date -Year 2020 -Month 02 -Day 26
+}
+PowerShell: Creating Custom Objects
+https://social.technet.microsoft.com/wiki/contents/articles/7804.powershell-creating-custom-objects.aspx
 #>
 
 [CmdletBinding()]
@@ -29,7 +38,7 @@ Param() #end param
 ## Main routine starts here
 ##=============================================
 Set-StrictMode -Version Latest;
-$ErrorActionPreference = "Stop";
+$ErrorActionPreference = "Continue";
 
 Invoke-Command -ScriptBlock {
 
@@ -46,14 +55,43 @@ Invoke-Command -ScriptBlock {
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 $mask = 'dddd, dd MMMM yyyy';
-$startDate = Get-Date;
-#$endDate = Get-Date -Year 2020 -Month 03 -Day 24; #Last working day of contract
-$endDate = Get-Date -Year 2020 -Month 08 -Day 24; #test date to use
-$weekdays = @('Monday'
-              'Tuesday'
-              'Wednesday'
-              'Thursday'
-              'Friday');
+$startDate = Get-Date -Year 2020 -Month 02 -Day 17;
+$endDate = Get-Date -Year 2020 -Month 02 -Day 26;
+
+$StartEndDates = [PSCustomObject]@{
+   # Change accordingly
+   PSTypeName = 'StartEnd';
+   StartDate = Get-Date -Year 2020 -Month 02 -Day 17;
+   EndDate   = Get-Date -Year 2020 -Month 02 -Day 26;
+}
+
+[String[]]$Weekdays = @(
+            'Monday'
+            'Tuesday'
+            'Wednesday'
+            'Thursday'
+            'Friday');
+[String[]]$Weekend = @(
+           'Sunday'
+           'Saturday');
+
+#Example of holidays or other days to ignore from our
+#count of working days
+[DateTime[]]$SampleHolidays = @(
+  #Example date format to use for holidays; YYYY-MM-DD
+  (Get-Date -Date '2020-06-08')
+  (Get-Date -Date '2020-06-11')
+)
+#A list of holidays and any other days you wish to exclude
+#from the count of working days. Dates in this data structure
+#will be ignored and not counted. If there are no holidays or
+#other days to be aware of, leave this variable as an empty
+#array. i.e., $holidays = @()
+[DateTime[]]$Holidays = @(
+  #Date format to use for holidays; YYYY-MM-DD
+  (Get-Date -Date '2020-02-18')
+  (Get-Date -Date '2020-02-25')
+)
 
 Write-Output ('Start date used: {0}' -f $startDate.ToString($mask));
 Write-Output ('End date used: {0}' -f $endDate.ToString($mask));
@@ -65,29 +103,39 @@ if ($endDate.Date -le $startDate.Date) {
 }
 
 #Find the interval in days between the start date and end date.
-$interval = ($endDate - $startDate);
-Set-Variable -Name 'startDate', 'endDate', 'weekdays', 'mask' -Option ReadOnly;
+$DateInterval = New-TimeSpan -Start $startDate -End $endDate;
 
-[UInt16]$counter = 0;
+Set-Variable -Name 'mask', 'startDate', 'endDate', 'weekdays', 'Weekend' -Option ReadOnly;
+Set-Variable -Name 'SampleHolidays', 'Holidays', 'DateInterval' -Option ReadOnly;
+
+#Count the number of working days
+[UInt16]$WorkdayCounter = 0;
 
 #Temporary working 'System.DateTime' variable.
-$d = $startDate;
+$tempDate = $startDate;
+[String]$msg = '';
 do {
   #date loop
+  if ( ($Weekend.Contains($tempDate.DayOfWeek.ToString())) -or
+        ($Holidays.Contains($tempDate.Date)) ) {
 
-  #Increment the counter if this is a weekday, otherwise do nothing.
-  if ($d.DayOfWeek -in $weekdays) {
-    $counter++;
-    Write-Verbose -Message ('The date is now {0}' -f $d.ToString($mask));
+    #This day will be ignored as it is either a weekend or a holiday
+    $msg = [System.String]::Format('{0} date ignored, - holiday or weekend', $tempDate.ToString($mask));
+  } else {
+
+    #This is a valid working day to count
+    $msg = [System.String]::Format('The date is now {0}', $tempDate.ToString($mask));
+    $WorkdayCounter++;
   }
+  Write-Verbose -Message $msg;
 
-  $d = $d.AddDays(1);
+  $tempDate = $tempDate.AddDays(1);
 
-} until ($d.CompareTo($endDate) -gt 0)
+} until ($tempDate.CompareTo($endDate) -gt 0)
 
 Write-Output '';
-Write-Output ('Number of working days is {0}' -f ($counter));
-Write-Output ('Total elapsed days is {0}' -f $interval.Days);
+Write-Output ('Number of working days is {0}' -f ($WorkdayCounter));
+Write-Output ('Total elapsed days is (including weekends) {0}' -f ($DateInterval.Days + 1));
 Write-Output 'All done now';
 
 ##=============================================
