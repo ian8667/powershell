@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-26T22:38:02
+Last updated : 2020-09-02T22:06:46
 
 .LINK
 
@@ -130,12 +130,12 @@ function Get-OldFilename {
 [CmdletBinding()]
 [OutputType([System.String])]
 Param (
-        [parameter(Position=0,
-                   Mandatory=$true,
-                   HelpMessage="ShowDialog box title")]
-        [ValidateNotNullOrEmpty()]
-        [String]$Boxtitle
-      ) #end param
+   [parameter(Position=0,
+              Mandatory=$true,
+              HelpMessage="ShowDialog box title")]
+   [ValidateNotNullOrEmpty()]
+   [String]$Boxtitle
+) #end param
 
 Begin {
   Write-Verbose -Message "Invoking function to obtain the to file to copy";
@@ -144,7 +144,7 @@ Begin {
   [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
 
   $myok = [System.Windows.Forms.DialogResult]::OK;
-  $retFilename = "";
+  [String]$retFilename = "";
   $ofd.AddExtension = $false;
   $ofd.CheckFileExists = $true;
   $ofd.CheckPathExists = $true;
@@ -176,6 +176,36 @@ End {
 
 #----------------------------------------------------------
 
+#region ***** Function Compare-Files *****
+function Compare-Files {
+[CmdletBinding()]
+[OutputType([System.Boolean])]
+Param (
+   [parameter(Position=0,
+              Mandatory=$true,
+              HelpMessage="Data files to compare")]
+   [ValidateNotNullOrEmpty()]
+   [PSTypeName('OldNew')]$DataFile
+) #end param
+
+[Boolean]$retval = $false;
+$splat = @{
+    Path = @($DataFile.OldFilename, $DataFile.NewFilename)
+    Algorithm = 'MD5'
+}
+$fHash = Get-FileHash @splat;
+if ($fHash[0].Hash -eq $fHash[1].Hash) {
+  $retval = $true;
+} else {
+  $retval = $false;
+}
+
+return $retval;
+}
+#endregion ***** End of function Compare-Files *****
+
+#----------------------------------------------------------
+
 #region ***** Function Get-NewFilename *****
 #* Function: Get-NewFilename
 #* Last modified: 2017-10-22
@@ -198,12 +228,12 @@ function Get-NewFilename {
 [CmdletBinding()]
 [OutputType([System.String])]
 Param (
-        [parameter(Position=0,
-                   Mandatory=$true,
-                   HelpMessage="The filename to rename")]
-        [ValidateNotNullOrEmpty()]
-        [String]$OldFilename
-      ) #end param
+   [parameter(Position=0,
+              Mandatory=$true,
+              HelpMessage="The filename to rename")]
+   [ValidateNotNullOrEmpty()]
+   [String]$OldFilename
+) #end param
 
 Begin {
   # Date format used to help rename the file from the original
@@ -275,23 +305,38 @@ Invoke-Command -ScriptBlock {
 # each run of the program.
 Start-Sleep -Seconds 2.0;
 
+$OldNewName = [PSCustomObject]@{
+   PSTypeName = 'OldNew';
+   OldFilename = 'NotModified';
+   NewFilename = 'NotModified';
+}
+
 if ($PSBoundParameters.ContainsKey('Path')) {
    # Use the filename supplied.
-   $oldFilename = Resolve-Path -LiteralPath $Path;
+   $OldNewName.OldFilename = Resolve-Path -LiteralPath $Path;
 } else {
    # Filename has not been supplied. Execute function Get-OldFilename
    # to allow the user to select a file to copy.
-   $oldFilename = Get-OldFilename -Boxtitle 'File to copy';
+   $OldNewName.OldFilename = Get-OldFilename -Boxtitle 'File to copy';
 }
 
-$newFilename = Get-NewFilename -OldFilename $oldFilename;
-Set-Variable -Name 'oldFilename', 'newFilename' -Option ReadOnly;
+$OldNewName.NewFilename = Get-NewFilename -OldFilename $OldNewName.OldFilename;
+Set-Variable -Name 'OldNewName' -Option ReadOnly;
 
-Write-Output ("`nFile we want to copy: {0}" -f $oldFilename);
-Write-Output ("New filename = {0}" -f $newFilename);
-Copy-Item -Path $oldFilename -Destination $newFilename;
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+Write-Output ("File we want to copy: {0}" -f $OldNewName.OldFilename);
+Write-Output ("New name of copied file = {0}" -f $OldNewName.NewFilename);
+Copy-Item -Path $OldNewName.OldFilename -Destination $OldNewName.NewFilename;
 
-if (Test-Path -Path $newFilename) {
+if (Test-Path -Path $OldNewName.NewFilename) {
+
+  # Ensure the file copy was successful by computing the hash value
+  # of the two files concerned.
+  $compareOK = Compare-Files -DataFile $OldNewName;
+  if (-not ($compareOK)) {
+    throw 'Hash values for the two files are not the same. Please check';
+  }
+
   # Set the value of the 'LastWriteTime' property of the file just copied
   # to the current date/time rather than keep the value of the file it
   # was copied from. If we didn't do this, both the original file and the
@@ -303,17 +348,27 @@ if (Test-Path -Path $newFilename) {
 
   # Ensure the attribute 'IsReadOnly' is set to false to avoid the error:
   # Access to the path <filename> is denied
-  Set-ItemProperty -Path $newFilename -Name 'IsReadOnly' -Value $false;
-  Set-ItemProperty -Path $newFilename -Name 'LastWriteTime' -Value (Get-Date);
+  Set-ItemProperty -Path $OldNewName.NewFilename -Name 'IsReadOnly' -Value $false;
+  Set-ItemProperty -Path $OldNewName.NewFilename -Name 'LastWriteTime' -Value (Get-Date);
 
   if ($PSBoundParameters.ContainsKey('ReadOnly')) {
      # Set the value of the 'IsReadOnly' property of the file just copied
      # to true making it read only.
-     Set-ItemProperty -Path $newFilename -Name 'IsReadOnly' -Value $True;
+     Set-ItemProperty -Path $OldNewName.NewFilename -Name 'IsReadOnly' -Value $True;
   }
 
-  Get-ChildItem -Path $newFilename;
+  #List the old and new filename objects
+  #I agree this is a convoluted way of listing the files used, but
+  #this serves as a reminder of how to iterate over a PowerShell
+  #'PSCustomObject' object.
+  $m = $OldNewName.psobject.Members |
+         Where-Object -Property 'MemberType' -like -Value 'NoteProperty';
+  foreach ($item in $m) {Get-ChildItem -Path $item.value}
+
+} else {
+  Write-Error -Message "Can't seem to find new file $($OldNewName.NewFilename)";
 }
+ #end if Test-Path
 
 ##=============================================
 ## END OF SCRIPT: DateCopy-File.ps1
