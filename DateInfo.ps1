@@ -24,6 +24,10 @@ I need to check any date submitted on my timesheets.
 The end date of the first week of the contract (Saturday) is set in
 function 'Show-WeekendingDates'.
 
+Under normal circumstances, my preferred 'end of the week' day is a
+Saturday but there will be occasions on some contracts where this
+will be a Sunday. I can't explain why some contracts are like this.
+
 .EXAMPLE
 
 PS> ./DateInfo.ps1
@@ -70,7 +74,8 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-02T22:06:48
+Last updated : 2020-09-14T12:11:35
+Keywords     : contract end of week
 
 .LINK
 
@@ -124,7 +129,7 @@ Param(
 ## Author: Ian Molloy
 ## Arguments: N/A
 ##=============================================
-## Purpose: display a list weekending dates (Saturday)
+## Purpose: display a list weekending dates (Sunday)
 ## from the start of contract until the present.
 ##
 ## Returns: N/A
@@ -148,7 +153,7 @@ Begin {
   # should be, for example, the Saturday of the end of the
   # first week on the contract. This date should be earlier
   # than the end date.
-  $startDate = Get-Date -Year 2020 -Month 6 -Day 20;
+  $startDate = Get-Date -Year 2020 -Month 8 -Day 15;
 
   # The end date is determined to be the current date, whatever
   # today is. Our output will finish when it gets to this date.
@@ -157,7 +162,7 @@ Begin {
   # Check the start date is earlier than the end date. Throw
   # a terminating error if this is not the case.
   $Result = (($startDate.Date).CompareTo($endDate.Date));
-  if ($Result -ge 0) {
+  if ($Result -gt 0) {
       throw "Start date $($startDate) must be earlier than end date $($endDate)";
   }
 
@@ -182,7 +187,7 @@ Process {
 
     Write-Output ("Week {0}, ending on {1}" -f $weekCounter, $tempDate.ToString("yyyy-MM-dd"));
 
-    # see whether we're due to insert a blank line in our output
+    # See whether we're due to insert a blank line in our output
     if (($weekCounter % $blockSize) -eq 0) {
        Write-Output "";
     }
@@ -199,7 +204,7 @@ End {
   Write-Output ('*' * 30);
 
   Write-Output ('Weeks listed: {0}' -f $weekCounter.ToString());
-  Write-Output ("Start date used: {0}" -f $startDate.ToString("dddd, dd MMMM yyyy"));
+  Write-Output ("The first weekending date used: {0}" -f $startDate.ToString("dddd, dd MMMM yyyy"));
 
 }
 
@@ -380,8 +385,8 @@ function Get-WeekendingDate {
 Param() #end param
 
 Begin {
-  $sat = [System.DayOfWeek]::Saturday;
-  Set-Variable -Name 'sat' -Option ReadOnly;
+  $eow = [System.DayOfWeek]::Saturday; #end of week
+  Set-Variable -Name 'eow' -Option ReadOnly;
 
   $tempDate = Get-Date;
   # see what day of the week variable $tempDate is
@@ -389,12 +394,14 @@ Begin {
 }
 
 Process {
-  # keep looping until we find the next Saturday from today
-  while ($weekday -ne $sat) {
-     $tempDate = $tempDate.AddDays(1.0);
+  # keep looping until we find the next 'end of week' day
+  # from today
+  do {
+    $tempDate = $tempDate.AddDays(1.0);
 
-     $weekday = $tempDate.DayOfWeek;
-  }
+    $weekday = $tempDate.DayOfWeek;
+  } while ($weekday -ne $eow)
+
 }
 
 End {
