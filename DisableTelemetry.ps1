@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-02T13:29:26
+Last updated : 2020-08-19T21:58:16
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -64,6 +64,9 @@ Start-Process
 Starts one or more processes on the local computer.
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/start-process?view=powershell-7
 
+How To Disable Telemetry and Data Collection in Windows 10 and Regain Your Privacy
+https://www.tecklyfe.com/how-to-disable-telemetry-and-data-collection-in-windows-10-regain-your-privacy/
+
 #>
 
 #requires -RunAsAdministrator
@@ -80,6 +83,7 @@ $ErrorActionPreference = "Stop";
 
 [Byte]$Counter = 0;
 #List of scheduled tasks we want to disable
+#TypeName: System.Collections.Hashtable
 $tasklist = @{
   'CCleanerSkipUAC' = '\'
   'Proxy' = '\Microsoft\Windows\Autochk\'
@@ -99,6 +103,7 @@ $tasklist = @{
   'Overseer' = '\Avast Software\'
   'MicrosoftEdgeUpdateTaskMachineCore' = '\'
   'MicrosoftEdgeUpdateTaskMachineUA' = '\'
+  'PcaPatchDbTask' = '\Microsoft\Windows\Application Experience'
 }
 Set-Variable -Name 'tasklist' -Option ReadOnly;
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
@@ -113,11 +118,24 @@ foreach ($kvp in $tasklist.GetEnumerator()) {
     $Counter++;
 
     Write-Output ('Task number#({0})' -f $Counter);
-    Write-Verbose "Disabling task $($key)";
+    Write-Verbose -Message "Disabling task $($key)";
     Disable-ScheduledTask -TaskName $key -TaskPath $value |
         Format-List TaskName, State;
 }
-Stop-Service -Force -DisplayName 'Adobe Acrobat Update Service';
+
+#Unwanted services
+Write-Output 'Stopping some unwanted services';
+$services = @(
+  'AdobeARMservice' # Adobe Acrobat Update Service
+  'DiagTrack'       # Connected User Experiences and Telemetry
+  'ClickToRunSvc'   # Microsoft Office Click-to-Run Service
+  'WinRM'           # Windows Remote Management (WS-Management)
+ 
+)
+
+foreach ($service in $services) {
+  Stop-Service -Force -Name $service;
+}
 
 Write-Output 'All done now';
 ##=============================================
