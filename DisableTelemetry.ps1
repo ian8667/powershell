@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-19T21:58:16
+Last updated : 2020-09-24T11:24:23
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -84,6 +84,13 @@ $ErrorActionPreference = "Stop";
 [Byte]$Counter = 0;
 #List of scheduled tasks we want to disable
 #TypeName: System.Collections.Hashtable
+#
+#TaskPath - To specify a full TaskPath you need to include the
+#leading and trailing \. If you do not specify a path, the
+#cmdlet uses the root folder.
+#
+#Think about disabling tasks in \Microsoft\Office ?
+#
 $tasklist = @{
   'CCleanerSkipUAC' = '\'
   'Proxy' = '\Microsoft\Windows\Autochk\'
@@ -104,7 +111,8 @@ $tasklist = @{
   'MicrosoftEdgeUpdateTaskMachineCore' = '\'
   'MicrosoftEdgeUpdateTaskMachineUA' = '\'
   'PcaPatchDbTask' = '\Microsoft\Windows\Application Experience'
-}
+  'Office ClickToRun Service Monitor' = '\Microsoft\Office\'
+} #end of Hashtable
 Set-Variable -Name 'tasklist' -Option ReadOnly;
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
@@ -112,16 +120,28 @@ Set-Variable -Name 'tasklist' -Option ReadOnly;
 # Within this loop:
 #   kvp.Name - the scheduled task name.
 #   kvp.Value - the scheduled task path.
+Write-Output 'Disabling some scheduled tasks';
 foreach ($kvp in $tasklist.GetEnumerator()) {
     $key = $kvp.Name;    #TaskName
     $value = $kvp.Value; #TaskPath
     $Counter++;
 
-    Write-Output ('Task number#({0})' -f $Counter);
-    Write-Verbose -Message "Disabling task $($key)";
-    Disable-ScheduledTask -TaskName $key -TaskPath $value |
-        Format-List TaskName, State;
-}
+    Write-Verbose -Message ('Scheduled task number#({0})' -f $Counter);
+    #Ensure the scheduled task exists even though it may exist
+    #in our Hashtable variable. It could be we've forgotten to
+    #remove it from the Hashtable although we've removed the
+    #scheduled task from within the operating system
+    $fred = Get-ScheduledTask -TaskName $key -TaskPath $value -ErrorAction SilentlyContinue;
+    if ([String]::IsNullOrWhiteSpace($fred)) {
+      #Scheduled task not found
+      Write-Warning -Message ('Scheduled task {0} not found to disable' -f $key);
+    } else {
+      #Write-Output 'disabling a task';
+      Write-Verbose -Message "Disabling scheduledtask $($key)";
+      Disable-ScheduledTask -TaskName $key -TaskPath $value | Out-Null;
+    }
+
+} #end foreach loop
 
 #Unwanted services
 Write-Output 'Stopping some unwanted services';
@@ -130,7 +150,6 @@ $services = @(
   'DiagTrack'       # Connected User Experiences and Telemetry
   'ClickToRunSvc'   # Microsoft Office Click-to-Run Service
   'WinRM'           # Windows Remote Management (WS-Management)
- 
 )
 
 foreach ($service in $services) {
