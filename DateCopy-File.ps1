@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-09-02T22:06:46
+Last updated : 2020-10-12T15:42:51
 
 .LINK
 
@@ -89,6 +89,12 @@ https://en.wikipedia.org/wiki/MD5
 
 The MD5 Message-Digest Algorithm
 https://www.ietf.org/rfc/rfc1321.txt
+
+How to find these files again:
+$file = 'C:\Gash\mygash_2020-10-01T22-47-03.pdf';
+$reg = '(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})';
+Get-ChildItem -file | Where-Object -Property 'name' -Match -Value $reg;
+$file -match $reg
 
 #>
 
@@ -330,8 +336,8 @@ Copy-Item -Path $OldNewName.OldFilename -Destination $OldNewName.NewFilename;
 
 if (Test-Path -Path $OldNewName.NewFilename) {
 
-  # Ensure the file copy was successful by computing the hash value
-  # of the two files concerned.
+  # Ensure the file copy was successful by computing the (MD5) hash
+  # value of the two files concerned.
   $compareOK = Compare-Files -DataFile $OldNewName;
   if (-not ($compareOK)) {
     throw 'Hash values for the two files are not the same. Please check';
