@@ -16,16 +16,11 @@ Greater than zero - $tempDate is later than $endDate, or value is null.
 
 File Name    : Get-WorkingDays.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-31T12:20:25
+Last updated : 2020-10-01T16:03:20
 Keywords     : count working days
 
 [System.Enum]::GetNames( [System.DayOfWeek] )
 
-Shall I use an object like this?
-$Dates = [PSCustomObject]@{
-  Start = Get-Date -Year 2020 -Month 02 -Day 17
-  End   = Get-Date -Year 2020 -Month 02 -Day 26
-}
 PowerShell: Creating Custom Objects
 https://social.technet.microsoft.com/wiki/contents/articles/7804.powershell-creating-custom-objects.aspx
 #>
@@ -55,14 +50,13 @@ Invoke-Command -ScriptBlock {
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 $mask = 'dddd, dd MMMM yyyy';
-$startDate = Get-Date -Year 2020 -Month 02 -Day 17;
-$endDate = Get-Date -Year 2020 -Month 02 -Day 26;
 
+#Start and end dates used by the program
 $StartEndDates = [PSCustomObject]@{
    # Change accordingly
    PSTypeName = 'StartEnd';
-   StartDate = Get-Date -Year 2020 -Month 02 -Day 17;
-   EndDate   = Get-Date -Year 2020 -Month 02 -Day 26;
+   StartDate  = Get-Date -Year 2020 -Month 09 -Day 23;
+   EndDate    = Get-Date;
 }
 
 [String[]]$Weekdays = @(
@@ -93,26 +87,26 @@ $StartEndDates = [PSCustomObject]@{
   (Get-Date -Date '2020-02-25')
 )
 
-Write-Output ('Start date used: {0}' -f $startDate.ToString($mask));
-Write-Output ('End date used: {0}' -f $endDate.ToString($mask));
+Write-Output ('Start date used: {0}' -f $($StartEndDates.StartDate).ToString($mask));
+Write-Output ('End date used: {0}' -f $($StartEndDates.EndDate).ToString($mask));
 Write-Output '';
 
 #Property 'Date' refers to the date component of the variables
-if ($endDate.Date -le $startDate.Date) {
+if ($($StartEndDates.EndDate).Date -le $($StartEndDates.StartDate).Date) {
   throw "End date must be later than the start date";
 }
 
 #Find the interval in days between the start date and end date.
-$DateInterval = New-TimeSpan -Start $startDate -End $endDate;
+$DateInterval = New-TimeSpan -Start $StartEndDates.StartDate -End $StartEndDates.EndDate;
 
-Set-Variable -Name 'mask', 'startDate', 'endDate', 'weekdays', 'Weekend' -Option ReadOnly;
+Set-Variable -Name 'mask', 'StartEndDates', 'Weekdays', 'Weekend' -Option ReadOnly;
 Set-Variable -Name 'SampleHolidays', 'Holidays', 'DateInterval' -Option ReadOnly;
 
 #Count the number of working days
 [UInt16]$WorkdayCounter = 0;
 
 #Temporary working 'System.DateTime' variable.
-$tempDate = $startDate;
+$tempDate = $StartEndDates.StartDate;
 [String]$msg = '';
 do {
   #date loop
@@ -131,11 +125,11 @@ do {
 
   $tempDate = $tempDate.AddDays(1);
 
-} until ($tempDate.CompareTo($endDate) -gt 0)
+} until ($tempDate.CompareTo($StartEndDates.EndDate) -gt 0)
 
 Write-Output '';
 Write-Output ('Number of working days is {0}' -f ($WorkdayCounter));
-Write-Output ('Total elapsed days is (including weekends) {0}' -f ($DateInterval.Days + 1));
+Write-Output ('Total elapsed days (including weekends) is {0}' -f ($DateInterval.Days + 1));
 Write-Output 'All done now';
 
 ##=============================================
