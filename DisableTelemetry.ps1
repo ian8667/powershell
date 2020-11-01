@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2020-09-24T11:24:23
+Last updated : 2020-10-31T19:37:19
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -80,6 +80,19 @@ Param() #end param
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+
+Invoke-Command -ScriptBlock {
+
+  Write-Output '';
+  Write-Output 'Disable telemetry and unwanted things';
+  $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+  Write-Output ('Today is {0}' -f $dateMask);
+
+  $script = $MyInvocation.MyCommand.Name;
+  $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+  Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+
+}
 
 [Byte]$Counter = 0;
 #List of scheduled tasks we want to disable
