@@ -1,0 +1,173 @@
+<#
+Powershell code which can be used to ask questions which require
+a 'yes' or 'no' answer.
+
+See also:
+Windows PowerShell Tip of the Week
+http://technet.microsoft.com/en-us/library/ff730939.aspx
+
+ChoiceDescription Class
+http://msdn.microsoft.com/en-us/library/System.Management.Automation.Host.ChoiceDescription(v=vs.85).aspx
+Keywords: yesno yes no question
+
+More Choices in PowerShell
+Jeff Hicks | Mar 25, 2016
+https://petri.com/more-choices-powershell
+
+PSHostUserInterface.PromptForChoice(String, String, Collection<ChoiceDescription>, Int32) Method
+https://docs.microsoft.com/en-us/dotnet/api/system.management.automation.host.pshostuserinterface.promptforchoice?view=powershellsdk-7.0.0#System_Management_Automation_Host_PSHostUserInterface_PromptForChoice_System_String_System_String_System_Collections_ObjectModel_Collection_System_Management_Automation_Host_ChoiceDescription__System_Int32_
+
+Last updated: 01 November 2020
+Keywords: yes no yesno powershell question menu
+#>
+
+Adding a simple command-line menu to a Windows PowerShell script.
+
+$title = "Delete Files"
+$message = "Do you want to delete the remaining files in the folder?"
+
+$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", `
+    "Deletes all the files in the folder."
+$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", `
+    "Retains all the files in the folder."
+
+$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+
+$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+
+switch ($result) {
+    0 {"You selected Yes."}
+    1 {"You selected No."}
+S}
+
+Source: http://technet.microsoft.com/en-us/library/ff730939.aspx
+
+
+or
+$msg = @"
+Confirm
+Are you sure you want to perform this action?
+
+Performing the operation 'Remove File' on target 'C:\Family\powershell\ian.ian'.
+
+This action cannot be undone!
+"@
+$result = $host.ui.PromptForChoice($title, $msg, $options, 0);
+
+##===========================================
+## New item
+##===========================================
+
+Function Show-MessageBox{
+
+Param(
+    [Parameter(Mandatory=$True)][string]$Msg,
+    [Parameter(Mandatory=$False)][string]$Title = "",
+    [Parameter(Mandatory=$False)][ValidateSet(0,1,2,3,4,5)] [int]$Type = 0,
+    [Parameter(Mandatory=$False)][ValidateSet(0,16,32,48,64)] [int]$Icon = 0
+)
+
+    #Load the WinForm Assembly. Out-Null hides the message while loading.
+    [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
+
+    #Display the message with input
+    $Answer = [System.Windows.Forms.MessageBox]::Show($MSG , $TITLE, $Type, $Icon)
+
+    #Return Answer
+    Return $Answer
+}
+
+Source: http://gallery.technet.microsoft.com/scriptcenter/PowerShell-Message-Box-6c6e4f75
+
+##===========================================
+## New item
+##===========================================
+
+$title = "Breakfast eggs"
+$message = "Shall we have eggs for breakfast?"
+
+$yes = New-Object -TypeName System.Management.Automation.Host.ChoiceDescription "&Yes", `
+       "I love eggs"
+$no = New-Object -TypeName System.Management.Automation.Host.ChoiceDescription "&No", `
+      "Not hungry at present"
+
+$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+
+$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+
+switch ($result)
+{
+    0 {"You selected Yes."}
+    1 {"You selected No."}
+}
+
+##===========================================
+## New item
+## A revised (alternate) way of writing bacon and eggs
+## 01 November 2020
+##===========================================
+$cDescription = 'System.Management.Automation.Host.ChoiceDescription' -as [type];
+$caption = "Breakfast eggs";
+$message = "Shall we have bacon and eggs for breakfast?";
+$choices = New-Object -typeName "System.Collections.ObjectModel.Collection[$cDescription]";
+$defaultChoice = 0;
+
+$yes = $cDescription::new("&Yes");
+$yes.HelpMessage = "I love eggs";
+$choices.Add($yes);
+
+$no = $cDescription::new("&No");
+$no.HelpMessage = "Not hungry at present";
+$choices.Add($no);
+
+$exit = $cDescription::new("&Exit");
+$exit.HelpMessage = "Exit and do nothing";
+$choices.Add($exit);
+
+$result = $host.ui.PromptForChoice($caption, $message, $choices, $defaultChoice)
+
+switch ($result) {
+    0 {"You selected Yes"}
+    1 {"You selected No"}
+    2 {"Nothing to do"}
+}
+
+Write-Output 'All done now';
+
+##===========================================
+## New item
+##===========================================
+<#
+Keywords: yesno yes no
+#>
+
+$caption = "Fruit list";
+$message = "Which fruit would you like today?";
+$a = [System.Management.Automation.Host.ChoiceDescription]::new("&Apple");
+$a.HelpMessage = "Apple";
+$b = [System.Management.Automation.Host.ChoiceDescription]::new("A&pricot");
+$b.HelpMessage = "Apricot";
+$c = [System.Management.Automation.Host.ChoiceDescription]::new("A&vocado");
+$c.HelpMessage = "Avocado";
+$d = [System.Management.Automation.Host.ChoiceDescription]::new("&Banana");
+$d.HelpMessage = "Banana";
+$e = [System.Management.Automation.Host.ChoiceDescription]::new("B&lackberry");
+$e.HelpMessage = "Blackberry";
+
+$choices =
+    [System.Management.Automation.Host.ChoiceDescription[]]($a,$b,$c,$d,$e);
+$answerFruit = $host.ui.PromptForChoice($caption, $message, $choices, 0);
+
+ switch ($answerFruit) {
+    0 {$fruit = "Apple"; break}
+    1 {$fruit = "Apricot"; break}
+    2 {$fruit = "Avocado"; break}
+    3 {$fruit = "Banana"; break}
+    4 {$fruit = "Blackberry"; break}
+ }
+
+Write-Output "Your choice of fruit is now $fruit";
+
+##===========================================
+## New item
+##===========================================
