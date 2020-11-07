@@ -21,20 +21,6 @@ The directory paths used are hard coded within the program
 A filename to copy has not been supplied so the user
 will be prompted to supply the filename.
 
-.EXAMPLE
-
-PS> ./Kopy-2Orig.ps1 'myfile.ps1'
-
-The filename supplied will be copied to the main
-(master) PowerShell directory.
-
-.EXAMPLE
-
-PS> ./Kopy-2Orig.ps1 -Filename 'myfile.ps1'
-
-The filename supplied will be copied to the main
-(master) PowerShell directory.
-
 .INPUTS
 
 None, no .NET Framework types of objects are used as input.
@@ -47,19 +33,98 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Kopy-2Orig.ps1
 Author       : Ian Molloy
-Last updated : 2020-11-07T18:40:06
+Last updated : 2020-11-07T19:33:14
 Keywords     : git github repository copy
 
 #>
 
 [CmdletBinding()]
-param (
-    [Parameter(Position=0,
-               Mandatory=$true,
-               HelpMessage="Enter filename to copy to orig PowerShell dir")]
-    [ValidateNotNullOrEmpty()]
-    [String]$Filename
-) #end param
+param () #end param
+
+#----------------------------------------------------------
+# Start of functions
+#----------------------------------------------------------
+
+
+#region ***** Function Get-Filename *****
+function Get-Filename {
+   <#
+   .SYNOPSIS
+
+   Display the OpenFileDialog dialog box
+
+   .DESCRIPTION
+
+   Display the .NET class OpenFileDialog dialog box that prompts
+   the user to select a file to copy to the main PowerShell
+   directory
+
+   .PARAMETER Title
+
+   The title displayed on the dialog box window
+
+   .LINK
+
+   OpenFileDialog Class.
+   https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?view=netcore-3.1
+   #>
+
+   [CmdletBinding()]
+   Param (
+      [parameter(Mandatory=$true,
+                 HelpMessage="File to copy to main PowerShell directory")]
+      [ValidateNotNullOrEmpty()]
+      [String]$Title,
+
+      [parameter(Mandatory=$true,
+                 HelpMessage="Local Git repository")]
+      [ValidateNotNullOrEmpty()]
+      [String]$GitRepository
+   ) #end param
+
+   Begin {
+
+     Add-Type -AssemblyName "System.Windows.Forms";
+     # Displays a standard dialog box that prompts the user
+     # to open (select) a file.
+     [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
+
+     # The dialog box return value is OK (usually sent
+     # from a button labeled OK). This indicates the
+     # user has selected a file.
+     $myok = [System.Windows.Forms.DialogResult]::OK;
+     $retFilename = "";
+     $ofd.CheckFileExists = $true;
+     $ofd.CheckPathExists = $true;
+     $ofd.ShowHelp = $false;
+     $ofd.Filter = "PowerShell files (*.ps1)|*.ps1|All files (*.*)|*.*";
+     $ofd.FilterIndex = 1;
+     $ofd.InitialDirectory = $GitRepository;
+     $ofd.Multiselect = $false;
+     $ofd.RestoreDirectory = $false;
+     $ofd.Title = $Title; # sets the file dialog box title
+     $ofd.DefaultExt = "ps1";
+
+   }
+
+   Process {
+     if ($ofd.ShowDialog() -eq $myok) {
+        $retFilename = $ofd.FileName;
+     } else {
+        Throw "No file chosen or selected";
+     }
+   }
+
+   End {
+     $ofd.Dispose();
+     return $retFilename;
+   }
+   }
+   #endregion ***** End of function Get-Filename *****
+
+#-------------------------------------------------
+# End of functions
+#-------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
@@ -92,17 +157,20 @@ $ConfigData = [PSCustomObject]@{
 }
 Set-Variable -Name 'ConfigData' -Option ReadOnly;
 
-#Filenames with absolute paths
-$SourceFile = Join-Path -Path $ConfigData.SourceDirectory -ChildPath $Filename;
-$DestinationFile = Join-Path -Path $ConfigData.DestinationDirectory -ChildPath $Filename;
-Set-Variable -Name 'SourceFile', 'DestinationFile' -Option ReadOnly;
+$SourceFile = Get-Filename -Title 'File to cppy' -GitRepository $ConfigData.SourceDirectory;
+
+#Filename with absolute paths
+$SourceFile = Split-Path -Path $SourceFile -Leaf;
+$DestinationFile = Join-Path -Path $ConfigData.DestinationDirectory -ChildPath $SourceFile;
+Set-Variable -Name 'DestinationFile' -Option ReadOnly;
 
 #Not all of the programs in the local Git repository will be
 #in the original PowerShell directory. If this is the case,
 #there is nothing to do.
 if (-not (Test-Path -Path $DestinationFile)) {
+$Leaf = Split-Path -Path $gash -Leaf;
 $msg = @"
-File $Filename does not exist in the original (master) PowerShell directory.
+File $Leaf does not exist in the original (master) PowerShell directory.
 So this file will not be copied
 "@
 
@@ -110,7 +178,7 @@ So this file will not be copied
   return;
 }
 
-Write-Output ('Copying file {0} to {1}' -f $Filename, $DestinationFile);
+Write-Output ('Copying file {0} to {1}' -f $SourceFile, $DestinationFile);
 Start-Sleep -Seconds 2.0;
 Copy-Item -Path $SourceFile -Destination $$ConfigData.DestinationDirectory;
 
@@ -122,7 +190,7 @@ Copy-Item -Path $SourceFile -Destination $$ConfigData.DestinationDirectory;
 $fileHash = Get-FileHash -Path $SourceFile, $DestinationFile -Algorithm 'MD5';
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 if ($fileHash.Hash[0] -eq $fileHash.Hash[1]) {
-   Write-Output ('File {0} seems to have copied OK ' -f $Filename);
+   Write-Output ('File {0} seems to have copied OK ' -f $SourceFile);
 } else {
    Write-Warning -Message 'File hash for the two files are not the same';
 }
