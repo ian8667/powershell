@@ -135,8 +135,8 @@ Param (
     [String]$Base
 ) #end param
 
-   #Get the repository name which is being cloned. This is the
-   #last segment of the URI.
+   #Get the individual repository name which is being cloned. This
+   #is the last segment of the URI.
    $ReposName = $CloneUri.Segments[-1];
    Set-Variable -Name 'ReposName' -Option ReadOnly;
 
@@ -230,6 +230,7 @@ Clone-Repository -CloneUri $uri -Base $ConfigData.BaseDirectory;
 Get-ChildItem -Directory -Path $ConfigData.BaseDirectory |
 Where-Object -Property 'CreationTime' -GT -Value (Get-Date).AddMinutes(-5);
 
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Output 'All done now';
 ##=============================================
 ## END OF SCRIPT: Clone-GitRepository.ps1
