@@ -31,9 +31,13 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Clone-GitRepository.ps1
 Author       : Ian Molloy
-Last updated : 2020-11-04T18:51:53
+Last updated : 2020-11-07T16:37:24
+Keywords     : git github clone repository
 
 .LINK
+
+git documentation
+https://git-scm.com/doc
 
 About Object Creation
 Explains how to create objects in PowerShell.
@@ -131,9 +135,6 @@ Param (
     [String]$Base
 ) #end param
 
-   #Move to the base directory of the local Git repository
-   #Set-Location -Path $Base;
-
    #Get the repository name which is being cloned. This is the
    #last segment of the URI.
    $ReposName = $CloneUri.Segments[-1];
@@ -145,15 +146,21 @@ Param (
    Set-Variable -Name 'LocalRepo' -Option ReadOnly;
    Write-Output ('Local repository pathname is [{0}]' -f $LocalRepo);
 
+   #Syntax used:
+   #git clone <options> <repository> <directory>
+   #where <repository> = The remote GitHub repository to clone from
+   #<directory> = The name of a new local directory to clone into.
+   #              Cloning into an existing directory is only allowed
+   #              if the directory is empty.
    $gitexe = 'C:\Program Files\Git\bin\git.exe';
-   $cmdArgs = @('clone', '--verbose', '--progress', $CloneUri, $LocalRepo);
-   Set-Variable -Name 'gitexe', 'cmdArgs' -Option ReadOnly;
+   $options = @('clone', '--verbose', '--progress');
+   $cmdArgs = @($options, $CloneUri, $LocalRepo);
+   Set-Variable -Name 'gitexe', 'options', 'cmdArgs' -Option ReadOnly;
 
-Write-Output 'testpath test';
-Test-Path -Path $LocalRepo;
    if (Test-Path -Path $LocalRepo) {
       #As we're going to clone to this directory, remove it
-      #if it already exists.
+      #if it exists. Cloning into an existing directory is
+      #only allowed if the directory is empty.
       Write-Output ('Trying to remove unwanted directory {0}' -f $LocalRepo);
       Remove-Item -Path $LocalRepo -Force -Recurse;
       Write-Output ('Unwanted directory removed');
@@ -161,7 +168,7 @@ Test-Path -Path $LocalRepo;
 
    & $gitexe @cmdArgs;
    $rc = $LastExitCode;
-   Write-Output "Exit code = $rc";
+   Write-Output "Clone of repository exit code = $rc";
 
 }
 #endregion ***** end of function Clone-Repository *****
@@ -219,6 +226,9 @@ if ($lastSegment -eq 'Quit') {
 Write-Output ('The clone uri is now [{0}]' -f $uri);
 
 Clone-Repository -CloneUri $uri -Base $ConfigData.BaseDirectory;
+
+Get-ChildItem -Directory -Path $ConfigData.BaseDirectory |
+Where-Object -Property 'CreationTime' -GT -Value (Get-Date).AddMinutes(-5);
 
 Write-Output 'All done now';
 ##=============================================
