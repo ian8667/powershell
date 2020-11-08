@@ -33,7 +33,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Kopy-2Orig.ps1
 Author       : Ian Molloy
-Last updated : 2020-11-07T19:33:14
+Last updated : 2020-11-08T16:24:05
 Keywords     : git github repository copy
 
 #>
@@ -45,7 +45,6 @@ param () #end param
 # Start of functions
 #----------------------------------------------------------
 
-
 #region ***** Function Get-Filename *****
 function Get-Filename {
    <#
@@ -56,8 +55,8 @@ function Get-Filename {
    .DESCRIPTION
 
    Display the .NET class OpenFileDialog dialog box that prompts
-   the user to select a file to copy to the main PowerShell
-   directory
+   the user to select a file to copy from the local Git repository
+   to the main PowerShell directory
 
    .PARAMETER Title
 
@@ -72,12 +71,12 @@ function Get-Filename {
    [CmdletBinding()]
    Param (
       [parameter(Mandatory=$true,
-                 HelpMessage="File to copy to main PowerShell directory")]
+                 HelpMessage="File to copy to the main PowerShell directory")]
       [ValidateNotNullOrEmpty()]
       [String]$Title,
 
       [parameter(Mandatory=$true,
-                 HelpMessage="Local Git repository")]
+                 HelpMessage="Local Git repository where we will find the file to copy")]
       [ValidateNotNullOrEmpty()]
       [String]$GitRepository
    ) #end param
@@ -157,20 +156,24 @@ $ConfigData = [PSCustomObject]@{
 }
 Set-Variable -Name 'ConfigData' -Option ReadOnly;
 
+#This will be the modified file to copy from the local Git repository
+#to the main (master) PowerShell directory. Once the file is copied to
+#the main PowerShell directory, we are free to overwrite the local Git
+#repository. If we didn't do this copy, we would lose the updates to
+#the file when the local Git repository is deleted in the process of
+#being cloned from the online repository.
 $SourceFile = Get-Filename -Title 'File to cppy' -GitRepository $ConfigData.SourceDirectory;
 
-#Filename with absolute paths
-$SourceFile = Split-Path -Path $SourceFile -Leaf;
-$DestinationFile = Join-Path -Path $ConfigData.DestinationDirectory -ChildPath $SourceFile;
-Set-Variable -Name 'DestinationFile' -Option ReadOnly;
+$SourceFileLeaf = Split-Path -Path $SourceFile -Leaf;
+$DestinationFile = Join-Path -Path $ConfigData.DestinationDirectory -ChildPath $SourceFileLeaf;
+Set-Variable -Name 'SourceFile', 'SourceFileLeaf', 'DestinationFile' -Option ReadOnly;
 
 #Not all of the programs in the local Git repository will be
 #in the original PowerShell directory. If this is the case,
 #there is nothing to do.
 if (-not (Test-Path -Path $DestinationFile)) {
-$Leaf = Split-Path -Path $gash -Leaf;
 $msg = @"
-File $Leaf does not exist in the original (master) PowerShell directory.
+File $SourceFileLeaf does not exist in the original (master) PowerShell directory.
 So this file will not be copied
 "@
 
@@ -180,7 +183,7 @@ So this file will not be copied
 
 Write-Output ('Copying file {0} to {1}' -f $SourceFile, $DestinationFile);
 Start-Sleep -Seconds 2.0;
-Copy-Item -Path $SourceFile -Destination $$ConfigData.DestinationDirectory;
+Copy-Item -Path $SourceFile -Destination $DestinationFile;
 
 #Ensure the file copy was OK. Algorithm MD5 is being used for simple
 #change validation only. We can also use hash values to determine if
