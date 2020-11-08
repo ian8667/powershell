@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Clone-GitRepository.ps1
 Author       : Ian Molloy
-Last updated : 2020-11-07T16:37:24
+Last updated : 2020-11-08T16:10:30
 Keywords     : git github clone repository
 
 .LINK
@@ -227,6 +227,7 @@ Write-Output ('The clone uri is now [{0}]' -f $uri);
 
 Clone-Repository -CloneUri $uri -Base $ConfigData.BaseDirectory;
 
+Write-Output 'Local Git repositories created in the last few minutes';
 Get-ChildItem -Directory -Path $ConfigData.BaseDirectory |
 Where-Object -Property 'CreationTime' -GT -Value (Get-Date).AddMinutes(-5);
 
