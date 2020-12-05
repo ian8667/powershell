@@ -1,0 +1,80 @@
+Function template to use:
+
+#region ***** Function Demo-FunctionOutline *****
+function Demo-FunctionOutline {
+<#
+.SYNOPSIS
+
+Function Template
+
+.DESCRIPTION
+
+This is the long description. Template that can be used
+when creating functions
+
+.PARAMETER PersonName
+
+The persons name to use
+
+.EXAMPLE
+
+Demo-FunctionOutline
+
+.EXAMPLE
+
+Demo-FunctionOutline -PersonName 'Helen'
+
+.EXAMPLE
+
+Demo-FunctionOutline 'Helen'
+
+.INPUTS
+
+None
+
+.OUTPUTS
+
+None
+
+.NOTES
+
+File Name    : Demo-FunctionOutline
+Author       : Ian Molloy
+Last updated : 2020-12-04T22:24:43
+Keywords     : yes no yesno
+
+.Link
+
+About Functions Advanced Parameters
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-7.1
+
+About Functions Advanced Methods
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_methods?view=powershell-7.1
+
+About Comment-based Help
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comment_based_help?view=powershell-7.1
+
+PowerShell Documentation
+https://docs.microsoft.com/en-us/powershell/
+
+Approved Verbs for PowerShell Commands
+https://docs.microsoft.com/en-us/powershell/scripting/developer/cmdlet/approved-verbs-for-windows-powershell-commands?view=powershell-7.1
+
+#>
+[CmdletBinding()]
+Param(
+    [Parameter(Position=0,
+               Mandatory=$true,
+               HelpMessage="Input person name")]
+    [ValidateNotNullOrEmpty()]
+    [String]$PersonName
+) #end param
+
+Begin {}
+
+Process {}
+
+End {}
+
+} #end of function
+#endregion ***** End of function Demo-FunctionOutline *****
