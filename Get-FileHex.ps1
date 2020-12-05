@@ -1,24 +1,66 @@
 <#
 
+.SYNOPSIS
+
+Produces a hex dump of a file
+
+.DESCRIPTION
+
+Produces a hex dump of a file
+
+.PARAMETER Filename
+
+The filename from which a hex dump will be produced.
+If a parameter is not supplied, an internal function
+is invoked to obtain the filename
+
+.EXAMPLE
+
+./Get-FileHex.ps1
+
+As a parameter has not been supplied, an internal function is invoked
+to obtain the filename
+
+.EXAMPLE
+
+./Get-FileHex.ps1 'filename.txt'
+
+A hex dump will be produced of file 'filename.txt'
+
+.EXAMPLE
+
+./Get-FileHex.ps1 -Filename 'somefile.txt'
+
+A hex dump will be produced of file 'somefile.txt'
+
+.INPUTS
+
+None, no .NET Framework types of objects are used as input.
+
+.OUTPUTS
+
+No .NET Framework types of objects are output from this script.
+
+.NOTES
+
 File Name    : Get-FileHex.ps1
 Author       : Ian Molloy
-Last updated : 2020-12-04T18:09:41
-Keywords     : hex file dump
+Last updated : 2020-12-05T19:51:35
+Keywords     : file hex dump
 
-[Predicate[Byte]]$$IsLetterOrDigit = {param($x) $x -gt 15 } #returns true or false
-$IsLetterOrDigit.Invoke(5);
+With thanks to Jason Fossen, Enclave Consulting LLC
+(http://www.sans.org/) for the original version from
+which this is based upon.
+
+.LINK
+
+Format-Hex
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/format-hex?view=powershell-7.1
+
+About Comment-based Help
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_comment_based_help?view=powershell-7.1
+
 #>
-
-##############################################################################
-#  Script: Get-FileHex.ps1
-#    Date: 16.May.2007
-# Version: 1.0
-#  Author: Jason Fossen, Enclave Consulting LLC (http://www.sans.org/sec505)
-# Purpose: Shows the hex translation of a file, binary or otherwise.  The
-#          $width argument determines how many bytes are output per line.
-#   Legal: Script provided "AS IS" without warranties or guarantees of any
-#          kind.  USE AT YOUR OWN RISK.  Public domain, no rights reserved.
-##############################################################################
 
 [CmdletBinding()]
 Param (
@@ -119,6 +161,8 @@ param (
         $linecounter += $width;
         #$m = "$asciitext".Replace(' ', '');
         #Write-Output "$offsettext $paddedhex $m";
+        # This is a useful way of joining the output from an
+        # array on one line
         $m = [String]::Join('', $asciitext);
         Write-Output "$offsettext $ttest $m";
     } #end of ForEach-Object loop
