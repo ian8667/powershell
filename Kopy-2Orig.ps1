@@ -6,8 +6,8 @@ Copy a file to the original PowerShell directory
 .DESCRIPTION
 
 Copy a file from a local Git respository to the original
-PowerShell directory. I don't keep all files from my
-Github repository in my original PowerShell directory,
+local PowerShell directory. I don't keep all files from
+my Github repository in my original PowerShell directory,
 so this script checks first to see whether this is the
 case. If so, the file is not copied from the local Git
 respository.
@@ -18,8 +18,7 @@ The directory paths used are hard coded within the program
 
 ./Kopy-2Orig.ps1
 
-A filename to copy has not been supplied so the user
-will be prompted to supply the filename.
+No parameters used
 
 .INPUTS
 
@@ -33,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Kopy-2Orig.ps1
 Author       : Ian Molloy
-Last updated : 2020-11-08T16:24:05
+Last updated : 2020-12-07T19:07:33
 Keywords     : git github repository copy
 
 #>
@@ -60,7 +59,13 @@ function Get-Filename {
 
    .PARAMETER Title
 
-   The title displayed on the dialog box window
+   The title displayed on the OpenFileDialog dialog box window
+
+   .PARAMETER GitRepository
+
+   The initial directory displayed by the file dialog box.
+   This value is used by the OpenFileDialog class
+   'InitialDirectory' property
 
    .LINK
 
@@ -148,10 +153,10 @@ Invoke-Command -ScriptBlock {
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 #Directories involved
 $ConfigData = [PSCustomObject]@{
-   #Local Git repository
+   #Local Git repository directory
    SourceDirectory = 'C:\IanmTools\GitRepos\powershell';
 
-   #Main (master) PowerShell directory
+   #Local main (master) PowerShell directory
    DestinationDirectory = 'C:\Family\powershell';
 }
 Set-Variable -Name 'ConfigData' -Option ReadOnly;
@@ -169,8 +174,8 @@ $DestinationFile = Join-Path -Path $ConfigData.DestinationDirectory -ChildPath $
 Set-Variable -Name 'SourceFile', 'SourceFileLeaf', 'DestinationFile' -Option ReadOnly;
 
 #Not all of the programs in the local Git repository will be
-#in the original PowerShell directory. If this is the case,
-#there is nothing to do.
+#in the original local PowerShell directory. If this is the
+#case, there is nothing to do.
 if (-not (Test-Path -Path $DestinationFile)) {
 $msg = @"
 File $SourceFileLeaf does not exist in the original (master) PowerShell directory.
