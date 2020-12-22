@@ -68,7 +68,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-10-12T15:42:51
+Last updated : 2020-12-22T18:40:18
 
 .LINK
 
@@ -117,22 +117,28 @@ Param (
 #----------------------------------------------------------
 
 #region ***** Function Get-OldFilename *****
-#* Function: Get-OldFilename
-#* Last modified: 2017-10-22
-#* Author: Ian Molloy
-#*
-#* Arguments:
-#* title - the title displayed on the dialog box window.
-#*
-#* See also:
-#* OpenFileDialog Class.
-#* http://msdn.microsoft.com/en-us/library/system.windows.forms.openfiledialog.aspx
-#* =============================================
-#* Purpose:
-#* Displays a standard dialog box that prompts
-#* the user to select a filename.
-#* =============================================
 function Get-OldFilename {
+<#
+.SYNOPSIS
+
+Gets the file to copy
+
+.DESCRIPTION
+
+Uses the OpenFileDialog class to obtain a filename to
+copy. This file will not be modified or changed in any
+way
+
+.PARAMETER Boxtitle
+
+Used to set the file OpenFileDialog box title.
+
+.LINK
+
+OpenFileDialog Class.
+https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?view=netcore-3.1
+#>
+
 [CmdletBinding()]
 [OutputType([System.String])]
 Param (
@@ -147,7 +153,7 @@ Begin {
   Write-Verbose -Message "Invoking function to obtain the to file to copy";
 
   Add-Type -AssemblyName "System.Windows.Forms";
-  [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
+  [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
 
   $myok = [System.Windows.Forms.DialogResult]::OK;
   [String]$retFilename = "";
@@ -184,6 +190,31 @@ End {
 
 #region ***** Function Compare-Files *****
 function Compare-Files {
+<#
+.SYNOPSIS
+
+Computes the hash value of two files
+
+.DESCRIPTION
+
+Uses the Get-FileHash cmdlet to compute the MD5 hash value
+of the original and copied file. The purpose of hash values
+is to verify that the contents of the copied file has not
+been changed and thus the copy was successful.
+
+Returns true if the hash values are the same; false otherwise
+
+.PARAMETER DataFile
+
+A PSCustomObject object containing the original and copied
+filenames.
+
+.LINK
+
+Get-FileHash
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-filehash?view=powershell-7.1#description
+#>
+
 [CmdletBinding()]
 [OutputType([System.Boolean])]
 Param (
@@ -213,24 +244,27 @@ return $retval;
 #----------------------------------------------------------
 
 #region ***** Function Get-NewFilename *****
-#* Function: Get-NewFilename
-#* Last modified: 2017-10-22
-#* Author: Ian Molloy
-#*
-#* Arguments:
-#* filename - the filename from which to create the new
-#* filename.
-#*
-#* See also:
-#* OpenFileDialog Class.
-#* http://msdn.microsoft.com/en-us/library/system.windows.forms.openfiledialog.aspx
-#* =============================================
-#* Purpose:
-#* Creates the new filename from the filename supplied. This
-#* function is designed to cater for the fact that not all
-#* files have a file extension. Most do of course.
-#* =============================================
 function Get-NewFilename {
+<#
+.SYNOPSIS
+
+Constructs a new filename
+
+.DESCRIPTION
+
+Constructs a new filename from the filename passed as a
+parameter. The copied file will have this filename when
+when the copy is complete
+
+Returns a filename in the format of, for example,
+myfile_2020-12-22T19-42-58.txt
+
+.PARAMETER OldFilename
+
+Filename from which to construct a new filename
+
+#>
+
 [CmdletBinding()]
 [OutputType([System.String])]
 Param (
@@ -258,7 +292,8 @@ Begin {
   # if variable 'OldFilename' does not contain an extension.
   $f3 = [System.io.Path]::GetExtension($OldFilename);
 
-  # Character used to separate directory levels in a path
+  # Character used to separate directory levels in a path. Returns
+  # a backslash on an MS Windows operating system 
   $slash = [System.io.Path]::DirectorySeparatorChar;
   Set-Variable -Name 'f1', 'f2', 'f3', 'slash' -Option ReadOnly;
 
@@ -313,7 +348,12 @@ Start-Sleep -Seconds 2.0;
 
 $OldNewName = [PSCustomObject]@{
    PSTypeName = 'OldNew';
+
+   # The file to be copied. ie myfile.txt
    OldFilename = 'NotModified';
+
+   # The copied file containing the timestamp, ie
+   # myfile_2020-12-22T18-48-20.txt
    NewFilename = 'NotModified';
 }
 
@@ -373,8 +413,7 @@ if (Test-Path -Path $OldNewName.NewFilename) {
 
 } else {
   Write-Error -Message "Can't seem to find new file $($OldNewName.NewFilename)";
-}
- #end if Test-Path
+} #end if Test-Path
 
 ##=============================================
 ## END OF SCRIPT: DateCopy-File.ps1
