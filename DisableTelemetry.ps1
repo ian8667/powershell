@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2020-12-05T19:13:31
+Last updated : 2020-12-22T18:14:35
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -241,6 +241,7 @@ Invoke-Command -ScriptBlock {
   $script = $MyInvocation.MyCommand.Name;
   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+  Write-Output '';
 
 }
 
@@ -251,7 +252,10 @@ Disable-Services;
 #Not yet developed/completed
 #Disable-PSRemoteing;
 
+Write-Output '';
 Write-Output 'All done now';
+Write-Output '';
+
 ##=============================================
 ## END OF SCRIPT: DisableTelemetry.ps1
 ##=============================================
