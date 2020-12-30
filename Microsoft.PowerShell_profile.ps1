@@ -13,7 +13,20 @@
 # or
 # $Host.UI.RawUI.WindowTitle = "PowerShell ROCKS"
 #
-# Last updated : 2020-04-18
+# Announcing PSReadLine 2.1+ with Predictive IntelliSense
+# https://devblogs.microsoft.com/powershell/announcing-psreadline-2-1-with-predictive-intellisense/
+# Predictive IntelliSense is disabled by default.
+# Enable:
+# Set-PSReadLineOption -PredictionSource History
+# Disable:
+# Set-PSReadLineOption -PredictionSource None
+# Set-PSReadLineOption, Module PSReadLine
+# https://docs.microsoft.com/en-us/powershell/module/psreadline/set-psreadlineoption?view=powershell-7.1
+#
+# PSReadLine
+# https://docs.microsoft.com/en-us/powershell/module/psreadline/?view=powershell-7.1
+#
+# Last updated : 2020-12-30T18:43:07
 #------------------------------------------------
 
 #------------------------------------------------
@@ -48,6 +61,9 @@ $colors = @{
 }
 $HistSavePath = 'C:\Family\powershell\ConsoleHost_history.txt';
 Set-PSReadLineOption -Colors $colors -HistorySavePath $HistSavePath;
+
+#Enable Predictive IntelliSense
+Set-PSReadLineOption -PredictionSource History;
 
 Remove-Variable -Name colors, HistSavePath;
 #------------------------------------------------
