@@ -13,8 +13,14 @@
 # or
 # $Host.UI.RawUI.WindowTitle = "PowerShell ROCKS"
 #
+# Predictive IntelliSense
 # Announcing PSReadLine 2.1+ with Predictive IntelliSense
 # https://devblogs.microsoft.com/powershell/announcing-psreadline-2-1-with-predictive-intellisense/
+# PSReadLine contains functions to navigate and accept predictions.
+# As an example, to accept a displayed prediction, use "AcceptSuggestion".
+# AcceptSuggestion is built within ForwardChar, which by default
+# is bound to the "RightArrow" key.
+#
 # Predictive IntelliSense is disabled by default.
 # Enable:
 # Set-PSReadLineOption -PredictionSource History
@@ -26,7 +32,7 @@
 # PSReadLine
 # https://docs.microsoft.com/en-us/powershell/module/psreadline/?view=powershell-7.1
 #
-# Last updated : 2020-12-30T18:43:07
+# Last updated : 2020-12-31T17:09:40
 #------------------------------------------------
 
 #------------------------------------------------
@@ -65,7 +71,7 @@ Set-PSReadLineOption -Colors $colors -HistorySavePath $HistSavePath;
 #Enable Predictive IntelliSense
 Set-PSReadLineOption -PredictionSource History;
 
-Remove-Variable -Name colors, HistSavePath;
+Remove-Variable -Name 'colors', 'HistSavePath';
 #------------------------------------------------
 # Setup some variables.
 #------------------------------------------------
