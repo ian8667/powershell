@@ -100,7 +100,7 @@ function prompt
 Set-StrictMode -Version Latest;
 # The JShell tool, also called REPL (Read Evaluate Print Loop),
 # allows you to execute Java code, getting immediate results.
-$jshell = 'C:\Program Files\Java\jdk-10\bin\jshell.exe';
+$jshell = 'C:\Program Files\Java\jdk-15\bin\jshell.exe';
 
 $Host.UI.RawUI.WindowTitle = "PowerShell 7";
 
