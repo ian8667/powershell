@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-05T10:18:57
+Last updated : 2021-01-17T13:18:09
 Keywords     : yes no yesno
 
 .LINK
@@ -42,6 +42,44 @@ implementation provided by the cryptographic service provider (CSP).
 https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryptoserviceprovider?view=netframework-4.7.2
 
 #>
+
+Search term: how to download a file with powershell from the web
+
+How to Download a File with PowerShell from the Web
+https://adamtheautomator.com/powershell-download-file/
+
+
+See if I can tidy up yesno function Confirm-Delete a little bit?
+A revised (alternate) way of writing bacon and eggs
+(C:\Family\powershell\YesNo.txt)
+$cDescription = 'System.Management.Automation.Host.ChoiceDescription' -as [type];
+$caption = "Breakfast eggs";
+$message = "Shall we have bacon and eggs for breakfast?";
+$choices = New-Object -typeName "System.Collections.ObjectModel.Collection[$cDescription]";
+$defaultChoice = 0;
+
+$yes = $cDescription::new("&Yes");
+$yes.HelpMessage = "I love eggs";
+$choices.Add($yes);
+
+$no = $cDescription::new("&No");
+$no.HelpMessage = "Not hungry at present";
+$choices.Add($no);
+
+$exit = $cDescription::new("&Exit");
+$exit.HelpMessage = "Exit and do nothing";
+$choices.Add($exit);
+
+$result = $host.ui.PromptForChoice($caption, $message, $choices, $defaultChoice)
+
+switch ($result) {
+    0 {"You selected Yes"}
+    1 {"You selected No"}
+    2 {"Nothing to do"}
+}
+
+Write-Output 'All done now';
+
 
 [CmdletBinding()]
 Param() #end param
@@ -60,7 +98,7 @@ function Get-Filename {
   .DESCRIPTION
 
   Display the .NET class OpenFileDialog dialog box that prompts
-  the user to open a C# file to compile
+  the user to open a file to which will be securely deleted
 
   .PARAMETER Title
 
@@ -81,18 +119,19 @@ function Get-Filename {
   ) #end param
 
   Begin {
-    Write-Verbose -Message "Invoking function to obtain the C# filename to compile";
 
     Add-Type -AssemblyName "System.Windows.Forms";
     # Displays a standard dialog box that prompts the user
-    # to open (select) a file.
-    [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
+    # to open (select) a file that will eventually be
+    # shredded.
+    [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
 
     # The dialog box return value is OK (usually sent
     # from a button labeled OK). This indicates the
     # user has selected a file.
     $myok = [System.Windows.Forms.DialogResult]::OK;
-    $retFilename = "";
+    [String]$retFilename = "";
+
     $ofd.CheckFileExists = $true;
     $ofd.CheckPathExists = $true;
     $ofd.ShowHelp = $false;
@@ -103,6 +142,7 @@ function Get-Filename {
     $ofd.RestoreDirectory = $false;
     $ofd.Title = $Title; # sets the file dialog box title
     $ofd.DefaultExt = "txt";
+    Set-Variable -Name 'myok', 'ofd' -Option ReadOnly;
 
   }
 
@@ -116,7 +156,7 @@ function Get-Filename {
 
   End {
     $ofd.Dispose();
-    return $retFilename;
+    return $retFilename.Trim();
   }
 }
 #endregion ***** End of function Get-Filename *****
@@ -153,7 +193,6 @@ This action cannot be undone! Please make sure
   }
 
   Process {
-
    $options = [System.Management.Automation.Host.ChoiceDescription[]]($no, $yes);
 
    $result = $host.ui.PromptForChoice($title, $msg, $options, 0);
@@ -179,51 +218,98 @@ function Delete-File {
 [CmdletBinding()]
 Param (
     [parameter(Mandatory=$true,
-               HelpMessage="Filename to delete")]
+               HelpMessage="Filename to shred and delete")]
     [ValidateNotNullOrEmpty()]
     [String]$FileName
 ) #end param
 
     Begin {
-      Write-Output "Deleting file $($FileName)";
-      $objectFile = Get-Item -Path $FileName;
-      $fileLen = $objectFile.Length;
-      $objectFile.IsReadOnly = $false;
-      $byteArray = New-Object -TypeName Byte[] -ArgumentList $fileLen;
+      #Write-Output "Shredding and deleting file $($FileName)";
+      [Byte]$PassCounter = 0;
+      $BufferSize = 8KB;
+      $DataBuffer = [System.Byte[]]::new($BufferSize);
+      $BufferLen = $DataBuffer.Length;
+      $ShredFile = Get-Item -Path $FileName;
+      $ShredFile.IsReadOnly = $false;
+
+      $fos = New-Object -TypeName System.IO.FileStream($ShredFile, 'OPEN', 'Write', 'None');
       $rng = New-Object -TypeName 'System.Security.Cryptography.RNGCryptoServiceProvider';
+      Set-Variable -Name 'BufferSize', 'BufferLen', 'ShredFile', 'rng' -Option ReadOnly;
+
+      [Long]$FileLength = $ShredFile.Length;
+      [Long]$BytesWritten = 0L;
+      [Long]$RemainingBytes = 0L;
+      Set-Variable -Name 'FileLength' -Option ReadOnly;
+      Write-Verbose -Message "Length of file to be overwritten: $FileLength bytes";
 
     }
 
     Process {
      try {
 
-       foreach ($num in 1..3) {
+        # Outer loop which determines how many times the file is
+        # overwritten.
+        foreach ($num in 1..5) {
+            # Set the current position of the stream to the beginning
+            # of the stream before overwriting the file. Otherwise,
+            # we'll end up extending the size of the file which we
+            # don't want to do.
+            $fos.Position = 0;
+            $PassCounter++;
+            Write-Output "`nFile overwrite pass# $PassCounter";
 
-          $rng.GetBytes($byteArray);
-          [System.IO.File]::WriteAllBytes($FileName, $byteArray);
+            # Inner loop to write, buffer by buffer, to the output stream
+            while ($BytesWritten -lt $FileLength) {
+                #
+                $RemainingBytes = $FileLength - $BytesWritten;
+                $rng.GetBytes($DataBuffer);
+                Write-Verbose -Message 'Random data refreshed. First four bytes...';
+                if ($PSBoundParameters['Verbose']) {
+                    Write-output  'Random data refreshed. First 99 bytes...';
+                    $VerboseMsg = ($DataBuffer[0..3] | ForEach-Object {write-output ("{0:X2}" -f $_)}) -join ' ';
+                    Write-Verbose -Message $VerboseMsg
+                 }
 
-       } #end foreach loop
+                if ($RemainingBytes -gt $BufferLen) {
+                    # Write a full buffer worth of data to the stream
+                    $fos.Write($DataBuffer, 0, $BufferLen);
+                    $BytesWritten += $DataBuffer.LongLength;
+                } else {
+                    # Write a partial buffer to the stream because
+                    # this is all we have left
+                    $fos.Write($DataBuffer, 0, $RemainingBytes);
+                    $BytesWritten += $RemainingBytes;
+                }
 
-       # Now we've overwritten the file, delete it
-       Remove-Item -Path $FileName -Force;
+                $fos.Flush();
+
+            } #end while loop
+
+            $BytesWritten = 0L;
+        } #end foreach loop
 
      } catch {
        Write-Host $_.Exception.Message -ForegroundColor Green
      } finally {
+       $fos.Flush();
+       $fos.Close();
        $rng.Dispose();
+
+       # Now we've overwritten the file, delete it
+       Remove-Item -Path $FileName -Force;
 
        # Confirm to the user whether the file has been deleted as intended
        if (Test-Path -Path $FileName) {
-         Write-Warning -Message "File $($FileName) not deleted";
+         Write-Warning -Message "Shredded file $($FileName) not deleted";
        } else {
-         Write-Output "File $($FileName) deleted as intended";
+         Write-Output "Shredded file $($FileName) deleted as intended";
        }
      } #end try/catch/finally block
 
     }
 
     End {
-      Remove-Variable -Name fileLen, byteArray -Force;
+      Remove-Variable -Name 'DataBuffer' -Force;
     }
 }
 #endregion ***** End of function Delete-File *****
@@ -252,12 +338,13 @@ Invoke-Command -ScriptBlock {
 
 }
 
-# Get the filename to delete
-$Path = Get-Filename -Title 'Filename to delete';
-if (Confirm-Delete -FileName $Path) {
-   Delete-File -FileName $Path;
+# Get the filename to shred and delete
+[String]$MyFile = Get-Filename -Title 'Filename to delete';
+Write-Verbose -Message "File returned is |$MyFile|";
+if (Confirm-Delete -FileName $MyFile) {
+   Delete-File -FileName $MyFile;
 } else {
-   Write-Warning -Message "`nFile $($Path) not deleted at user request";
+   Write-Warning -Message "`nFile $($MyFile) not deleted at user request";
 }
 
 ##=============================================
