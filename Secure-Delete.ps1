@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2021-01-17T13:18:09
+Last updated : 2021-01-18T12:54:47
 Keywords     : yes no yesno
 
 .LINK
@@ -43,43 +43,9 @@ https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryp
 
 #>
 
-Search term: how to download a file with powershell from the web
-
-How to Download a File with PowerShell from the Web
-https://adamtheautomator.com/powershell-download-file/
-
-
-See if I can tidy up yesno function Confirm-Delete a little bit?
-A revised (alternate) way of writing bacon and eggs
-(C:\Family\powershell\YesNo.txt)
-$cDescription = 'System.Management.Automation.Host.ChoiceDescription' -as [type];
-$caption = "Breakfast eggs";
-$message = "Shall we have bacon and eggs for breakfast?";
-$choices = New-Object -typeName "System.Collections.ObjectModel.Collection[$cDescription]";
-$defaultChoice = 0;
-
-$yes = $cDescription::new("&Yes");
-$yes.HelpMessage = "I love eggs";
-$choices.Add($yes);
-
-$no = $cDescription::new("&No");
-$no.HelpMessage = "Not hungry at present";
-$choices.Add($no);
-
-$exit = $cDescription::new("&Exit");
-$exit.HelpMessage = "Exit and do nothing";
-$choices.Add($exit);
-
-$result = $host.ui.PromptForChoice($caption, $message, $choices, $defaultChoice)
-
-switch ($result) {
-    0 {"You selected Yes"}
-    1 {"You selected No"}
-    2 {"Nothing to do"}
-}
-
-Write-Output 'All done now';
-
+#Search term: how to download a file with powershell from the web
+#How to Download a File with PowerShell from the Web
+#https://adamtheautomator.com/powershell-download-file/
 
 [CmdletBinding()]
 Param() #end param
@@ -169,45 +135,61 @@ function Confirm-Delete {
 [OutputType([System.Boolean])]
 Param (
     [parameter(Mandatory=$true,
-               HelpMessage="Filename about to be deleted")]
+               HelpMessage="Confirm file deletion")]
     [ValidateNotNullOrEmpty()]
     [String]$FileName
 ) #end param
 
-  Begin {
-   $retval = $false;
-   $title = "Remove file";
-   $yes = New-Object -TypeName 'System.Management.Automation.Host.ChoiceDescription' "&Yes", `
-          "Remove file";
-   $no = New-Object -TypeName 'System.Management.Automation.Host.ChoiceDescription' "&No", `
-         "Ignore file";
+      Begin {
 
-   $msg = @"
+        $retval = $false;
+        $cDescription = 'System.Management.Automation.Host.ChoiceDescription' -as [type];
+        $caption = "Remove file";
+        $message = @"
 Confirm
 Are you sure you want to perform this action?
-
-Performing the operation 'Remove File' on target $($FileName).
-
+Performing the operation remove file on target $($FileName).
 This action cannot be undone! Please make sure
-"@
-  }
+"@ #end of message variable
+        # Create a 'Collection' object of type
+        # 'System.Management.Automation.Host.ChoiceDescription'
+        # with the generic type of
+        # 'System.Management.Automation.Host.ChoiceDescription'
+        $choices = New-Object -typeName "System.Collections.ObjectModel.Collection[$cDescription]";
+        $defaultChoice = 1;
 
-  Process {
-   $options = [System.Management.Automation.Host.ChoiceDescription[]]($no, $yes);
+        $yes = $cDescription::new("&Yes"); # Label value
+        $yes.HelpMessage = "Remove file";
+        $choices.Add($yes);
 
-   $result = $host.ui.PromptForChoice($title, $msg, $options, 0);
+        $no = $cDescription::new("&No"); # Label value
+        $no.HelpMessage = "Ignore file";
+        $choices.Add($no);
 
-  }
+        $exit = $cDescription::new("&Exit"); # Label value
+        $exit.HelpMessage = "Exit and do nothing";
+        $choices.Add($exit);
+      } #end of Begin block
 
-  End {
+      Process {
+        # https://docs.microsoft.com/en-us/dotnet/api/system.management.automation.host.pshostuserinterface.promptforchoice?view=powershellsdk-7.0.0
+        # Returns an 'Int32' value which is the index of the choices
+        # element that corresponds to the option selected by the
+        # user.
+        $result = $host.ui.PromptForChoice($caption, $message, $choices, $defaultChoice)
 
-   switch ($result) {
-      0 {$retval = $false; break}  # Response no
-      1 {$retval = $true; break}   # Response yes
-   }
+      }
 
-    return $retval;
-  }
+      End {
+
+       switch ($result) {
+          0 {$retval = $true; break}  # Response yes
+          1 {$retval = $false; break} # Response no
+          2 {$retval = $false; break} # Response exit
+       }
+
+        return $retval;
+      }
 }
 #endregion ***** end of function Confirm-Delete *****
 
@@ -224,7 +206,6 @@ Param (
 ) #end param
 
     Begin {
-      #Write-Output "Shredding and deleting file $($FileName)";
       [Byte]$PassCounter = 0;
       $BufferSize = 8KB;
       $DataBuffer = [System.Byte[]]::new($BufferSize);
@@ -263,12 +244,9 @@ Param (
                 #
                 $RemainingBytes = $FileLength - $BytesWritten;
                 $rng.GetBytes($DataBuffer);
-                Write-Verbose -Message 'Random data refreshed. First four bytes...';
-                if ($PSBoundParameters['Verbose']) {
-                    Write-output  'Random data refreshed. First 99 bytes...';
-                    $VerboseMsg = ($DataBuffer[0..3] | ForEach-Object {write-output ("{0:X2}" -f $_)}) -join ' ';
-                    Write-Verbose -Message $VerboseMsg
-                 }
+                Write-Verbose  'Random data refreshed. First four bytes...';
+                $VerboseMsg = ($DataBuffer[0..3] | ForEach-Object {Write-Output ("{0:X2}" -f $_)}) -join ' ';
+                Write-Verbose -Message $VerboseMsg
 
                 if ($RemainingBytes -gt $BufferLen) {
                     # Write a full buffer worth of data to the stream
@@ -296,7 +274,7 @@ Param (
        $rng.Dispose();
 
        # Now we've overwritten the file, delete it
-       Remove-Item -Path $FileName -Force;
+       Remove-Item -Path $FileName -Force -Verbose;
 
        # Confirm to the user whether the file has been deleted as intended
        if (Test-Path -Path $FileName) {
@@ -339,12 +317,12 @@ Invoke-Command -ScriptBlock {
 }
 
 # Get the filename to shred and delete
-[String]$MyFile = Get-Filename -Title 'Filename to delete';
-Write-Verbose -Message "File returned is |$MyFile|";
+[String]$MyFile = Get-Filename -Title 'Filename to shred/delete';
+Write-Verbose -Message "File selected for shred/delete is |$MyFile|";
 if (Confirm-Delete -FileName $MyFile) {
    Delete-File -FileName $MyFile;
 } else {
-   Write-Warning -Message "`nFile $($MyFile) not deleted at user request";
+   Write-Warning -Message "File $($MyFile) not deleted at user request";
 }
 
 ##=============================================
