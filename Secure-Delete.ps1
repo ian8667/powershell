@@ -5,10 +5,10 @@ Securely delete a file.
 
 .DESCRIPTION
 
-Securely deletes a file by overwriting the file several times with a
-cryptographically strong sequence of random byte values. Each iteration
-uses a different value of bytes which are obtained from the method
-RNGCryptoServiceProvider.GetBytes.
+Securely deletes a file by overwriting the file several times
+with a cryptographically strong sequence of random byte values.
+Each iteration uses a different value of bytes which are
+obtained from the method 'RNGCryptoServiceProvider.GetBytes'.
 
 After the file has been overwritten, it's then deleted using the
 PowerShell cmdlet Remove-Item.
@@ -33,6 +33,12 @@ File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
 Last updated : 2021-01-18T12:54:47
 Keywords     : yes no yesno
+
+See also
+NIST SP 800-88 R1, Guidelines for Media Sanitization
+
+DoD 5220.22-M National Industrial Security Program
+Operating Manual (NISPOM)
 
 .LINK
 
