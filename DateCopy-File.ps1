@@ -68,7 +68,9 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-12-22T18:40:18
+Last updated : 2021-01-20T15:52:36
+
+This program contains examples of using delegates.
 
 .LINK
 
@@ -93,7 +95,7 @@ https://www.ietf.org/rfc/rfc1321.txt
 How to find these files again:
 $file = 'C:\Gash\mygash_2020-10-01T22-47-03.pdf';
 $reg = '(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})';
-Get-ChildItem -file | Where-Object -Property 'name' -Match -Value $reg;
+Get-ChildItem -File | Where-Object -Property 'name' -Match -Value $reg;
 $file -match $reg
 
 #>
@@ -113,7 +115,98 @@ Param (
 ) #end param
 
 #----------------------------------------------------------
+# Start of delegates
+#----------------------------------------------------------
+$ErrorsFound = [Predicate[System.Collections.Generic.List[Byte]]]{
+<#
+The object passed in contains a list of positions within the
+filename string which are invalid. If the number of elements
+contained in the List is zero (the collection is empty),
+there are no errors.
+
+Return true if there are errors; otherwise, false.
+#>
+param($x) $x.Count -gt 0
+}
+Set-Variable -Name 'ErrorsFound' -Option ReadOnly;
+
+#----------------------------------------------------------
+
+$invalids = [Func[System.Collections.Generic.List[Byte]]]{
+<#
+Create a collection and store a list of invalid characters
+that should not appear in a filename.
+
+Method GetInvalidFileNameChars is used to build a collection
+containing the characters that are not allowed in file names.
+
+Func<TResult> Delegate
+Encapsulates a method that has no parameters and returns a
+value of the type specified by the TResult parameter.
+https://docs.microsoft.com/en-us/dotnet/api/system.func-1?view=net-5.0
+#>
+    $invalidChars = [System.Collections.Generic.List[Byte]]::new();
+    $invalidChars.Capacity = 50;
+    $invalidChars.Add(91); #decimal value - Left square bracket [
+    $invalidChars.Add(93); #decimal value - Right square bracket ]
+    $invalidChars.Add(35); #decimal value - Hash symbol #
+    $invalidChars.Add(59); #decimal value - Semicolon ;
+    $invalidChars.Add(64); #decimal value - At symbol @
+    [System.IO.Path]::GetInvalidFileNameChars() |
+    ForEach-Object {
+        $invalidChars.Add($PSItem);
+    }
+    $invalidChars;
+}
+Set-Variable -Name 'invalids' -Option ReadOnly;
+
+#----------------------------------------------------------
+# End of delegates
+#----------------------------------------------------------
+
+#----------------------------------------------------------
 # Start of functions
+#----------------------------------------------------------
+
+#region ***** function Show-ErrorPositions *****
+function Show-ErrorPositions {
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory=$true,
+                   HelpMessage="Show where the errors are in the filename")]
+        [ValidateNotNullOrEmpty()]
+        [System.Collections.Generic.List[Byte]]$ErrorPositions,
+
+        [parameter(Mandatory=$true,
+                   HelpMessage="Filename length")]
+        [ValidateScript({$_ -gt 0})]
+        [Int32]$FilenameLen
+    ) #end param
+
+    begin {
+        $k = ' ' * $FilenameLen;
+        $sb = [System.Text.StringBuilder]::new();
+        $sb.Capacity = $FilenameLen;
+        $sb.Append($k) | Out-Null;
+        #Write-Output "sb(1) is now: $($sb.ToString())";
+
+    }
+
+    process {
+        foreach ($item in $ErrorPositions) {
+            $sb[($item - 1)] = '^';
+        }
+
+    }
+
+    end {
+        #Write-Output "k is now: $k";
+        #Write-Output "sb(2) is now: $($sb.ToString())";
+        return $sb.ToString();
+    }
+}
+#endregion ***** end of function Show-ErrorPositions *****
+
 #----------------------------------------------------------
 
 #region ***** Function Get-OldFilename *****
@@ -167,7 +260,7 @@ Begin {
   $ofd.Title = $Boxtitle; # sets the file dialog box title
   $ofd.ShowHelp = $false;
   $ofd.RestoreDirectory = $false;
-  Set-Variable -Name 'ofd' -Option ReadOnly;
+  Set-Variable -Name 'myok', 'ofd' -Option ReadOnly;
 
 }
 
@@ -197,10 +290,12 @@ Computes the hash value of two files
 
 .DESCRIPTION
 
-Uses the Get-FileHash cmdlet to compute the MD5 hash value
-of the original and copied file. The purpose of hash values
-is to verify that the contents of the copied file has not
-been changed and thus the copy was successful.
+Uses the 'Get-FileHash' cmdlet to compute the MD5 hash value
+of the original and copied file. The hashes of two sets of
+data from the files concerned should match if the
+corresponding data also matches. This will verify that the
+contents of the copied file has not been changed and thus
+the copy was successful.
 
 Returns true if the hash values are the same; false otherwise
 
@@ -212,7 +307,12 @@ filenames.
 .LINK
 
 Get-FileHash
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-filehash?view=powershell-7.1#description
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-filehash?view=powershell-7.1
+
+System.Security.Cryptography.MD5CryptoServiceProvider Class
+https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.md5cryptoserviceprovider?view=net-5.0
+
+java.security.MessageDigest Class
 #>
 
 [CmdletBinding()]
@@ -293,7 +393,7 @@ Begin {
   $f3 = [System.io.Path]::GetExtension($OldFilename);
 
   # Character used to separate directory levels in a path. Returns
-  # a backslash on an MS Windows operating system 
+  # a backslash on an MS Windows operating system
   $slash = [System.io.Path]::DirectorySeparatorChar;
   Set-Variable -Name 'f1', 'f2', 'f3', 'slash' -Option ReadOnly;
 
@@ -315,6 +415,92 @@ End {
 
 }
 #endregion ***** End of function Get-NewFilename *****
+
+#----------------------------------------------------------
+
+#region ***** function Check-Filename *****
+function Check-Filename {
+<#
+.SYNOPSIS
+
+Check the filename for invalid characters
+
+.DESCRIPTION
+
+Checks the filename supplied for any invalid characters
+and throws a terminating error if errors found. Prior
+to throwing a terminating error, the filename and where
+the errors are in the filename will be written to the
+console so the user will be aware of where the problem
+characters are in the filename
+
+.PARAMETER CheckFile
+
+The filename to check
+
+.LINK
+
+OpenFileDialog Class.
+https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?view=netcore-3.1
+#>
+
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory=$true,
+                   HelpMessage="Check filename for invalid characters")]
+        [ValidateNotNullOrEmpty()]
+        [String]$CheckFile
+    ) #end param
+
+    begin {
+          $invalidChars = $invalids.Invoke();
+
+          #We only need to check the filename, not the pathname so
+          #hence the reason for using the Split-Path cmdlet to
+          #obtain the leaf part of the path.
+          #$filename = 'C:\Gash\gashfile.txt';
+          $fname = Split-Path -Path $CheckFile -Leaf;
+
+          [Byte]$PosCounter = 0;
+          #Contains the character position(s) within the filename that
+          #are in error
+          $ErrorPos = [System.Collections.Generic.List[Byte]]::new();
+          $ErrorPos.Capacity = 30;
+
+          $encoder = [System.Text.UTF8Encoding]::new();
+          Set-Variable -Name 'fname', 'encoder' -Option ReadOnly;
+          #Write-Output ('Looking at filename: {0} ({1} characters)' -f $fname, $fname.Length);
+    } #end begin block
+
+    process {
+          #Iterate over each character in the filename in order
+          #to examine or process each character to ensure it's
+          #not an invalid character. If it is an invalid character,
+          #make a note of it's position.
+          $encoder.GetBytes($fname) | ForEach-Object {
+              $data = $PSItem;
+              $PosCounter++;
+              if ($invalidChars.Contains($data)) {
+                  $ErrorPos.Add($PosCounter);
+              }
+          } #end of ForEach-Object loop
+
+          if ($ErrorsFound.Invoke($ErrorPos)) {
+              Write-Output '';
+              Write-Output ('We have a filename problem, ({0} errors)' -f $ErrorPos.Count);
+              $m = Show-ErrorPositions -ErrorPositions $ErrorPos -FilenameLen $fname.Length;
+              Write-Output $fname;
+              Write-Output $m;
+
+              throw "Invalid characters found in filename $($fname)";
+          }
+
+    } #end process block
+
+    end {}
+
+}
+#endregion ***** end of function Check-Filename *****
 
 #----------------------------------------------------------
 # End of functions
@@ -366,6 +552,12 @@ if ($PSBoundParameters.ContainsKey('Path')) {
    $OldNewName.OldFilename = Get-OldFilename -Boxtitle 'File to copy';
 }
 
+# Check the input filename doesn't contain any invalid characters
+# which may cause problems. If so, terminate the program
+Check-Filename -CheckFile $OldNewName.OldFilename;
+
+# Get the new filename name which is derived from the old
+# (original) filename from which we are copying.
 $OldNewName.NewFilename = Get-NewFilename -OldFilename $OldNewName.OldFilename;
 Set-Variable -Name 'OldNewName' -Option ReadOnly;
 
@@ -379,7 +571,9 @@ if (Test-Path -Path $OldNewName.NewFilename) {
   # Ensure the file copy was successful by computing the (MD5) hash
   # value of the two files concerned.
   $compareOK = Compare-Files -DataFile $OldNewName;
-  if (-not ($compareOK)) {
+  if ($compareOK) {
+    Write-Output 'Hash compare of the two files successful';
+  } else {
     throw 'Hash values for the two files are not the same. Please check';
   }
 
