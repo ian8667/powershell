@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2020-12-22T18:14:35
+Last updated : 2021-01-24T13:57:05
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -69,6 +69,132 @@ https://www.tecklyfe.com/how-to-disable-telemetry-and-data-collection-in-windows
 
 Windows 10: Powershell Script to protect your privacy
 https://michlstechblog.info/blog/windows-10-powershell-script-to-protect-your-privacy/
+
+20 Unnecessary Background Services to Disable on Windows 10
+https://www.freshtechtips.com/2019/04/disable-unnecessary-services-in-windows.html
+
+See also
+What's new in Windows 10? (worth reading?)
+https://support.microsoft.com/en-us/windows?ui=en-US&rs=en-US&ad=US
+
+* -----
+Next run the commands below (cmd) in an elevated command prompt:
+sc delete DiagTrack
+sc delete dmwappushservice
+
+o Makre sure this directory is empty
+DiagTrack Log
+C:\ProgramData\Microsoft\Diagnosis\ETLLogs\Autologger(?)
+Concentrate on file 'AutoLogger-DiagTrack-Listener.etl'?
+
+o Services
+You can delete or disable the 2 services below:
+DiagTrack - (aka. Connected User Experiences and Telemetry) Diagnostics Tracking Service
+dmwappushsvc - WAP Push Message Routing Service
+
+o HOSTS
+Append known tracking domains to the HOSTS file located
+in C:\Windows\System32\drivers\etc
+
+o IP Blocking
+Block known tracking IPs with the Windows Firewall. The
+rules are named TrackingIPX, replacing X with the IP numbers.
+
+o Windows Defender
+Disable the following:
+Automatic Sample Submission
+Delivery Optimization Download Mode
+
+o WifiSense (not sure what this is)
+Disables the following:
+Credential Share
+Open-ness
+
+o Office 365 telemetry
+The English version of the report is available as a PDF document
+that you can download.
+https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Publikationen/Studien/Office_Telemetrie/Office_Telemetrie.pdf?__blob=publicationFile&v=5
+
+o Microsoft Edge
+C:\Users\ianm7\AppData\Local\Microsoft\Edge\User Data
+Why do I have recent files in the above directory when I don't use Edge?
+
+o Services
+what are these services? Have a look in more detail.
+get-Service -Name RetailDemo
+get-Service -Name wercplsupport
+get-Service -Name TapiSrv
+get-Service -Name WbioSrvc
+get-Service -Name wcncsvc
+get-Service -Name winrm
+get-Service -Name XblAuthManager
+get-Service -Name XblGameSave
+get-Service -Name XboxNetApiSvc
+
+o Scheduled tasks
+Do I need to disable these tasks?
+
+"Microsoft\Windows\Power Efficiency Diagnostics\AnalyzeSystem",
+# Initializes Family Safety monitoring and enforcement.
+"Microsoft\Windows\Shell\FamilySafetyMonitor",
+# Synchronizes the latest settings with the Microsoft family features service.
+"Microsoft\Windows\Shell\FamilySafetyMonitorToastTask",
+# Synchronizes the latest settings with the Microsoft family features service.
+"Microsoft\Windows\Shell\FamilySafetyRefreshTask",
+# Collects program telemetry information if opted-in to the Microsoft Customer Experience Improvement Program.
+"Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser",
+"Microsoft\Windows\Application Experience\AitAgent",
+# Collects program telemetry information if opted-in to the Microsoft Customer Experience Improvement Program
+"Microsoft\Windows\Application Experience\ProgramDataUpdater",
+"Microsoft\Windows\Application Experience\Uploader",
+# This task collects and uploads autochk SQM data if opted-in to the Microsoft Customer Experience Improvement Program.
+"Microsoft\Windows\Autochk\Proxy",
+# The Windows Disk Diagnostic reports general disk and system information to Microsoft for users participating in the Customer Experience Program.
+"Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector",
+# "Microsoft\Windows\Maintenance\WinSAT",
+"Microsoft\Office\OfficeTelemetryAgentFallBack2016",
+"Microsoft\Office\OfficeTelemetryAgentLogOn2016",
+"Microsoft\Office\Office ClickToRun Service Monitor",
+"Microsoft\Office\OfficeTelemetry\AgentFallBack2016",
+"Microsoft\Office\OfficeTelemetry\OfficeTelemetryAgentLogOn2016",
+"Microsoft\Windows\Media Center\ActivateWindowsSearch",
+"Microsoft\Windows\Media Center\ConfigureInternetTimeService",
+"Microsoft\Windows\Media Center\DispatchRecoveryTasks",
+"Microsoft\Windows\Media Center\ehDRMInit",
+"Microsoft\Windows\Media Center\InstallPlayReady",
+"Microsoft\Windows\Media Center\mcupdate",
+"Microsoft\Windows\Media Center\MediaCenterRecoveryTask",
+"Microsoft\Windows\Media Center\ObjectStoreRecoveryTask",
+"Microsoft\Windows\Media Center\OCURActivate",
+"Microsoft\Windows\Media Center\OCURDiscovery",
+"Microsoft\Windows\Media Center\PBDADiscovery",
+"Microsoft\Windows\Media Center\PBDADiscoveryW1",
+"Microsoft\Windows\Media Center\PBDADiscoveryW2",
+"Microsoft\Windows\Media Center\PvrRecoveryTask",
+"Microsoft\Windows\Media Center\PvrScheduleTask",
+"Microsoft\Windows\Media Center\RegisterSearch",
+"Microsoft\Windows\Media Center\ReindexSearchRoot",
+"Microsoft\Windows\Media Center\SqlLiteRecoveryTask",
+"Microsoft\Windows\Media Center\UpdateRecordPath"
+
+\Microsoft\Windows\Diagnosis
+
+o OneDrive logs - check the number of logs in this directory
+C:\Users\ianm7\AppData\Local\Microsoft\OneDrive\setup\logs
+
+o Privacy Dashboard
+https://account.microsoft.com/privacy/
+
+o Example of code - shall I do something like this?
+Function DisableDiagTrack {
+	Write-Output "Stopping and disabling Diagnostics Tracking Service..."
+	Stop-Service "DiagTrack" -WarningAction SilentlyContinue
+	Set-Service "DiagTrack" -StartupType Disabled
+}
+
+o Example program (contains LOTS of enable/disables)
+mughuara/windows10_debloat_OneDrive.txt
+https://gist.github.com/mughuara/fd71e3b297bc6f20b07327f131f265dc
 
 #>
 
@@ -159,27 +285,42 @@ param ()
 
 #region ***** function Disable-Services *****
 function Disable-Services {
+<#
+o 'DiagTrack' service has been deleted. Just make sure it
+doesn't come back.
+
+o 'Distributed Link Tracking Client' (service name'TrkWks').
+Responsible for safely eject issues? ie, why you can't eject
+a drive because it still has a file handle open?
+
+#>
 [CmdletBinding()]
 param ()
 
+# dmwappushservice
+# sc delete dmwappushservice
     begin {
-        #Unwanted services
+        #Unwanted services. The values used in the array
+        #are the 'service name' for the service concerned.
+        #The 'display name' can be seen in the comments.
         Write-Output 'Stopping some unwanted services';
         $services = @(
           'AdobeARMservice' # Adobe Acrobat Update Service
-          'DiagTrack'       # Connected User Experiences and Telemetry
           'ClickToRunSvc'   # Microsoft Office Click-to-Run Service
           'WinRM'           # Windows Remote Management (WS-Management)
+          'AJRouter'        # AllJoyn Router Service
         )
         Set-Variable -Name 'services' -Option ReadOnly;
 
     }
 
     process {
-        # Loop to disable scheduled tasks
+        # Loop to disable services
         foreach ($service in $services) {
             Stop-Service -Force -Name $service;
-          }
+            Set-Service -Name $service -StartupType Disabled;
+
+        }
 
     }
 
