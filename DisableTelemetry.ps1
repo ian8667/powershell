@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2021-01-24T13:57:05
+Last updated : 2021-01-26T13:53:29
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -72,6 +72,9 @@ https://michlstechblog.info/blog/windows-10-powershell-script-to-protect-your-pr
 
 20 Unnecessary Background Services to Disable on Windows 10
 https://www.freshtechtips.com/2019/04/disable-unnecessary-services-in-windows.html
+
+What Windows 10 Services Can I Disable
+https://www.briteccomputers.co.uk/posts/what-windows-10-services-can-i-disable/
 
 See also
 What's new in Windows 10? (worth reading?)
@@ -187,9 +190,9 @@ https://account.microsoft.com/privacy/
 
 o Example of code - shall I do something like this?
 Function DisableDiagTrack {
-	Write-Output "Stopping and disabling Diagnostics Tracking Service..."
-	Stop-Service "DiagTrack" -WarningAction SilentlyContinue
-	Set-Service "DiagTrack" -StartupType Disabled
+  Write-Output "Stopping and disabling Diagnostics Tracking Service..."
+  Stop-Service "DiagTrack" -WarningAction SilentlyContinue
+  Set-Service "DiagTrack" -StartupType Disabled
 }
 
 o Example program (contains LOTS of enable/disables)
@@ -219,7 +222,7 @@ param ()
         #
         #TaskPath - To specify a full TaskPath you need to include the
         #leading and trailing \. If you do not specify a path, the
-        #cmdlet uses the root folder.
+        #cmdlet uses the root folder which may not be what you want.
         #
         #Think about disabling tasks in \Microsoft\Office ?
         #
@@ -289,10 +292,31 @@ function Disable-Services {
 o 'DiagTrack' service has been deleted. Just make sure it
 doesn't come back.
 
-o 'Distributed Link Tracking Client' (service name'TrkWks').
-Responsible for safely eject issues? ie, why you can't eject
-a drive because it still has a file handle open?
+o Services to think about disabling
+Name: TrkWks
+DisplayName: Distributed Link Tracking Client
 
+o Notes
+Name: PcaSvc
+DisplayName: Program Compatibility Assistant Service
+If you love to run legacy or poorly maintained applications
+on your Windows 10 PC, you may need this service. This
+service checks for compatibility problems while installing
+an application.
+
+Name: stisvc
+DisplayName: Windows Image Acquisition (WIA)
+Windows Image Acquisition (WIA) is the still image acquisition
+platform in the Windows family of operating systems
+https://docs.microsoft.com/en-us/windows/win32/wia/-wia-startpage
+
+See also:
+Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services
+
+* -----
+Currently working on:
+What Windows 10 Services Can I Disable
+https://www.briteccomputers.co.uk/posts/what-windows-10-services-can-i-disable/
 #>
 [CmdletBinding()]
 param ()
@@ -305,10 +329,27 @@ param ()
         #The 'display name' can be seen in the comments.
         Write-Output 'Stopping some unwanted services';
         $services = @(
-          'AdobeARMservice' # Adobe Acrobat Update Service
-          'ClickToRunSvc'   # Microsoft Office Click-to-Run Service
-          'WinRM'           # Windows Remote Management (WS-Management)
-          'AJRouter'        # AllJoyn Router Service
+          'AdobeARMservice'     # Adobe Acrobat Update Service
+          'ClickToRunSvc'       # Microsoft Office Click-to-Run Service
+          'WinRM'               # Windows Remote Management (WS-Management)
+          'AJRouter'            # AllJoyn Router Service
+          'MapsBroker'          # Downloaded Maps Manager
+          'Fax'                 # Fax
+          'WpcMonSvc'           # Parental Controls
+          'PcaSvc'              # Program Compatibility Assistant Service. See note above
+          'RemoteRegistry'      # Remote Registry
+          'RetailDemo'          # Retail Demo Service
+          'seclogon'            # Secondary Log-on
+          'lmhosts'             # TCP/IP NetBIOS Helper
+          'WerSvc'              # Windows Error Reporting Service
+          'wisvc'               # Windows Insider Service
+          'XblAuthManager'      # Xbox Live Auth Manager
+          'XblGameSave'         # Xbox Live Game Save
+          'XboxGipSvc'          # Xbox Accessory Management Service
+          'XboxNetApiSvc'       # Xbox Live Networking Service
+          'OneSyncSvc*'         # Sync Host_4fe3c
+          #Can't seem to stop this service. It gives an error
+          #'TabletInputService'  # Touch Keyboard and Handwriting Panel Service
         )
         Set-Variable -Name 'services' -Option ReadOnly;
 
