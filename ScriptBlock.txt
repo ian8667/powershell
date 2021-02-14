@@ -9,7 +9,7 @@ or Start-ThreadJob cmdlet.
 See also the Start-Job/Start-ThreadJob cmdlet parameter
 'ScriptBlock'.
 
-Last updated: 01 November 2020
+Last updated: 14 February 2021
 #-------------------------------------------------
 
 
@@ -22,7 +22,10 @@ Last updated: 01 November 2020
 
 $sb = {
 <#
+Find oldest and newest LastWriteTime of files.
+
 Oldest and newest file.
+
 Scriptblock to find the oldest and newest LastWriteTime of files
 in a directory. No recursion is done so only the start (initial)
 directory is looked at.
@@ -42,6 +45,7 @@ $ErrorActionPreference = "Stop";
     $oldFilename = '';
     $newFilename = '';
     [UInt32]$fileCounter = 0;
+    Set-Variable -Name 'oldDate', 'newDate' -Option ReadOnly;
 
     Write-Output "`nLooking for the oldest and newest LastWriteTime of files";
     Write-Output ("Directory looked at (with no recursion): {0}" -f $path);
@@ -89,7 +93,7 @@ End {
 ##===========================================
 ## New item
 ## Text file line numbers.
-## 25 March 2020
+## 14 February 2021
 ##===========================================
 
 $sb = {
@@ -113,22 +117,17 @@ Begin {
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-  $datetimeMask = 'yyyy-MM-ddTHH-mm-ss';
-  $ProcessStart = Get-Date;
-  Write-Output ('Text file line numbering start: {0}' -f $ProcessStart.ToString($datetimeMask))
+  Write-Output ('Text file line numbering start: {0}' -f (Get-Date -Format 's'))
 
   $BasePath = 'C:\gash';  # <-- Change accordingly.
   Set-Location -Path $BasePath;
   $myfile = @{
-      'Input' = Join-Path -Path $BasePath -ChildPath 'gash01.txt';   # <-- Change accordingly.
+      'Input' = Join-Path -Path $BasePath -ChildPath 'testinput.txt';   # <-- Change accordingly.
       'Output' = Join-Path -Path $BasePath -ChildPath 'gash02.txt';  # <-- Change accordingly.
   }
+  Set-Variable -Name 'BasePath','myfile' -Option ReadOnly;
 
   [UInt16]$lineCounter = 0;
-
-  # Specifies how many lines of content are sent through
-  # the pipeline at a time
-  [Int64]$rCount = 1024;
 
   if ((Get-Item $myfile.Input).Length -eq 0) {
       throw "Input file $($myfile.Input) cannot be zero bytes length)";
@@ -141,13 +140,17 @@ $ErrorActionPreference = "Stop";
   if (Test-Path -Path $myfile.Output) {
       Clear-Content -Path $myfile.Output;
   }
-}
+
+  $stopwatch =  [System.Diagnostics.Stopwatch]::StartNew();
+
+} #end Begin block
 
 Process {
 
-  foreach ($oldLine in (Get-Content -Path $myfile.Input -ReadCount $rCount)) {
+  foreach ($oldLine in (Get-Content -Path $myfile.Input)) {
       $lineCounter++;
       $newLine = [System.String]::Format(("{0} | {1}"), $lineCounter.ToString('00000'), $oldLine);
+      #Add the newly constructed line to the output file
       Add-Content -Path $myfile.Output -Value $newLine;
   }
 
@@ -155,10 +158,12 @@ Process {
 
 End {
 
-  $ProcessFinish = Get-Date;
-  Write-Output ('Text file line numbering finish: {0}' -f $ProcessFinish.ToString($datetimeMask))
+  $stopwatch.Stop();
+  Write-Output ('Text file line numbering finish: {0}' -f (Get-Date -Format 's'))
+  Write-Output 'Elapsed time:'
+  $stopwatch.Elapsed | Format-Table Hours, Minutes, Seconds, Milliseconds;
 
-  Write-Output "`nFiles used:"
+  Write-Output "Files used:"
   Write-Output $myfile;
 
   Get-ChildItem -File -Path $BasePath |
