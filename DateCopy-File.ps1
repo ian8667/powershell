@@ -42,6 +42,8 @@ PS> ./DateCopy-File.ps1 -Path 'myfile.txt'
 The filename supplied will be copied to a file with the name format
 of myfile_YYYY-MM-DDTHH-MM-SS.txt.
 
+.EXAMPLE
+
 PS> ./DateCopy-File.ps1 -ReadOnly
 
 A filename to copy has not been supplied so an internal function will be
