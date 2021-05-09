@@ -42,6 +42,12 @@ PS> ./DateCopy-File.ps1 -Path 'myfile.txt'
 The filename supplied will be copied to a file with the name format
 of myfile_YYYY-MM-DDTHH-MM-SS.txt.
 
+PS> ./DateCopy-File.ps1 -ReadOnly
+
+A filename to copy has not been supplied so an internal function will be
+invoked to obtain the file to copy. The file when copied, will be set to
+ReadOnly upon completion.
+
 .EXAMPLE
 
 PS> ./DateCopy-File.ps1 'myfile.txt' -ReadOnly
@@ -68,7 +74,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2021-01-20T15:52:36
+Last updated : 2021-05-09T16:53:50
 
 This program contains examples of using delegates.
 
@@ -246,7 +252,8 @@ Begin {
   Write-Verbose -Message "Invoking function to obtain the to file to copy";
 
   Add-Type -AssemblyName "System.Windows.Forms";
-  [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
+  #[System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
+  [System.Windows.Forms.OpenFileDialog]$ofd = [System.Windows.Forms.OpenFileDialog]::new();
 
   $myok = [System.Windows.Forms.DialogResult]::OK;
   [String]$retFilename = "";
@@ -312,6 +319,9 @@ https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/
 System.Security.Cryptography.MD5CryptoServiceProvider Class
 https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.md5cryptoserviceprovider?view=net-5.0
 
+Microsoft.PowerShell.Commands.FileHashInfo Class
+https://docs.microsoft.com/en-us/dotnet/api/microsoft.powershell.commands.filehashinfo?view=powershellsdk-7.0.0
+
 java.security.MessageDigest Class
 #>
 
@@ -333,8 +343,6 @@ $splat = @{
 $fHash = Get-FileHash @splat;
 if ($fHash[0].Hash -eq $fHash[1].Hash) {
   $retval = $true;
-} else {
-  $retval = $false;
 }
 
 return $retval;
@@ -400,8 +408,8 @@ Begin {
   $newFilename = ("{0}{1}{2}{3}" -f $f1, $slash, $f2, $timestamp);
 
   if (-not ([System.String]::IsNullOrEmpty($f3))) {
-      # This filename has a file extension. Insert it
-      # into our new filename
+      # The original filename has a file extension. Insert
+      # it back into our new filename
       $newFilename = ("$($newFilename){0}" -f $f3);
   }
 
@@ -567,7 +575,6 @@ Write-Output ("New name of copied file = {0}" -f $OldNewName.NewFilename);
 Copy-Item -Path $OldNewName.OldFilename -Destination $OldNewName.NewFilename;
 
 if (Test-Path -Path $OldNewName.NewFilename) {
-
   # Ensure the file copy was successful by computing the (MD5) hash
   # value of the two files concerned.
   $compareOK = Compare-Files -DataFile $OldNewName;
@@ -597,13 +604,13 @@ if (Test-Path -Path $OldNewName.NewFilename) {
      Set-ItemProperty -Path $OldNewName.NewFilename -Name 'IsReadOnly' -Value $True;
   }
 
-  #List the old and new filename objects
+  #List the old and new filename objects.
   #I agree this is a convoluted way of listing the files used, but
   #this serves as a reminder of how to iterate over a PowerShell
   #'PSCustomObject' object.
   $m = $OldNewName.psobject.Members |
          Where-Object -Property 'MemberType' -like -Value 'NoteProperty';
-  foreach ($item in $m) {Get-ChildItem -Path $item.value}
+  foreach ($item in $m) {Get-ChildItem -Path $item.value -File}
 
 } else {
   Write-Error -Message "Can't seem to find new file $($OldNewName.NewFilename)";
