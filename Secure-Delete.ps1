@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2021-01-18T12:54:47
+Last updated : 2021-05-21T18:41:34
 Keywords     : yes no yesno
 
 See also
@@ -157,6 +157,7 @@ Are you sure you want to perform this action?
 Performing the operation remove file on target $($FileName).
 This action cannot be undone! Please make sure
 "@ #end of message variable
+
         # Create a 'Collection' object of type
         # 'System.Management.Automation.Host.ChoiceDescription'
         # with the generic type of
@@ -227,7 +228,7 @@ Param (
       [Long]$BytesWritten = 0L;
       [Long]$RemainingBytes = 0L;
       Set-Variable -Name 'FileLength' -Option ReadOnly;
-      Write-Verbose -Message "Length of file to be overwritten: $FileLength bytes";
+      Write-Output ("Length of file to be overwritten: {0:N0} bytes" -f $FileLength);
 
     }
 
@@ -243,7 +244,8 @@ Param (
             # don't want to do.
             $fos.Position = 0;
             $PassCounter++;
-            Write-Output "`nFile overwrite pass# $PassCounter";
+            #Write-Output "`nFile overwrite pass# $PassCounter";
+            Write-Output ("`nFile overwrite pass #{0}" -f $PassCounter);
 
             # Inner loop to write, buffer by buffer, to the output stream
             while ($BytesWritten -lt $FileLength) {
@@ -267,26 +269,27 @@ Param (
 
                 $fos.Flush();
 
-            } #end while loop
+            } #end inner while loop
 
             $BytesWritten = 0L;
         } #end foreach loop
 
      } catch {
-       Write-Host $_.Exception.Message -ForegroundColor Green
+       Write-Host $_.Exception.Message -ForegroundColor Green;
      } finally {
        $fos.Flush();
        $fos.Close();
+       $fos.Dispose();
        $rng.Dispose();
 
        # Now we've overwritten the file, delete it
-       Remove-Item -Path $FileName -Force -Verbose;
+       Remove-Item -Path $FileName -Force;
 
        # Confirm to the user whether the file has been deleted as intended
        if (Test-Path -Path $FileName) {
-         Write-Warning -Message "Shredded file $($FileName) not deleted";
+         Write-Warning -Message "Shredded file [$($FileName)] not deleted";
        } else {
-         Write-Output "Shredded file $($FileName) deleted as intended";
+         Write-Output "Shredded file [$($FileName)] deleted as intended";
        }
      } #end try/catch/finally block
 
