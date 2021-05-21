@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2021-05-21T18:41:34
+Last updated : 2021-05-21T23:28:01
 Keywords     : yes no yesno
 
 See also
@@ -218,6 +218,8 @@ Param (
       $DataBuffer = [System.Byte[]]::new($BufferSize);
       $BufferLen = $DataBuffer.Length;
       $ShredFile = Get-Item -Path $FileName;
+      # Ensure the file is not read only before we attempt to
+      # overwrite it.
       $ShredFile.IsReadOnly = $false;
 
       $fos = New-Object -TypeName System.IO.FileStream($ShredFile, 'OPEN', 'Write', 'None');
@@ -272,7 +274,7 @@ Param (
             } #end inner while loop
 
             $BytesWritten = 0L;
-        } #end foreach loop
+        } #end foreach outer loop
 
      } catch {
        Write-Host $_.Exception.Message -ForegroundColor Green;
