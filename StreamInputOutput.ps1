@@ -31,7 +31,11 @@ System.IO.FileInfo
 
 File Name    : StreamInputOutput.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-05T12:54:29
+Last updated : 2021-06-24T23:08:45
+Keywords     : delegate
+
+Encoder - converts a set of characters into a sequence of bytes.
+Decoder - converts a sequence of encoded bytes into a set of characters.
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -55,54 +59,132 @@ http://msdn.microsoft.com/en-us/library/system.io.fileinfo.aspx
 [CmdletBinding()]
 Param() #end param
 
-$inrec="";
-$counter=0;
-$infile="C:\junk\gashinputfile.txt";
-$outfile="C:\junk\gashoutputfile.txt";
+#----------------------------------------------------------
+# Start of delegates
+#----------------------------------------------------------
+
+$inStreamReader = [Func[String,System.IO.StreamReader]]{
+   param($InputData)
+   <#
+   Get input stream reader
+   #>
+      $buffersize = 8KB;
+      $myargs = @(
+          #Constructor arguments - input stream
+          $InputData #path
+          [System.Text.Encoding]::ASCII #encoding
+          $false #detectEncodingFromByteOrderMarks
+          $buffersize #bufferSize
+      )
+      $parameters = @{
+          #General parameters
+          TypeName = 'System.IO.StreamReader'
+          ArgumentList = $myargs
+      }
+      $fis = New-Object @parameters;  #splat example
+      return $fis;
+} #end inStreamReader
+
+#----------------------------------------------------------
+
+$outStreamWriter = [Func[String,System.IO.StreamWriter]]{
+   param($OutputData)
+   <#
+   Get output stream writer
+   #>
+      $buffersize = 8KB;
+      $myargs = @(
+          #Constructor arguments - output stream
+          $OutputData #path
+          $false #true to append data to the file; false to overwrite
+                 #the file. If the specified file does not exist,
+                 #this parameter has no effect, and the constructor
+                 #creates a new file.
+          [System.Text.Encoding]::ASCII #encoding
+          $buffersize #bufferSize
+      )
+      $parameters = @{
+          #General parameters
+          TypeName = 'System.IO.StreamWriter'
+          ArgumentList = $myargs
+      }
+
+      $fos = New-Object @parameters;  #splat example
+      return $fos;
+} #end outStreamWriter
+
+#----------------------------------------------------------
+# End of delegates
+#----------------------------------------------------------
+
+##=============================================
+## SCRIPT BODY
+## Main routine starts here
+##=============================================
+Set-StrictMode -Version Latest;
+$ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
+  <#
+  $MyInvocation
+  TypeName: System.Management.Automation.InvocationInfo
+  This automatic variable contains information about the current
+  command, such as the name, parameters, parameter values, and
+  information about how the command was started, called, or
+  invoked, such as the name of the script that called the current
+  command.
 
-   Write-Output '';
-   Write-Output 'Demonstration program using .NET objects to achieve file input/output';
-   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
-   Write-Output ('Today is {0}' -f $dateMask);
+  $MyInvocation is populated differently depending upon whether
+  the script was run from the command line or submitted as a
+  background job. This means that $MyInvocation may not be able
+  to return the path and file name of the script concerned as
+  intended.
+  #>
+     Write-Output '';
+     Write-Output 'Demonstration program using .NET objects to achieve file input/output';
+     $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+     Write-Output ('Today is {0}' -f $dateMask);
 
-   $script = $MyInvocation.MyCommand.Name;
-   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+     if ($MyInvocation.OffsetInLine -ne 0) {
+         #I think the script was run from the command line
+         $script = $MyInvocation.MyCommand.Name;
+         $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+         Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+     }
 
+} #end of Invoke-Command -ScriptBlock
+
+$inrec = '';
+$counter = 0;
+$inputFile = "C:\Gash\gashinput.txt";
+$outputFile = "C:\Gash\gashoutput.txt";
+Set-Variable -Name 'inputFile', 'outputFile' -Option ReadOnly;
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+$inStream = $inStreamReader.Invoke($inputFile);
+Write-Output ('Input file length: {0:N0} bytes' -f $inStream.BaseStream.Length);
+$outStream = $outStreamWriter.Invoke($outputFile);
+
+$inrec =  Get-Date | Out-String;
+$outStream.WriteLine($inrec);
+$inrec = $inStream.ReadLine();
+while ($null -ne $inrec) {
+    $outStream.WriteLine($inrec);
+    $counter++;
+
+    $inrec = $inStream.ReadLine();
 }
 
-$input = New-Object -TypeName System.IO.StreamReader($infile);
-$outStream = New-Object -TypeName System.IO.FileStream(
-                        $outfile,
-                        [System.IO.FileMode]::Create,
-                        [System.IO.FileAccess]::Write);
-$output = New-Object -TypeName System.IO.StreamWriter(
-              $outStream,
-              [System.Text.Encoding]::ASCII);
+$inStream.Close();
+$inStream.Dispose();
+$outStream.Flush();
+$outStream.Close();
+$outStream.Dispose();
 
-$inrec = $input.ReadLine();
-while ($inrec -ne $null) {
-   $output.WriteLine($inrec);
-   $counter++;
-
-   $inrec = $input.ReadLine();
-}
-
-$input.Close();
-$input.Dispose();
-$output.Flush();
-$output.Close();
-$output.Dispose();
-
-
-$filelen = New-Object -TypeName System.IO.FileInfo($outfile);
-Write-Output "File $($outfile.ToString()) has length $($filelen.length) bytes";
-
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Output "Lines written: $counter";
 Write-Output "Files used:";
-Write-Output ("Input file: {0}`nOutput file: {1}" -f $infile, $outfile);
+Write-Output ("Input file: {0}`nOutput file: {1}" -f $inputFile, $outputFile);
 Write-Output "All done now";
 ##=============================================
 ## END OF SCRIPT: StreamInputOutput.ps1

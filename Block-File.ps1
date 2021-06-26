@@ -1,4 +1,4 @@
-﻿<#
+<#
 
 .SYNOPSIS
 
@@ -56,7 +56,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-26T15:17:03
+Last updated : 2021-05-22T22:29:27
 
 For a carriage return and a new line, use `r`n.
 Special Characters
@@ -66,7 +66,7 @@ PS> Set-Content -Path 'fred.txt' -Stream 'Zone.Identifier' -Value "[ZoneTransfer
 
 Set-Content -Path 'ian.ian' -Stream 'Zone.Identifier' -Value '[ZoneTransfer]'
 Add-Content -Path 'ian.ian' -Stream 'Zone.Identifier' -Value 'ZoneId=3'
-Get-Content –Path 'fred.txt' -Stream zone.identifier
+Get-Content ???Path 'fred.txt' -Stream zone.identifier
 Get-Item -Path fred.txt -Stream zone*
 
 .LINK
@@ -118,13 +118,13 @@ Begin {
 
 Process {
   Get-ChildItem -file -Path $path |
-  foreach {Get-Item -Path $_.FullName -Stream *;} |
-    Where-Object -property stream -ne -value ':$DATA' |
-    Format-List filename, stream, length;
+    ForEach-Object {Get-Item -Path $_.FullName -Stream *;} |
+    Where-Object -Property 'stream' -ne -Value ':$DATA' |
+    Format-List FileName, Stream, Length;
 }
 
 End {
-  Write-Output 'alternate data stream search complete';
+  Write-Output 'Alternate data stream (ADS) search complete';
 }
 
 } #end of ScriptBlock
@@ -178,25 +178,26 @@ function Get-Filename {
   ) #end param
 
   Begin {
-    Write-Verbose -Message "Invoking function to obtain the C# filename to compile";
+    Write-Verbose -Message "Invoking function to obtain the filename to block";
 
     Add-Type -AssemblyName "System.Windows.Forms";
     # Displays a standard dialog box that prompts the user
     # to open (select) a file.
-    [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
+    #[System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
+    [System.Windows.Forms.OpenFileDialog]$ofd = [System.Windows.Forms.OpenFileDialog]::new();
 
     # The dialog box return value is OK (usually sent
     # from a button labeled OK). This indicates the
     # user has selected a file.
     $myok = [System.Windows.Forms.DialogResult]::OK;
-    $retFilename = "";
+    [String[]]$retFilename = "";
     $ofd.CheckFileExists = $true;
     $ofd.CheckPathExists = $true;
     $ofd.ShowHelp = $false;
     $ofd.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
     $ofd.FilterIndex = 1;
     $ofd.InitialDirectory = "C:\Family\powershell";
-    $ofd.Multiselect = $false;
+    $ofd.Multiselect = $true;
     $ofd.RestoreDirectory = $false;
     $ofd.Title = $Title; # sets the file dialog box title
     $ofd.DefaultExt = "txt";
@@ -205,7 +206,7 @@ function Get-Filename {
 
   Process {
     if ($ofd.ShowDialog() -eq $myok) {
-       $retFilename = $ofd.FileName;
+       $retFilename = $ofd.FileNames;
     } else {
        Throw "No file chosen or selected";
     }
@@ -218,7 +219,7 @@ function Get-Filename {
   }
   #endregion ***** End of function Get-Filename *****
 
-#------------------------------------------------------------------------------
+#------------------------------------------------
 
 #region ***** function Start-MainRoutine *****
 function Start-MainRoutine {
@@ -263,12 +264,18 @@ Process {
     #object of the type:
     #TypeName: System.Management.Automation.Internal.AlternateStreamData
     $zones = (Get-Item $file -Stream *).Stream;
+    [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
     if ($zones -contains 'Zone.Identifier') {
-      Write-Warning -Message "File $file already has a Zone.Identifier.`nNo further action taken";
+      Write-Warning -Message "File [$file] already has a Zone.Identifier.`nNo further action taken";
     } else {
       Set-Content -Path $file -Stream 'Zone.Identifier' -Value '[ZoneTransfer]';
       Add-Content -Path $file -Stream 'Zone.Identifier' -Value 'ZoneId=3';
+
+      #List the streams on the file
+      Write-Output "Streams now on file [$file]";
+      Get-Item -Path $file -Stream * | Format-Table Stream,Length;
+
     }
 
   }
@@ -292,25 +299,41 @@ Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
+<#
+$MyInvocation
+TypeName: System.Management.Automation.InvocationInfo
+This automatic variable contains information about the current
+command, such as the name, parameters, parameter values, and
+information about how the command was started, called, or
+invoked, such as the name of the script that called the current
+command.
 
+$MyInvocation is populated differently depending upon whether
+the script was run from the command line or submitted as a
+background job. This means that $MyInvocation may not be able
+to return the path and file name of the script concerned as
+intended.
+#>
    Write-Output '';
    Write-Output "Blocking file(s) using the Alternate Data Stream 'Zone.Identifier'";
    $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
    Write-Output ('Today is {0}' -f $dateMask);
 
-   $script = $MyInvocation.MyCommand.Name;
-   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+   if ($MyInvocation.OffsetInLine -ne 0) {
+       #I think the script was run from the command line
+       $script = $MyInvocation.MyCommand.Name;
+       $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+       Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+   }
 
-}
-
+} #end of Invoke-Command -ScriptBlock
 
 if ($PSBoundParameters.ContainsKey('Path')) {
    # Files have been supplied as a parameter.
    $files = $Path;
 } else {
-  # No files supplied to the program. Get some to work with.
-  $files = Get-Filename -Title 'File(s) to block';
+   # No files supplied to the program. Get some to work with.
+   $files = Get-Filename -Title 'File(s) to block';
 }
 
 Start-MainRoutine -fList $files;

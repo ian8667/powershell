@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-03T23:01:57
+Last updated : 2021-05-30T00:14:52
 
 .LINK
 
@@ -41,6 +41,11 @@ https://docs.microsoft.com/en-us/dotnet/api/system.io.filestream?view=netframewo
 
 Microsoft.PowerShell.Core help topic 'about'
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/?view=powershell-6
+
+Get-Content (parameter -Tail)
+Specifies the number of lines from the end of a file to list.
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-content?view=powershell-7.1#parameters
+
 #>
 
 [CmdletBinding()]
@@ -63,14 +68,14 @@ function Get-Parameters {
 
         # Input filename. A 'FileNotFoundException' exception is thrown
         # if the file does not exist.
-        path              = 'C:\Test\small_sampledata.txt';
+        path              = 'C:\test/small_sampledata.txt';
 
         # Output filename. The file will be overwritten if it exists.
-        pathout           = 'C:\gash\gashfile.txt';
+        pathout           = 'C:\Test\gashoutput.txt';
 
         # Int32 Struct. This variable determines the bufferSize
         # used by the System.IO.Stream object.
-        buffersize        = 4096;
+        buffersize        = 8192;
 
         # Int64 Struct. Seek position pointer. Sets the current
         # position of this stream to the given value. ie, the
@@ -81,7 +86,7 @@ function Get-Parameters {
         # So if you're interested in the last 15 Kb of the file,
         # for example, set this variable as:
         # seekPos           = [System.Convert]::ToInt64(15KB);
-        seekPos           = [System.Convert]::ToInt64(5KB);
+        seekPos           = [System.Convert]::ToInt64(10KB);
 
     }
 
@@ -244,17 +249,25 @@ function Get-InputFilestream {
   ) #end param
 
   Begin {
-    $opts1 = [PSCustomObject]@{
-        path        = $Filename;
-        mode        = [System.IO.FileMode]::Open;
-        access      = [System.IO.FileAccess]::Read;
-        share       = [System.IO.FileShare]::None; #Declines sharing of the current file.
-        bufferSize  = $Buffsize;
-        options     = [System.IO.FileOptions]::None;
-    }
 
-    $inStream = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
-        $opts1.path, $opts1.mode, $opts1.access, $opts1.share, $opts1.bufferSize, $opts1.options;
+    #
+    # The input stream
+    #
+    $myargs = @(
+        #Constructor arguments - input stream
+        $Filename #path
+        [System.IO.FileMode]::Open #mode - FileMode
+        [System.IO.FileAccess]::Read #access - FileAccess
+        [System.IO.FileShare]::Read #share - FileShare
+        $Buffsize #bufferSize - Int32
+        [System.IO.FileOptions]::SequentialScan #options - FileOptions
+    )
+    $parameters = @{
+        #General parameters (splat example)
+        TypeName = 'System.IO.FileStream'
+        ArgumentList = $myargs
+    }
+    $inStream = New-Object @parameters;
 
   }
 
@@ -286,14 +299,24 @@ function Get-OutputFilestream {
   ) #end param
 
   Begin {
-     $optOut = [PSCustomObject]@{
-         path        = $Filename;
-         mode        = [System.IO.FileMode]::OpenOrCreate;
-         access      = [System.IO.FileAccess]::Write;
-         share       = [System.IO.FileShare]::None;
-         bufferSize  = $Buffsize;
-         options     = [System.IO.FileOptions]::None;
-     }
+
+    #
+    # The output stream
+    #
+    $myargs = @(
+        #Constructor arguments - output stream
+        $Filename #path
+        [System.IO.FileMode]::Create #mode - FileMode
+        [System.IO.FileAccess]::Write #access - FileAccess
+        [System.IO.FileShare]::None #share - FileShare
+        $Buffsize #bufferSize - Int32
+        [System.IO.FileOptions]::None #options - FileOptions
+    )
+    $parameters = @{
+        #General parameters (splat example)
+        TypeName = 'System.IO.FileStream'
+        ArgumentList = $myargs
+    }
 
     # It's important to note that by specifying "Open", it does
     # not actually overwrite the entire file, it only starts at
@@ -303,8 +326,7 @@ function Get-OutputFilestream {
     # a 0 (zero) to tell the file to be 0 bytes and clear the file
     # prior to adding new text. This is analogous to using the
     # 'Clear-Content' cmdlet.
-    $outStream = New-Object -typeName 'System.IO.FileStream' -ArgumentList `
-        $optOut.path, $optOut.mode, $optOut.access, $optOut.share, $optOut.bufferSize, $optOut.options;
+    $outStream = New-Object @parameters;
     $outStream.SetLength(0);
   }
 
@@ -327,20 +349,37 @@ function Get-OutputFilestream {
 ## Main routine starts here
 ##=============================================
 Set-StrictMode -Version Latest;
-$ErrorActionPreference = 'Stop';
+$ErrorActionPreference = 'Continue';
 
 Invoke-Command -ScriptBlock {
+    <#
+    $MyInvocation
+    TypeName: System.Management.Automation.InvocationInfo
+    This automatic variable contains information about the current
+    command, such as the name, parameters, parameter values, and
+    information about how the command was started, called, or
+    invoked, such as the name of the script that called the current
+    command.
 
-   Write-Output '';
-   Write-Output 'Getting last few bytes (lines) of a file';
-   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
-   Write-Output ('Today is {0}' -f $dateMask);
+    $MyInvocation is populated differently depending upon whether
+    the script was run from the command line or submitted as a
+    background job. This means that $MyInvocation may not be able
+    to return the path and file name of the script concerned as
+    intended.
+    #>
+       Write-Output '';
+       Write-Output 'Getting last few bytes (lines) of a file';
+       $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+       Write-Output ('Today is {0}' -f $dateMask);
 
-   $script = $MyInvocation.MyCommand.Name;
-   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+       if ($MyInvocation.OffsetInLine -ne 0) {
+           #I think the script was run from the command line
+           $script = $MyInvocation.MyCommand.Name;
+           $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+           Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+       }
 
-}
+} #end of Invoke-Command -ScriptBlock
 
 $param = Get-Parameters;
 Set-Variable -Name "param" -Option ReadOnly -Description "Contains program parameters";
@@ -360,7 +399,7 @@ $theEnd = [System.IO.SeekOrigin]::End;
 try {
   $fis = Get-InputFilestream -Filename $param.path -Buffsize $param.buffersize;
   Write-Verbose -Message "Input stream $($param.path) open";
-  Write-Verbose -Message "Length of input stream $($fis.Length) bytes";
+  Write-Output ("Length of input stream {0:N0} bytes" -f $($fis.Length));
 
   $fos = Get-OutputFilestream -Filename $param.pathout -Buffsize $param.buffersize;
   Write-Verbose -Message "Output stream open";

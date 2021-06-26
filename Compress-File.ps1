@@ -32,7 +32,8 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Compress-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-07-26T22:32:05
+Last updated : 2021-05-23T14:59:45
+Keywords     : compress gzip zip
 
 .LINK
 
@@ -99,7 +100,7 @@ Process {
 try {
 
     #
-    # The stream to compress.
+    # The input stream to compress
     #
     $myargs = @(
         #Constructor arguments - input stream
@@ -185,7 +186,7 @@ End {
 }
 #endregion ***** end of function Compress-Gzip *****
 
-#----------------------------------------------------------
+#------------------------------------------------
 
 #region ***** function Compress-Zip *****
 function Compress-Zip {
@@ -210,7 +211,7 @@ Begin {
 Add-Type -AssemblyName "System.IO.Compression.FileSystem";
 
 $opt = [System.IO.Compression.CompressionLevel]::Optimal;
-$includeBaseDirectory = $true;
+$includeBaseDirectory = $false;
 
 $CompressStart = Get-Date;
 Write-Output ("`nZip compress directory start: {0}" -f $CompressStart.ToString("yyyy-MM-ddTHH-mm-ss"))
@@ -266,7 +267,7 @@ if ($kompare -eq 0) {
 
 # See whether the input object is a file or a directory.
 # true if object is a directory, false otherwise.
-$isDir = (Get-Item $Config.Input).PSIsContainer;
+$isDir = (Get-Item -Path $Config.Input).PSIsContainer;
 
 # Get the extension (including the period "."), or empty
 # if variable 'OldFilename' does not contain an extension.
@@ -319,6 +320,16 @@ if ($Config.Format -eq 'Gzip') {
     if ($count -eq 0) {
         throw "Input directory $($Config.Input) does not appear to have any object to zip";
     }
+
+    # Delete the output file if it exists. This avoids the
+    # the error message:
+    # IOException - destinationArchiveFileName already exists.
+    if (Test-Path -Path $Config.Output) {
+        #
+        $msg = [String]::Format('Zip compress, deleting existing output file [{0}]',$Config.Output);
+        Write-Warning -Message $msg;
+        Remove-Item -Path $Config.Output -Force;
+    }
 }
 
 } #end function
@@ -336,17 +347,34 @@ Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
+    <#
+    $MyInvocation
+    TypeName: System.Management.Automation.InvocationInfo
+    This automatic variable contains information about the current
+    command, such as the name, parameters, parameter values, and
+    information about how the command was started, called, or
+    invoked, such as the name of the script that called the current
+    command.
 
-   Write-Output '';
-   Write-Output 'Gzip/Zip compression of file';
-   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
-   Write-Output ('Today is {0}' -f $dateMask);
+    $MyInvocation is populated differently depending upon whether
+    the script was run from the command line or submitted as a
+    background job. This means that $MyInvocation may not be able
+    to return the path and file name of the script concerned as
+    intended.
+    #>
+       Write-Output '';
+       Write-Output 'Gzip/Zip compression of file';
+       $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+       Write-Output ('Today is {0}' -f $dateMask);
 
-   $script = $MyInvocation.MyCommand.Name;
-   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+       if ($MyInvocation.OffsetInLine -ne 0) {
+           #I think the script was run from the command line
+           $script = $MyInvocation.MyCommand.Name;
+           $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+           Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+       }
 
-}
+} #end of Invoke-Command -ScriptBlock
 
 enum CompressFormat
 {
@@ -364,7 +392,7 @@ $ConfigData = @{
     #
     # For gzip files - the (usually text) file to compress
     # specified as an absolute path.
-    Input   = 'C:\temp'
+    Input   = 'C:\Test'
 
     # Output object.
     # For zip files - the path of the archive (zip file) to be
@@ -377,7 +405,7 @@ $ConfigData = @{
 
     # Compression format to use. Uses one of the values in
     # enumerated type 'CompressFormat' to do the compression.
-    Format  = [CompressFormat]::Zip;
+    Format = [CompressFormat]::Zip;
 }
 Set-Variable -Name 'ConfigData' -Option ReadOnly;
 

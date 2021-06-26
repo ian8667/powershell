@@ -35,7 +35,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Split-File.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-05T11:37:30
+Last updated : 2021-06-19T18:59:35
 
 .LINK
 
@@ -155,13 +155,14 @@ $Attr1 = New-Object -TypeName 'System.Management.Automation.ValidateRangeAttribu
 #   C:\junk\filename.{0}.csv
 # where the place holder will be used to insert an integer
 # number thus making the file name unqiue each time around.
+# ie, C:\junk\filename.007.csv
 $pos = $inputfile.LastIndexOf([System.IO.Path]::GetExtension($inputfile));
-$template = $inputfile.Insert($pos, ".{0}");
-Write-Verbose -Message "Chunk file template used is $template";
+$ChunkTemplate = $inputfile.Insert($pos, ".{0}");
+Write-Verbose -Message "Chunk file template used is $ChunkTemplate";
 
 Write-Output "`nSplitting input file using $CHUNKSIZE byte chunks per file.";
 $startTime = Get-Date;
-Write-Output ($startTime.ToString('F') );
+#Write-Output ($startTime.ToString('F') );
 $parent = Split-Path $INPUTFILE -Parent;
 
 try {
@@ -182,8 +183,8 @@ try {
          # Create a filename for the next chunk file to be written to.
          # The number portion of filename will have leading zeros. So
          # the number 7 will be written into the filename as 007.
-         $fout = ($template -f ($idx.ToString('000')));
-         Write-Verbose -Message "creating chunk file  $($fout)";
+         $fout = ($ChunkTemplate -f ($idx.ToString('000')));
+         Write-Output "Creating chunk file [$($fout)]";
 
          # Open the next chunk file to write to.
          # Returns FileStream, An unshared FileStream object on
@@ -220,6 +221,10 @@ $tspan = New-TimeSpan -Start $startTime -End $endTime;
 
 Write-Output "";
 Write-Output ("{0} chunk files created`nin directory {1}" -f $idx, $parent);
+Get-ChildItem -Path (Split-Path -Path $INPUTFILE -Parent) -File |
+    Where-Object {$_.LastWriteTime -ge (Get-Date).AddMinutes(-5)} |
+    Sort-Object -Property LastWriteTime;
+
 Write-Output "`nElapsed time for split:";
 Write-Output $tspan | Select-Object Hours, Minutes, Seconds;
 Write-Output "`nAll done now!";

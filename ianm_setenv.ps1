@@ -39,7 +39,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : ianm_setenv.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-04T18:00:02
+Last updated : 2021-06-01T00:44:48
 Keywords     : oracle environment variable setenv
 
 .LINK
@@ -97,8 +97,8 @@ $params =  @{
 # Check 1 - Oracle Home
 # Check the Oracle Home supplied exists. If so, create
 # environment variable TNS_ADMIN which is also based upon
-# the Oracle home just validated. If not, throw a terminating
-# error.
+# the Oracle Home just validated. Throw a terminating
+# error if the Oracle Home cannot be found.
 $oh = $params.ORACLE_HOME;
 #$dd = $params.Item('ORACLE_HOME');
 if (Test-Path -Path $oh) {
@@ -138,7 +138,7 @@ Set-Variable -Name 'proc' -Option ReadOnly;
 
 # Create the environment variables. The following is true
 # within this loop:
-#   kvp.Key - the environment variable name.
+#   kvp.Key   - the environment variable name.
 #   kvp.Value - the value assigned to the variable.
 foreach ($kvp in $params.GetEnumerator()) {
     [System.Environment]::SetEnvironmentVariable($kvp.Name, $kvp.Value, $proc);
@@ -148,6 +148,8 @@ foreach ($kvp in $params.GetEnumerator()) {
 }
 
 Write-Output "`nOracle environment variables created: $($envCounter)";
+Write-Output "All done now";
+
 ##=============================================
 ## END OF SCRIPT: ianm_setenv.ps1
 ##=============================================

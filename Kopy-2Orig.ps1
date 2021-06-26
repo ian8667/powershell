@@ -12,13 +12,16 @@ so this script checks first to see whether this is the
 case. If so, the file is not copied from the local Git
 respository.
 
-The directory paths used are hard coded within the program
+The relevant directory paths used are hard coded within the
+program
 
 .EXAMPLE
 
 ./Kopy-2Orig.ps1
 
-No parameters used
+No parameters used. An internal function is used in order
+select a file to copy from the local Git repository to the
+main PowerShell directory
 
 .INPUTS
 
@@ -32,7 +35,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Kopy-2Orig.ps1
 Author       : Ian Molloy
-Last updated : 2020-12-07T19:07:33
+Last updated : 2021-06-01T22:42:26
 Keywords     : git github repository copy
 
 #>
@@ -151,7 +154,7 @@ Invoke-Command -ScriptBlock {
 }
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
-#Directories involved
+#PowerShell directories involved
 $ConfigData = [PSCustomObject]@{
    #Local Git repository directory
    SourceDirectory = 'C:\IanmTools\GitRepos\powershell';
@@ -160,6 +163,22 @@ $ConfigData = [PSCustomObject]@{
    DestinationDirectory = 'C:\Family\powershell';
 }
 Set-Variable -Name 'ConfigData' -Option ReadOnly;
+
+#Check the objects in variable 'ConfigData' are indeed
+#directories. Throw an exception if this is not the case.
+Invoke-Command -ScriptBlock {
+
+    $path = $ConfigData.SourceDirectory;
+    if ((Get-Item -Path $path) -isNot [System.IO.DirectoryInfo]) {
+        throw [System.IO.DirectoryNotFoundException] "Source directory supplied is not a directory";
+    }
+    
+    $path = $ConfigData.DestinationDirectory;
+    if ((Get-Item -Path $path) -isNot [System.IO.DirectoryInfo]) {
+        throw [System.IO.DirectoryNotFoundException] "Destination directory supplied is not a directory";
+    }
+    
+}
 
 #This will be the modified file to copy from the local Git repository
 #to the main (master) PowerShell directory. Once the file is copied to

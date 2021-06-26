@@ -26,8 +26,10 @@ Add-Type -AssemblyName "System.Drawing";
 #endregion
 
 #region Generated Form Objects
-$form1 = New-Object 'System.Windows.Forms.Form'
-$monthCalendar1 = New-Object 'System.Windows.Forms.MonthCalendar'
+#$form1 = New-Object 'System.Windows.Forms.Form';
+$form1 = [System.Windows.Forms.Form]::new();
+
+$monthCalendar1 = [System.Windows.Forms.MonthCalendar]::new();
 # 'System.Windows.Forms.FormWindowState' is actually an enumeration
 # object used by the Form class. It represents the different states
 # of the form. The default state is Normal (A default sized window).
@@ -37,8 +39,9 @@ $monthCalendar1 = New-Object 'System.Windows.Forms.MonthCalendar'
 #
 # Variable 'InitialFormWindowState' is of type:
 # TypeName: System.Windows.Forms.FormWindowState
-$InitialFormWindowState = New-Object 'System.Windows.Forms.FormWindowState'
-$button1 = New-Object 'System.Windows.Forms.Button'
+$InitialFormWindowState = New-Object 'System.Windows.Forms.FormWindowState';
+#$button1 = New-Object 'System.Windows.Forms.Button';
+$button1 = [System.Windows.Forms.Button]::new();
 #endregion Generated Form Objects
 
 #----------------------------------------------
@@ -48,11 +51,11 @@ $button1 = New-Object 'System.Windows.Forms.Button'
 $button1_OnClick=
 {
 #TODO: Place custom script here
-  $monthCalendar1.Dispose();
-  $form1.Close();
-  $form1.Dispose();
+    $monthCalendar1.Dispose();
+    $form1.Close();
+    $form1.Dispose();
 
-  return;
+    return;
 }
 
 #region Generated Form Code
@@ -62,38 +65,59 @@ $OnLoadForm_StateCorrection=
   $form1.WindowState = $InitialFormWindowState
 }
 
+<#
+Stores an ordered pair of integers, which specify a Height
+and Width. This structure is typically used to set the size
+of form components.
+Height Property - gets or sets the vertical component of this
+Size structure.
+Width Property - gets or sets the horizontal component of this
+Size structure.
+#>
+$DrawSize = [System.Drawing.Size]::new(0,0); #width, height
+
+<#
+Represents an ordered pair of integer X- and Y-coordinates
+that defines a point in a two-dimensional plane. This
+structure is typically used to set the location of form
+components.
+X - the horizontal position of the point.
+Y - the vertical position of the point.
+#>
+$DrawPoint = [System.Drawing.Point]::new(0,0); #X, Y
+
 $myFont = New-Object System.Drawing.Font("Georgia",12,0,3,0);
+Set-Variable -Name 'myFont' -Option ReadOnly;
+
 # form1
-$System_Drawing_Size = New-Object System.Drawing.Size
-$System_Drawing_Size.Height = 290
-$System_Drawing_Size.Width = 900
-$form1.ClientSize = $System_Drawing_Size
-$form1.DataBindings.DefaultDataSourceUpdateMode = 0
+$DrawSize.Height = 290;
+$DrawSize.Width = 900;
+$form1.ClientSize = $DrawSize;
+$form1.DataBindings.DefaultDataSourceUpdateMode = 0;
 $form1.Font = $myFont;
-$form1.Name = "form1"
-$form1.Text = "My Calendar"
+$form1.Name = "form1";
+$form1.Text = "My Calendar";
 
 # monthCalendar1
-$monthCalendar1.DataBindings.DefaultDataSourceUpdateMode = 0
+$monthCalendar1.DataBindings.DefaultDataSourceUpdateMode = 0;
 #$monthCalendar1.FirstDayOfWeek = [System.DayOfWeek]::Saturday
 $monthCalendar1.FirstDayOfWeek = 6; # Start the week on Sunday
-$System_Drawing_Point = New-Object System.Drawing.Point
-$System_Drawing_Point.X = 20
-$System_Drawing_Point.Y = 20
-$monthCalendar1.Location = $System_Drawing_Point
-$monthCalendar1.Name = "monthCalendar1"
-$monthCalendar1.ShowWeekNumbers = $True
+$DrawPoint.X = 20;
+$DrawPoint.Y = 20;
+$monthCalendar1.Location = $DrawPoint;
+$monthCalendar1.Name = "monthCalendar1";
+$monthCalendar1.ShowWeekNumbers = $True;
 $monthCalendar1.ShowToday = $True;
 $monthCalendar1.ShowTodayCircle = $True;
 $monthCalendar1.TabStop = $false;
 $monthCalendar1.ScrollChange = 1;
-$monthCalendar1.MinDate = (Get-Date).AddMonths(-3);
-$monthCalendar1.MaxDate = (Get-Date).AddMonths(4);
 #A DateTime representing today's date. The default value is
 #the current system date. I've inclued this as a reminder
 #of where the date is set (or can be set) for the calendar
-$monthCalendar1.TodayDate = Get-Date;
-#$monthCalendar1.BackColor = [System.Drawing.Color]::Honeydew;
+$Today = Get-Date;
+$monthCalendar1.TodayDate = $Today;
+$monthCalendar1.MinDate = $Today.AddMonths(-3);
+$monthCalendar1.MaxDate = $Today.AddMonths(4);
 $monthCalendar1.BackColor = [System.Drawing.Color]::LemonChiffon;
 
 # The 'System.Drawing.Size' structure is really used to specify
@@ -101,46 +125,46 @@ $monthCalendar1.BackColor = [System.Drawing.Color]::LemonChiffon;
 # graphics classes. In this example though, we're using it to
 # set the number of columns and rows of month calendars to display.
 #
-# ie, display 3 columns by 1 row of months.
-$mysize = New-Object -TypeName 'System.Drawing.Size' -Property @{
-  Width  = 3 #Columns
-  Height = 1 #Rows
-}
-$monthCalendar1.CalendarDimensions = $mysize
+# ie, display 3 columns by 1 row of month calendars.
+#$mysize = New-Object -TypeName 'System.Drawing.Size' -Property @{
+#    Width  = 3 #Columns
+#    Height = 1 #Rows
+#}
+$DrawSize.Width  = 3; #Columns
+$DrawSize.Height = 1; #Rows
+$monthCalendar1.CalendarDimensions = $DrawSize;
 
-$form1.Controls.Add($monthCalendar1)
+$form1.Controls.Add($monthCalendar1);
 
 
 # button1
-$System_Drawing_Point = New-Object System.Drawing.Point
-$System_Drawing_Point.X = 600
-$System_Drawing_Point.Y = 240
-$button1.Location = $System_Drawing_Point
-$button1.Name = "button1"
-$System_Drawing_Size = New-Object System.Drawing.Size
-$System_Drawing_Size.Height = 25
-$System_Drawing_Size.Width = 75
-$button1.Size = $System_Drawing_Size
+$DrawPoint.X = 600;
+$DrawPoint.Y = 240;
+$button1.Location = $DrawPoint;
+$button1.Name = "button1";
+$DrawSize.Height = 25;
+$DrawSize.Width = 75;
+$button1.Size = $DrawSize;
 $button1.TabIndex = 0;
 $button1.TabStop = $True;
-$button1.Text = "Close"
-$button1.UseVisualStyleBackColor = $True
-$button1.add_Click($button1_OnClick)
+$button1.Text = "Close";
+$button1.UseVisualStyleBackColor = $True;
+$button1.add_Click($button1_OnClick);
 
-$form1.Controls.Add($button1)
+$form1.Controls.Add($button1);
 
 #endregion Generated Form Code
 
 # The form is centered on the current display, and has the
 # dimensions specified in the form's size.
-$form1.StartPosition = "CenterScreen"
+$form1.StartPosition = "CenterScreen";
 
 #Save the initial state of the form
-$InitialFormWindowState = $form1.WindowState
+$InitialFormWindowState = $form1.WindowState;
 #Init the OnLoad event to correct the initial state of the form
-$form1.add_Load($OnLoadForm_StateCorrection)
+$form1.add_Load($OnLoadForm_StateCorrection);
 #Show the Form
-$form1.ShowDialog() | Out-Null
+$form1.ShowDialog() | Out-Null;
 
 } #End Function
 #endregion ***** end of function GenerateForm *****

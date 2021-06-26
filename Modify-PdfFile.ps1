@@ -4,14 +4,14 @@
 
 File Name    : Modify-PdfFile.ps1
 Author       : Ian Molloy
-Last updated : 2020-09-28T18:43:04
+Last updated : 2021-06-18T16:38:33
 Keywords     : pdf itext modify
 
 iText Java API docs URL
-iText 7 7.1.11 Java API docs: https://api.itextpdf.com/iText7/java/7.1.11/
+https://api.itextpdf.com/iText7/java/7.1.15/
 
-iText .NET API docs URL
-iText 7 7.1.12 .NET API https://api.itextpdf.com/iText7/dotnet/7.1.12/
+iText 7 7.1.15 API Documentation URL
+https://api.itextpdf.com/iText7/dotnet/7.1.15/
 
 iText company web site
 https://itextpdf.com/en
@@ -25,13 +25,60 @@ itext.io.dll
 itext.kernel.dll
 itext.layout.dll
 
-Everything you wanted to know about PSCustomObject
-https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-pscustomobject?view=powershell-7
+iText Core 7.1.15 is the second quarterly release for 2021
+of our multifunctional PDF SDK.
+https://github.com/itext/itext7-dotnet/releases/tag/7.1.15
 
 #>
 
 [CmdletBinding()]
 Param() #end param
+
+#----------------------------------------------------------
+# Start of delegates
+#----------------------------------------------------------
+$IsPdfFile = [Predicate[System.String]]{
+    <#
+    Checks the file supplied as a parameter is a PDF file. To a
+    point, a file can have any file extension but by convention,
+    PDF files have a file extension of 'pdf'. If the file doesn't
+    have an extension of 'pdf', we'll reject it. The first four
+    bytes of the file (magic numbers) are also checked to ensure
+    we have a valid pdf file. If the magic numbers are not as
+    expected, we'll reject the file.
+
+    Return true if this is a pdf file; otherwise, false.
+    #>
+    param($pdffile)
+
+    [Byte[]]$MagicBytes = @(0X25, 0X50, 0X44, 0X46, 0X2D);
+    [Byte[]]$FileBytes = Get-Content -Path $pdffile -AsByteStream -TotalCount $MagicBytes.Length;
+    Set-Variable -Name 'MagicBytes','FileBytes' -Option ReadOnly;
+
+    $ext = Split-Path -Path $pdffile -Extension;
+    if ($ext -ne '.pdf') {
+        return $false;
+    }
+
+    if ($MagicBytes.Length -ne $FileBytes.Length) {
+        return $false;
+    }
+
+    #Check both arrays, byte for byte.
+    foreach ($num in 0..($MagicBytes.Length - 1)) {
+        if ($MagicBytes[$num] -ne $FileBytes[$num]) {
+            return $false;
+        }
+
+    }
+
+    return $true;
+}
+Set-Variable -Name 'IsPdfFile' -Option ReadOnly;
+
+#----------------------------------------------------------
+# End of delegates
+#----------------------------------------------------------
 
 #region ***** class ValidatePathExistsAttribute *****
 class ValidatePathExistsAttribute : System.Management.Automation.ValidateArgumentsAttribute
@@ -53,7 +100,7 @@ https://overpoweredshell.com/Introduction-to-PowerShell-Classes/
     {
         $myargs = $Arguments;
         if (-not (Test-Path -Path $myargs)) {
-          throw [System.IO.DirectoryNotFoundException] "DLL library directory $myargs not found";
+          throw [System.IO.DirectoryNotFoundException] "DLL library directory [$myargs] not found";
         }
 
         #Ensure we have some dll files in the DLL directory
@@ -77,7 +124,7 @@ $ErrorActionPreference = "Stop";
 Invoke-Command -ScriptBlock {
 
   Write-Output '';
-  Write-Output 'Modify PDF file with itext 7';
+  Write-Output 'Modify PDF file with itext 7 software';
   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
   Write-Output ('Today is {0}' -f $dateMask);
 
@@ -96,62 +143,75 @@ Invoke-Command -ScriptBlock {
 [ValidatePathExists()]
 $libdir = 'C:\Family\powershell\lib'; # <-- Change accordingly
 
+#DLL files required by the program
 $dllfiles = @(
-  "$libdir\itext.layout.dll";
-  "$libdir\itext.kernel.dll";
-  "$libdir\BouncyCastle.Crypto.dll";
-  "$libdir\Common.Logging.dll";
-  "$libdir\Common.Logging.Core.dll";
-  "$libdir\itext.io.dll";
-)
+    "$libdir\itext.layout.dll";
+    "$libdir\itext.kernel.dll";
+    "$libdir\BouncyCastle.Crypto.dll";
+    "$libdir\Common.Logging.dll";
+    "$libdir\Common.Logging.Core.dll";
+    "$libdir\itext.io.dll";
+);
 Set-Variable -Name 'libdir', 'dllfiles' -Option ReadOnly;
 
 foreach ($dll in $dllfiles) {
-  Write-Verbose -Message "Loading dll file $dll";
-  Add-Type -Path $dll;
+    Write-Verbose -Message "Loading dll file $dll";
+    Add-Type -Path $dll;
 }
 
+# Input and output files used - Change accordingly
 $DataFile = [PSCustomObject]@{
-  # Input and output files used - Change accordingly
-  PSTypeName   = 'DataFiles';
-  Source       = 'C:\Gash\mygash.pdf'; #Existing PDF file
-  Destination  = 'C:\Gash\mygash_0025.pdf'; #New PDF file
+    PSTypeName   = 'DataFiles';
+    Source       = 'C:\Gash\gashpdf.pdf'; #Existing PDF file
+    Destination  = 'C:\Gash\gashpdf99.pdf'; #New PDF file
 }
 Set-Variable -Name 'DataFile' -Option ReadOnly;
-if (Test-Path -Path $DataFile.Destination) {
-  Remove-Item -Path $DataFile.Destination -Force;
+
+if ($IsPdfFile.Invoke($DataFile.Source)) {
+    #
+    if (Test-Path -Path $DataFile.Destination) {
+        Write-Warning -Message ('Removing existing output file {0}' -f $DataFile.Destination);
+        Remove-Item -Path $DataFile.Destination -Force;
+    }
+
+    $reader = New-Object -typeName 'iText.Kernel.Pdf.PdfReader' -ArgumentList $DataFile.Source;
+    $reader.SetUnethicalReading($true) | Out-Null;
+    $reader.SetCloseStream($true);
+    $writer = New-Object -typeName 'iText.Kernel.Pdf.PdfWriter' -ArgumentList $DataFile.Destination;
+    $writer.SetCloseStream($true);
+    $pdfDoc = New-Object -typeName 'iText.Kernel.Pdf.PdfDocument' -ArgumentList $reader, $writer;
+    $numPages = $pdfDoc.GetNumberOfPages();
+
+    #Has type of iText.Kernel.Pdf.PdfDocumentInfo Class
+    $metadata = $pdfDoc.GetDocumentInfo();
+    $metadata.setTitle("The Strange Case of Dr. Jekyll and Mr. Hyde") | Out-Null;
+    $metadata.setAuthor("Ian Molloy") | Out-Null;
+    $metadata.setSubject("PDF file testing") | Out-Null;
+    $metadata.setKeywords("keyword1 keyword2") | Out-Null;
+    $metadata.setCreator("PowerShell script Modify-PdfFile.ps1") | Out-Null; #Field Application:
+
+    #Custom keywords
+    #You can add custom properties to a PDF document. Each
+    #custom property requires a unique name, which must not
+    #be one of the standard property names, i.e. Title, Author,
+    #Subject, Keywords, Creator, Producer, CreationDate,
+    #ModDate and Trapped.
+    $metadata.setMoreInfo("Breakfast", "Bacon and eggs");
+    $metadata.setMoreInfo("Curry", "Chicken tikka masala");
+    $dt = Get-Date -Format 's';
+    $metadata.setMoreInfo("DateTime", $dt);
+
+    $pdfDoc.Close();
+    $writer.Close();
+    $reader.Close();
+
+    Get-ChildItem -File -Path $DataFile.Source, $DataFile.Destination;
+    Write-Output ('Pages in input file: {0}' -f $numPages);
+
+} else {
+
+    Write-Warning -Message ('File [{0}] is not a valid zip file' -f $DataFile.Source);
 }
-
-$reader = New-Object -typeName 'iText.Kernel.Pdf.PdfReader' -ArgumentList $DataFile.Source;
-$reader.SetUnethicalReading($true) | Out-Null;
-$reader.SetCloseStream($true);
-$writer = New-Object -typeName 'iText.Kernel.Pdf.PdfWriter' -ArgumentList $DataFile.Destination;
-$writer.SetCloseStream($true);
-$pdfDoc = New-Object -typeName 'iText.Kernel.Pdf.PdfDocument' -ArgumentList $reader, $writer;
-$numPages = $pdfDoc.GetNumberOfPages();
-
-$metadata = $pdfDoc.GetDocumentInfo();
-$metadata.setTitle("The Strange Case of Dr. Jekyll and Mr. Hyde") | Out-Null;
-$metadata.setAuthor("Ian Molloy") | Out-Null;
-$metadata.setSubject("PDF file testing") | Out-Null;
-$metadata.setKeywords("keyword1 keyword2") | Out-Null;
-$metadata.setCreator("PowerShell script Modify-PdfFile.ps1") | Out-Null; #Field Application:
-
-#Custom keywords
-#You can add custom properties to a PDF document. Each
-#custom property requires a unique name, which must not
-#be one of the standard property names, i.e. Title, Author,
-#Subject, Keywords, Creator, Producer, CreationDate,
-#ModDate and Trapped.
-$metadata.setMoreInfo("Breakfast", "Bacon and eggs");
-$metadata.setMoreInfo("Curry", "Chicken tikka masala");
-
-$pdfDoc.close();
-$writer.close();
-$reader.close();
-
-Get-ChildItem -Path $DataFile.Source, $DataFile.Destination;
-Write-Output ('Pages in input file: {0}' -f $numPages);
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Output 'All done now';

@@ -23,7 +23,7 @@ Set-Location -Path 'C:\Family\powershell';
 #------------------------------------------------
 # Welcome message and initial setup.
 #------------------------------------------------
-Write-Host "You are now entering PowerShell : " $env:Username;
+Write-Host "You are now entering PowerShell : $($env:Username)";
 Get-Date;
 Write-Host "We're currently in directory $(Get-Location)";
 

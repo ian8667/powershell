@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2021-05-21T23:28:01
+Last updated : 2021-06-19T17:59:52
 Keywords     : yes no yesno
 
 See also
@@ -55,6 +55,37 @@ https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryp
 
 [CmdletBinding()]
 Param() #end param
+
+#----------------------------------------------------------
+# Start of delegates
+#----------------------------------------------------------
+
+$Get_FileStream = [Func[System.IO.FileInfo,System.IO.FileStream]]{
+param($FilePath)
+<#
+Get the file stream which will be overwritten and then deleted.
+#>
+   $buffersize = 8KB;
+   $myargs = @(
+       #Constructor arguments
+       $FilePath.FullName.ToString() #path
+       [System.IO.FileMode]::Open #mode - FileMode
+       [System.IO.FileAccess]::Write #access - FileAccess
+       [System.IO.FileShare]::None #share - FileShare
+   )
+   $parameters = @{
+       #General parameters
+       TypeName = 'System.IO.FileStream'
+       ArgumentList = $myargs
+   }
+   $mystream = New-Object @parameters;  #splat example
+
+   return $mystream;
+} #end inStreamFunc
+
+#----------------------------------------------------------
+# End of delegates
+#----------------------------------------------------------
 
 #----------------------------------------------------------
 # Start of functions
@@ -157,6 +188,7 @@ Are you sure you want to perform this action?
 Performing the operation remove file on target $($FileName).
 This action cannot be undone! Please make sure
 "@ #end of message variable
+        Set-Variable -Name 'cDescription', 'caption', 'message' -Option ReadOnly
 
         # Create a 'Collection' object of type
         # 'System.Management.Automation.Host.ChoiceDescription'
@@ -222,7 +254,7 @@ Param (
       # overwrite it.
       $ShredFile.IsReadOnly = $false;
 
-      $fos = New-Object -TypeName System.IO.FileStream($ShredFile, 'OPEN', 'Write', 'None');
+      $deleteStream = $Get_FileStream.Invoke($ShredFile);
       $rng = New-Object -TypeName 'System.Security.Cryptography.RNGCryptoServiceProvider';
       Set-Variable -Name 'BufferSize', 'BufferLen', 'ShredFile', 'rng' -Option ReadOnly;
 
@@ -244,9 +276,8 @@ Param (
             # of the stream before overwriting the file. Otherwise,
             # we'll end up extending the size of the file which we
             # don't want to do.
-            $fos.Position = 0;
+            $deleteStream.Position = 0;
             $PassCounter++;
-            #Write-Output "`nFile overwrite pass# $PassCounter";
             Write-Output ("`nFile overwrite pass #{0}" -f $PassCounter);
 
             # Inner loop to write, buffer by buffer, to the output stream
@@ -254,22 +285,22 @@ Param (
                 #
                 $RemainingBytes = $FileLength - $BytesWritten;
                 $rng.GetBytes($DataBuffer);
-                Write-Verbose  'Random data refreshed. First four bytes...';
+                Write-Verbose -Message 'Random data refreshed. First four bytes...';
                 $VerboseMsg = ($DataBuffer[0..3] | ForEach-Object {Write-Output ("{0:X2}" -f $_)}) -join ' ';
                 Write-Verbose -Message $VerboseMsg
 
                 if ($RemainingBytes -gt $BufferLen) {
                     # Write a full buffer worth of data to the stream
-                    $fos.Write($DataBuffer, 0, $BufferLen);
+                    $deleteStream.Write($DataBuffer, 0, $BufferLen);
                     $BytesWritten += $DataBuffer.LongLength;
                 } else {
                     # Write a partial buffer to the stream because
                     # this is all we have left
-                    $fos.Write($DataBuffer, 0, $RemainingBytes);
+                    $deleteStream.Write($DataBuffer, 0, $RemainingBytes);
                     $BytesWritten += $RemainingBytes;
                 }
 
-                $fos.Flush();
+                $deleteStream.Flush();
 
             } #end inner while loop
 
@@ -279,9 +310,9 @@ Param (
      } catch {
        Write-Host $_.Exception.Message -ForegroundColor Green;
      } finally {
-       $fos.Flush();
-       $fos.Close();
-       $fos.Dispose();
+       $deleteStream.Flush();
+       $deleteStream.Close();
+       $deleteStream.Dispose();
        $rng.Dispose();
 
        # Now we've overwritten the file, delete it

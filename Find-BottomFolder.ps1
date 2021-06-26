@@ -64,7 +64,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Find-BottomFolder.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-03T22:17:03
+Last updated : 2021-05-23T20:13:00
 
 .LINK
 
@@ -128,21 +128,39 @@ Param (
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+Write-Output 'Finding the bottom folder';
 
 Invoke-Command -ScriptBlock {
+  <#
+  $MyInvocation
+  TypeName: System.Management.Automation.InvocationInfo
+  This automatic variable contains information about the current
+  command, such as the name, parameters, parameter values, and
+  information about how the command was started, called, or
+  invoked, such as the name of the script that called the current
+  command.
 
-   Write-Output '';
-   Write-Output 'Finding the bottom folder';
-   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
-   Write-Output ('Today is {0}' -f $dateMask);
+  $MyInvocation is populated differently depending upon whether
+  the script was run from the command line or submitted as a
+  background job. This means that $MyInvocation may not be able
+  to return the path and file name of the script concerned as
+  intended.
+  #>
+     Write-Output '';
+     Write-Output 'Finding the bottom folder';
+     $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+     Write-Output ('Today is {0}' -f $dateMask);
 
-   $script = $MyInvocation.MyCommand.Name;
-   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+     if ($MyInvocation.OffsetInLine -ne 0) {
+         #I think the script was run from the command line
+         $script = $MyInvocation.MyCommand.Name;
+         $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
+         Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
+     }
 
-}
+} #end of Invoke-Command -ScriptBlock
 
-$startDir = 'C:\temp';  # <-- Change accordingly
+$startDir = 'C:\IanmTools\GitRepos';  # <-- Change accordingly
 #Get a recursive list directories starting from our start directory.
 $dirlist = Get-ChildItem -Recurse -Directory -Path $startDir;
 Set-Variable -Name 'startDir', 'dirlist' -Option ReadOnly;
@@ -180,11 +198,9 @@ if ($children3.Count -eq 0) {
 } else {
   Write-Output ("{0} 'bottom folders' listed" -f $children3.Count);
 }
-Write-Output "`nAll done now";
 
-# -----
-#Checking for an elevated PowerShell prompt
-#https://www.undocumented-features.com/2016/11/28/checking-for-an-elevated-powershell-prompt/
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+Write-Output "All done now";
 
 ##=============================================
 ## END OF SCRIPT: Find-BottomFolder.ps1

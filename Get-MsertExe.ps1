@@ -41,7 +41,7 @@ Represents the method that will handle the MethodNameCompleted event of an async
 https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.asynccompletedeventhandler?view=netcore-3.1
 Is this how I should do it?
 
-Last updated : 2020-08-04T14:29:34
+Last updated : 2021-05-30T00:47:19
 #>
 
 [CmdletBinding()]
@@ -69,7 +69,7 @@ function Get-MsertFile {
       $OutputFile
   ) #end param
 
-  if (Test-Path -Path $outputFile) {
+  if (Test-Path -Path $OutputFile) {
     Clear-Content -Path $OutputFile;
   }
 
@@ -153,7 +153,7 @@ Invoke-Command -ScriptBlock {
 $inputFile = 'http://definitionupdates.microsoft.com/download/definitionupdates/safetyscanner/amd64/msert.exe';
 
 # The name of the file to be placed on the local computer.
-# i.e., the destination of the file.
+# i.e., the destination of the downloaded file.
 $outputFile = 'C:\Temp\msert.exe';
 
 $msg = @"
