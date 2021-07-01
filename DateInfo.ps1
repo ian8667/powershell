@@ -74,7 +74,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2020-09-14T12:11:35
+Last updated : 2021-07-01T22:46:12
 Keywords     : contract end of week
 
 .LINK
@@ -153,7 +153,7 @@ Begin {
   # should be, for example, the Saturday of the end of the
   # first week on the contract. This date should be earlier
   # than the end date.
-  $startDate = Get-Date -Year 2020 -Month 8 -Day 15;
+  $startDate = Get-Date -Year 2021 -Month 01 -Day 16;
 
   # The end date is determined to be the current date, whatever
   # today is. Our output will finish when it gets to this date.
@@ -444,7 +444,7 @@ if ($WeekEndingDates.IsPresent) {
   $WeekEnd = Get-WeekendingDate;
   $msg = "The next week ending coming up after today is: {0}";
   Write-Output '';
-  Write-Output ($msg -f $WeekEnd.ToString("dddd dd MMMM yyyy"));
+  Write-Output ($msg -f $WeekEnd.ToString("dddd, dd MMMM yyyy"));
 }
 
 Write-Output "All done now!";
