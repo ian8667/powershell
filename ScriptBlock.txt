@@ -9,7 +9,22 @@ or Start-ThreadJob cmdlet.
 See also the Start-Job/Start-ThreadJob cmdlet parameter
 'ScriptBlock'.
 
-Last updated: 14 February 2021
+o Composite formatting
+A composite format string consists of fixed text intermixed
+with indexed placeholders, called format items, that
+correspond to the objects in the list. 
+https://docs.microsoft.com/en-us/dotnet/standard/base-types/composite-formatting?redirectedfrom=MSDN
+
+o about_Script_Blocks
+In the PowerShell programming language, a script block is
+a collection of statements or expressions that can be used
+as a single unit. Syntactically, a script block is a
+statement list in curly braces. A script block can accept
+arguments and return values.
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_script_blocks?view=powershell-7.1
+
+
+Last updated: 03 July 2021
 #-------------------------------------------------
 
 
@@ -37,7 +52,7 @@ $ErrorActionPreference = "Stop";
 
     Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
 
-    $path = 'C:\Gash'; # <-- Change accordingly.
+    $path = 'C:\Gash\empty'; # <-- Change accordingly.
     Set-Variable -Name 'path' -Description "Search directory for the scriptblock" -Option ReadOnly;
 
     $oldDate = [System.DateTime]::MaxValue;
@@ -45,7 +60,7 @@ $ErrorActionPreference = "Stop";
     $oldFilename = '';
     $newFilename = '';
     [UInt32]$fileCounter = 0;
-    Set-Variable -Name 'oldDate', 'newDate' -Option ReadOnly;
+    #Set-Variable -Name 'oldDate', 'newDate' -Option ReadOnly;
 
     Write-Output "`nLooking for the oldest and newest LastWriteTime of files";
     Write-Output ("Directory looked at (with no recursion): {0}" -f $path);
@@ -76,7 +91,7 @@ End {
       Write-Output ("Name: {0},     LastWriteTime: {1}" -f $oldFilename, $oldDate.ToString('F'));
       Write-Output "Newest file:";
       Write-Output ("Name: {0},     LastWriteTime: {1}" -f $newFilename, $newDate.ToString('F'));
-      Write-Output ("`n{0:N0} files looked at" -f $fileCounter);
+      Write-Output ("`n{0:N0} files looked at in total" -f $fileCounter);
 
       Write-Output "`nTime difference between oldest and newest LastWriteTime of the files:";
       $tspan = New-TimeSpan -Start $oldDate -End $newDate;
@@ -86,7 +101,6 @@ End {
     Write-Output ("`nAll done now at {0}" -f (Get-Date -Format 's'));
     Write-Output "";
 }
-
 
 } #end of ScriptBlock
 
@@ -107,7 +121,7 @@ range 1 to 65535.
 
 There are comments on the Internet regarding performance
 implications of using cmdlets 'Get-Content' and 'Add-Content'.
-Given the ad-hoc nature of this little script, I’m prepared to
+Given the ad-hoc nature of this little script, I'm prepared to
 take any performance implications. If the worst comes to the
 worst, I'll wrap this code in a script block and submit it as
 PowerShell background job using the Start-Job cmdlet.
@@ -141,7 +155,7 @@ $ErrorActionPreference = "Stop";
       Clear-Content -Path $myfile.Output;
   }
 
-  $stopwatch =  [System.Diagnostics.Stopwatch]::StartNew();
+  $stopwatch = [System.Diagnostics.Stopwatch]::StartNew();
 
 } #end Begin block
 
@@ -287,26 +301,86 @@ End {
 ##===========================================
 ## New item
 ## Looking for files.
-## 01 November 2020
+## 03 July 2021
 ##===========================================
 
 $sb = {
 <#
 Looking for a file(s).
 Looking for a file when I don't where it is located.
+
+TypeName: System.Management.Automation.ErrorRecord
+TypeName: System.Collections.ArrayList
 #>
-Set-StrictMode -Version Latest;
-$ErrorActionPreference = "Stop";
+    Set-StrictMode -Version Latest;
+    $ErrorActionPreference = "Stop";
+    $Error.Clear();
 
-Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
+    Write-Output ("`nScriptblock started on {0}" -f (Get-Date -Format 's'));
 
-$file = 'myfile';  #File(s) of interest. Wildcards not required
-$path = 'C:\';  #Start directory
-Write-Output "Looking for file(s) containing '$file' starting with directory $path";
-Get-ChildItem -Path $path -Recurse -File -ErrorAction SilentlyContinue |
-  Where-Object -Property 'Name' -Match -Value $file;
+    $ConfigData = @{
+        File = 'gash';  #Filenames of interest. Wildcards not required
+        Path = 'C:\';  #Start directory
+    }
+    Set-Variable -Name 'ConfigData' -Option ReadOnly;
 
-[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+    Write-Output "Looking for filenames containing '$($ConfigData.File)' starting with directory $($ConfigData.Path)";
+    Get-ChildItem -Path $ConfigData.Path -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object -Property 'Name' -Match -Value $ConfigData.File;
+
+    [System.Linq.Enumerable]::Repeat("", 2); #blanklines
+    #Number of errors encountered during the running of this ScriptBlock
+    $ErrCount = $Error.Count;
+    Set-Variable -Name 'ErrCount' -Option ReadOnly;
+
+    ##===========================================
+    ## New item
+    ## Look at variable $Error.
+    ## This section is only relevant is there are errors in
+    ## variable $Error which indicates the running of this
+    ## scriptblock has encountered errors.
+    ##===========================================
+    if ($ErrCount -gt 0) {
+
+        Write-Output $('*' * 32);
+        Write-Output ('{0} errors to look at' -f $ErrCount);
+        [System.Linq.Enumerable]::Repeat("", 2); #blanklines
+
+        #The HashSet<T> class is a collection that contains no duplicate
+        #elements, and whose elements are in no particular order.
+        $hset = [System.Collections.Generic.HashSet[String]]::new();
+
+        $fred = $Error;
+        [UInt16]$counter = 0;
+        $ee = $fred.GetEnumerator();
+        #Loop through our copy of $Error to see what what errors
+        #we have
+        while ($ee.MoveNext()) {
+            $counter++;
+            Write-Output ('Looking at error #{0}/{1}' -f $counter, $ErrCount);
+
+            $erec = $ee.Current;
+            $MyReason = $erec.CategoryInfo.Reason;
+            Write-Output ('Reason: {0}' -f $MyReason);
+            $hset.Add($MyReason) | Out-Null;
+
+            $MyTarget = $erec.CategoryInfo.TargetName;
+            $ObjectType = if (Test-Path -Path $MyTarget -PathType Container) {'directory'} else {'file'}
+            Write-Output ('Target name: {0}     ({1})' -f $MyTarget, $ObjectType);
+
+            Write-Output '';
+        } #end while loop
+
+        if ($hset.Count -gt 0) {
+            #
+            Write-Output 'Summary: ErrorCategoryInfo.Reason - text description of the errors found:';
+            foreach ($item in $hset) {
+                Write-Output $item;
+            }
+        } #end ($hset.Count -gt 0)
+
+    } #end if ($ErrCount -gt 0)
+
 Write-Output ("`nAll done now at {0}" -f (Get-Date -Format 's'));
 } #end of ScriptBlock
 
