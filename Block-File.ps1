@@ -6,10 +6,14 @@ Blocks a file via a 'Zone.Identifier' Alternate Data Stream
 
 .DESCRIPTION
 
-'Blocks' files by setting the Zone.Identifier alternate data stream,
-which has a value of "3" to indicate as if it was downloaded from the
-Internet. Effectively this is the reverse of the 'Unblock-File' cmdlet
-which removes the Zone.Identifier alternate data stream.
+'Blocks' files by setting the Zone.Identifier Alternate Data Stream,
+which has a value of "3" which indicates as if it was downloaded from
+the Internet. This means the Windows operating system will consider
+the file to have been downloaded from the Internet Zone and results
+in the "Unblock" check box being displayed in the properties of the file.
+
+Effectively this is the reverse of the 'Unblock-File' cmdlet which
+removes the Zone.Identifier alternate data stream.
 
 The NTFS file system includes support for Alternate Data Streams (ADS).
 This is not a well known feature and was included, primarily, to provide
@@ -56,7 +60,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2021-05-22T22:29:27
+Last updated : 2021-07-04T12:52:28
 
 For a carriage return and a new line, use `r`n.
 Special Characters
@@ -117,10 +121,10 @@ Begin {
 }
 
 Process {
-  Get-ChildItem -file -Path $path |
-    ForEach-Object {Get-Item -Path $_.FullName -Stream *;} |
-    Where-Object -Property 'stream' -ne -Value ':$DATA' |
-    Format-List FileName, Stream, Length;
+  Get-ChildItem -File -Path $path |
+      ForEach-Object {Get-Item -Path $_.FullName -Stream *;} |
+      Where-Object -Property 'Stream' -ne -Value ':$DATA' |
+      Format-List FileName, Stream, Length;
 }
 
 End {
