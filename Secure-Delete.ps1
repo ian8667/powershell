@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2021-06-19T17:59:52
+Last updated : 2021-09-27T23:28:50
 Keywords     : yes no yesno
 
 See also
@@ -54,16 +54,21 @@ https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryp
 #https://adamtheautomator.com/powershell-download-file/
 
 [CmdletBinding()]
-Param() #end param
+Param (
+   [parameter(Position=0,
+              Mandatory=$false)]
+   [Object]
+   $ShredFile
+) #end param
 
-#----------------------------------------------------------
+#-----------------------------------------------------
 # Start of delegates
-#----------------------------------------------------------
+#-----------------------------------------------------
 
 $Get_FileStream = [Func[System.IO.FileInfo,System.IO.FileStream]]{
 param($FilePath)
 <#
-Get the file stream which will be overwritten and then deleted.
+Get the input file stream which will be overwritten and then deleted.
 #>
    $buffersize = 8KB;
    $myargs = @(
@@ -83,13 +88,13 @@ Get the file stream which will be overwritten and then deleted.
    return $mystream;
 } #end inStreamFunc
 
-#----------------------------------------------------------
+#-----------------------------------------------------
 # End of delegates
-#----------------------------------------------------------
+#-----------------------------------------------------
 
-#----------------------------------------------------------
+#-----------------------------------------------------
 # Start of functions
-#----------------------------------------------------------
+#-----------------------------------------------------
 
 #region ***** Function Get-Filename *****
 function Get-Filename {
@@ -101,7 +106,7 @@ function Get-Filename {
   .DESCRIPTION
 
   Display the .NET class OpenFileDialog dialog box that prompts
-  the user to open a file to which will be securely deleted
+  the user to open a file which will be securely deleted
 
   .PARAMETER Title
 
@@ -164,7 +169,7 @@ function Get-Filename {
 }
 #endregion ***** End of function Get-Filename *****
 
-#------------------------------------------------------------------------------
+#-----------------------------------------------------
 
 #region ***** function Confirm-Delete *****
 function Confirm-Delete {
@@ -187,14 +192,14 @@ Confirm
 Are you sure you want to perform this action?
 Performing the operation remove file on target $($FileName).
 This action cannot be undone! Please make sure
-"@ #end of message variable
+"@ #end of 'message' variable
         Set-Variable -Name 'cDescription', 'caption', 'message' -Option ReadOnly
 
         # Create a 'Collection' object of type
         # 'System.Management.Automation.Host.ChoiceDescription'
         # with the generic type of
         # 'System.Management.Automation.Host.ChoiceDescription'
-        $choices = New-Object -typeName "System.Collections.ObjectModel.Collection[$cDescription]";
+        $choices = New-Object -TypeName "System.Collections.ObjectModel.Collection[$cDescription]";
         $defaultChoice = 1;
 
         $yes = $cDescription::new("&Yes"); # Label value
@@ -232,7 +237,7 @@ This action cannot be undone! Please make sure
 }
 #endregion ***** end of function Confirm-Delete *****
 
-#------------------------------------------------------------------------------
+#-----------------------------------------------------
 
 #region ***** Function Delete-File *****
 function Delete-File {
@@ -334,9 +339,9 @@ Param (
 }
 #endregion ***** End of function Delete-File *****
 
-#----------------------------------------------------------
+#-----------------------------------------------------
 # End of functions
-#----------------------------------------------------------
+#-----------------------------------------------------
 
 ##=============================================
 ## SCRIPT BODY
@@ -358,8 +363,21 @@ Invoke-Command -ScriptBlock {
 
 }
 
-# Get the filename to shred and delete
-[String]$MyFile = Get-Filename -Title 'Filename to shred/delete';
+#Extract the filename to shred from the parameter
+if ($ShredFile -is [String]) {
+    Write-Verbose 'The main parameter is a string';
+    $MyFile = Resolve-Path -Path $ShredFile;
+
+} elseif ($ShredFile -is [System.IO.FileInfo]) {
+    Write-Verbose 'The main parameter is FileInfo';
+    $MyFile = $ShredFile.FullName;
+
+} else {
+    #No value has been supplied
+    Write-Verbose 'Not sure what the type of the main parameter is';
+    $MyFile = Get-Filename -Title 'Filename to shred/delete';
+}
+
 Write-Verbose -Message "File selected for shred/delete is |$MyFile|";
 if (Confirm-Delete -FileName $MyFile) {
    Delete-File -FileName $MyFile;
