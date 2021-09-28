@@ -31,7 +31,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2021-09-27T23:28:50
+Last updated : 2021-09-28T19:20:57
 Keywords     : yes no yesno
 
 See also
@@ -286,6 +286,7 @@ Param (
             Write-Output ("`nFile overwrite pass #{0}" -f $PassCounter);
 
             # Inner loop to write, buffer by buffer, to the output stream
+            # and thus overwrite the file.
             while ($BytesWritten -lt $FileLength) {
                 #
                 $RemainingBytes = $FileLength - $BytesWritten;
