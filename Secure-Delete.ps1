@@ -13,11 +13,55 @@ obtained from the method 'RNGCryptoServiceProvider.GetBytes'.
 After the file has been overwritten, it's then deleted using the
 PowerShell cmdlet Remove-Item.
 
+The path to the file can be passed to the parameter as a string
+or a 'System.IO.FileInfo' object.
+
 .EXAMPLE
 
 ./Secure-Delete.ps1
 
-No parameters are required
+As no parameter has been supplied, an internal function will
+invoke the 'System.Windows.Forms.OpenFileDialog' class which
+prompts the user to select a file to shred and delete.
+
+.EXAMPLE
+
+./Secure-Delete.ps1 'C:\Gash\speak.ps1'
+
+The string containing the path to the file is passed as a
+positional parameter.
+
+.EXAMPLE
+
+./Secure-Delete.ps1 -ShredFile 'C:\Gash\speak.ps1'
+
+Using a named parameter to pass the path of the file concerned.
+
+.EXAMPLE
+
+./Secure-Delete.ps1 $file
+
+The path to the file is passed as a positional parameter via
+the contents of variable 'file'. Variable file can be of type
+string or a System.IO.FileInfo object. This can be achieved
+with the following assignments:
+
+$file = 'C:\Gash\myfile.ps1'
+or
+$file = Get-Item 'myfile.ps1'
+
+.EXAMPLE
+
+./Secure-Delete.ps1 -ShredFile $file
+
+The path to the file is passed as a named parameter via
+the contents of variable 'file'. Variable file can be of type
+string or a System.IO.FileInfo object. This can be achieved
+with the following assignments:
+
+$file = 'C:\Gash\myfile.ps1'
+or
+$file = Get-Item 'myfile.ps1'
 
 .INPUTS
 
@@ -31,8 +75,8 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2021-09-28T19:20:57
-Keywords     : yes no yesno
+Last updated : 2021-09-28T22:38:30
+Keywords     : yes no yesno secure shred delete
 
 See also
 NIST SP 800-88 R1, Guidelines for Media Sanitization
