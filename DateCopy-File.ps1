@@ -6,12 +6,13 @@ the name of the copied file.
 
 .DESCRIPTION
 
-By copying a file and inserting the current date/time partway through
-the name of the copied file, a 'backup copy' is made of the original
-file. This means we can make amendments to the original file and have
-a backup copy should we have the need to revert to it. The date and
-time show when the file was copied and by having a time component, we
-can make more than one copy of a file per day.
+By copying a file and inserting the current date/time (timestamp)
+partway through the name of the copied file, a 'backup copy' is made
+of the original file. This means we can make amendments to the
+original file and have a backup copy should we have the need to
+revert to it. The date and time show when the file was copied and by
+having a time component, we can make more than one copy of a file
+per day.
 
 File 'fred.txt', for example, will be copied to a file named with a
 format of 'fred_2018-04-22T14-52-26.txt'. The file when copied can be
@@ -25,8 +26,8 @@ The date/time component used is:
 
 PS> ./DateCopy-File.ps1
 
-A filename to copy has not been supplied so an internal function will be
-invoked to obtain the file to copy.
+A filename to copy has not been supplied so an internal function
+will be invoked to obtain the file to copy.
 
 .EXAMPLE
 
@@ -46,9 +47,9 @@ of myfile_YYYY-MM-DDTHH-MM-SS.txt.
 
 PS> ./DateCopy-File.ps1 -ReadOnly
 
-A filename to copy has not been supplied so an internal function will be
-invoked to obtain the file to copy. The file when copied, will be set to
-ReadOnly upon completion.
+A filename to copy has not been supplied so an internal function will
+be invoked to obtain the file to copy. The file, when copied, will be
+set to ReadOnly upon completion.
 
 .EXAMPLE
 
@@ -62,7 +63,62 @@ of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
 PS> ./DateCopy-File.ps1 -Path 'myfile.txt' -ReadOnly
 
 The filename supplied will be copied to a file with the name format
-of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
+of 'myfile_YYYY-MM-DDTHH-MM-SS.txt' and set to ReadOnly upon
+completion of the copy.
+
+.EXAMPLE
+
+PS> ./DateCopy-File.ps1 $file
+
+The path to the file to copy is passed as a positional
+parameter via the contents of variable 'file'. The
+filename supplied will be copied to a file, for example,
+with the name format of 'myfile_YYYY-MM-DDTHH-MM-SS.txt'.
+Variable 'file' can be of type string or a
+System.IO.FileInfo object. Variable 'file' can be
+assigned as follows:
+
+PS> $file = 'C:\Gash\myfile.ps1'
+or
+PS> $file = Get-Item 'myfile.ps1'
+
+.EXAMPLE
+
+PS> ./DateCopy-File.ps1 $file -ReadOnly
+
+The path to the file to copy is passed as a positional
+parameter via the contents of variable 'file'. The
+filename supplied will be copied to a file, for example,
+with the name format of 'myfile_YYYY-MM-DDTHH-MM-SS.txt'.
+Variable 'file' can be of type string or a
+System.IO.FileInfo object. Variable 'file' can be
+assigned as follows:
+
+PS> $file = 'C:\Gash\myfile.ps1';
+or
+PS> $file = Get-Item 'myfile.ps1';
+
+The file will be set to ReadOnly upon completion of the
+copy.
+
+.EXAMPLE
+
+PS> ./DateCopy-File.ps1 -Path $file -ReadOnly
+
+The path to the file to copy is passed as a named
+parameter via the contents of variable 'file'. The
+filename supplied will be copied to a file, for example,
+with the name format of 'myfile_YYYY-MM-DDTHH-MM-SS.txt'.
+Variable 'file' can be of type string or a
+System.IO.FileInfo object. Variable 'file' can be
+assigned as follows:
+
+PS> $file = 'C:\Gash\myfile.ps1';
+or
+PS> $file = Get-Item 'myfile.ps1';
+
+The file will be set to ReadOnly upon completion of the
+copy.
 
 .INPUTS
 
@@ -76,7 +132,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2021-05-09T16:53:50
+Last updated : 2021-10-14T15:33:11
 
 This program contains examples of using delegates.
 
@@ -113,7 +169,7 @@ Param (
    [parameter(Position=0,
               Mandatory=$false)]
    [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
-   [String]
+   [Object]
    $Path,
 
    [parameter(Position=1,
@@ -154,7 +210,7 @@ value of the type specified by the TResult parameter.
 https://docs.microsoft.com/en-us/dotnet/api/system.func-1?view=net-5.0
 #>
     $invalidChars = [System.Collections.Generic.List[Byte]]::new();
-    $invalidChars.Capacity = 50;
+    $invalidChars.Capacity = 60;
     $invalidChars.Add(91); #decimal value - Left square bracket [
     $invalidChars.Add(93); #decimal value - Right square bracket ]
     $invalidChars.Add(35); #decimal value - Hash symbol #
@@ -164,6 +220,7 @@ https://docs.microsoft.com/en-us/dotnet/api/system.func-1?view=net-5.0
     ForEach-Object {
         $invalidChars.Add($PSItem);
     }
+    $invalidChars.TrimExcess();
     $invalidChars;
 }
 Set-Variable -Name 'invalids' -Option ReadOnly;
@@ -222,7 +279,7 @@ function Get-OldFilename {
 <#
 .SYNOPSIS
 
-Gets the file to copy
+Gets the name of the file to copy
 
 .DESCRIPTION
 
@@ -254,7 +311,6 @@ Begin {
   Write-Verbose -Message "Invoking function to obtain the to file to copy";
 
   Add-Type -AssemblyName "System.Windows.Forms";
-  #[System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
   [System.Windows.Forms.OpenFileDialog]$ofd = [System.Windows.Forms.OpenFileDialog]::new();
 
   $myok = [System.Windows.Forms.DialogResult]::OK;
@@ -363,8 +419,8 @@ Constructs a new filename
 .DESCRIPTION
 
 Constructs a new filename from the filename passed as a
-parameter. The copied file will have this filename when
-when the copy is complete
+parameter. The copied file will have this new filename
+when when the copy is complete
 
 Returns a filename in the format of, for example,
 myfile_2020-12-22T19-42-58.txt
@@ -536,49 +592,66 @@ Invoke-Command -ScriptBlock {
 
 }
 
+
+#Extract the filename to copy from the parameter
+if ($Path -is [String]) {
+  Write-Verbose 'The main parameter is a string';
+  $OldFilename = Resolve-Path -Path $Path;
+
+} elseif ($Path -is [System.IO.FileInfo]) {
+  Write-Verbose 'The main parameter is FileInfo';
+  $OldFilename = $Path.FullName;
+
+} else {
+  #No value has been supplied
+  Write-Verbose 'Not sure what the type of the main parameter is';
+  $OldFilename = Get-OldFilename -Boxtitle 'File to copy';
+}
+Set-Variable -Name 'OldFilename' -Option ReadOnly;
+
+
 # With a small sleep delay at the start of the program,
 # it helps ensure we can never have two timestamps the
 # same because we have at least two seconds delay between
 # each run of the program.
 Start-Sleep -Seconds 2.0;
 
-$OldNewName = [PSCustomObject]@{
-   PSTypeName = 'OldNew';
-
-   # The file to be copied. ie myfile.txt
-   OldFilename = 'NotModified';
-
-   # The copied file containing the timestamp, ie
-   # myfile_2020-12-22T18-48-20.txt
-   NewFilename = 'NotModified';
-}
-
-if ($PSBoundParameters.ContainsKey('Path')) {
-   # Use the filename supplied.
-   $OldNewName.OldFilename = Resolve-Path -LiteralPath $Path;
-} else {
-   # Filename has not been supplied. Execute function Get-OldFilename
-   # to allow the user to select a file to copy.
-   $OldNewName.OldFilename = Get-OldFilename -Boxtitle 'File to copy';
-}
 
 # Check the input filename doesn't contain any invalid characters
 # which may cause problems. If so, terminate the program
-Check-Filename -CheckFile $OldNewName.OldFilename;
+Check-Filename -CheckFile $OldFilename;
 
 # Get the new filename name which is derived from the old
 # (original) filename from which we are copying.
-$OldNewName.NewFilename = Get-NewFilename -OldFilename $OldNewName.OldFilename;
-Set-Variable -Name 'OldNewName' -Option ReadOnly;
+$NewFilename = Get-NewFilename -OldFilename $OldFilename;
+Set-Variable -Name 'NewFilename' -Option ReadOnly;
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
-Write-Output ("File we want to copy: {0}" -f $OldNewName.OldFilename);
-Write-Output ("New name of copied file = {0}" -f $OldNewName.NewFilename);
-Copy-Item -Path $OldNewName.OldFilename -Destination $OldNewName.NewFilename;
+Write-Output ("File we want to copy: {0}" -f $OldFilename);
+Write-Output ("New name of copied file = {0}" -f $NewFilename);
+Copy-Item -Path $OldFilename -Destination $NewFilename;
 
-if (Test-Path -Path $OldNewName.NewFilename) {
+if (Test-Path -Path $NewFilename) {
   # Ensure the file copy was successful by computing the (MD5) hash
   # value of the two files concerned.
+
+  $OldNewName = [PSCustomObject]@{
+    #I was using this data structure in a previous version
+    #of the program and decided to leave it in as function
+    #'Compare-Files' uses and processes this data structure.
+    #Of course, I could have changed things but I'm leaving
+    #this as it is.
+    PSTypeName = 'OldNew';
+
+    # The file to be copied. ie myfile.txt
+    OldFilename = $OldFilename;
+
+    # The copied file containing the timestamp, ie
+    # myfile_2020-12-22T18-48-20.txt
+    NewFilename = $NewFilename;
+  }
+  Set-Variable -Name 'OldNewName' -Option ReadOnly;
+
   $compareOK = Compare-Files -DataFile $OldNewName;
   if ($compareOK) {
     Write-Output 'Hash compare of the two files successful';
@@ -586,24 +659,25 @@ if (Test-Path -Path $OldNewName.NewFilename) {
     throw 'Hash values for the two files are not the same. Please check';
   }
 
-  # Set the value of the 'LastWriteTime' property of the file just copied
-  # to the current date/time rather than keep the value of the file it
-  # was copied from. If we didn't do this, both the original file and the
-  # file we've copied will have the same 'LastWriteTime' property. The
-  # original file has the earlier 'LastWriteTime' property. By doing this,
-  # it makes it easier for me to find the file in any output if I execute
-  # the command:
+  # Set the value of the 'LastWriteTime' property of the file just
+  # copied to the current date/time rather than keep the value of
+  # the file it was copied from. If we didn't do this, both the
+  # original file and the file we've copied will have the same
+  # 'LastWriteTime' property. The original file has the earlier
+  # 'LastWriteTime' property. By doing this, it makes it easier
+  # for me to find the file in any output if I execute the
+  # command, for example:
   # PS> Get-ChildItem -File | Sort-Object -Property LastWriteTime;
 
   # Ensure the attribute 'IsReadOnly' is set to false to avoid the error:
   # Access to the path <filename> is denied
-  Set-ItemProperty -Path $OldNewName.NewFilename -Name 'IsReadOnly' -Value $false;
-  Set-ItemProperty -Path $OldNewName.NewFilename -Name 'LastWriteTime' -Value (Get-Date);
+  Set-ItemProperty -Path $NewFilename -Name 'IsReadOnly' -Value $false;
+  Set-ItemProperty -Path $NewFilename -Name 'LastWriteTime' -Value (Get-Date);
 
   if ($PSBoundParameters.ContainsKey('ReadOnly')) {
      # Set the value of the 'IsReadOnly' property of the file just copied
      # to true making it read only.
-     Set-ItemProperty -Path $OldNewName.NewFilename -Name 'IsReadOnly' -Value $True;
+     Set-ItemProperty -Path $NewFilename -Name 'IsReadOnly' -Value $True;
   }
 
   #List the old and new filename objects.
@@ -615,7 +689,7 @@ if (Test-Path -Path $OldNewName.NewFilename) {
   foreach ($item in $m) {Get-ChildItem -Path $item.value -File}
 
 } else {
-  Write-Error -Message "Can't seem to find new file $($OldNewName.NewFilename)";
+  Write-Error -Message "Can't seem to find new file $($NewFilename)";
 } #end if Test-Path
 
 ##=============================================
