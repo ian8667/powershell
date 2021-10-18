@@ -31,8 +31,8 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Clone-GitRepository.ps1
 Author       : Ian Molloy
-Last updated : 2020-11-08T16:10:30
-Keywords     : git github clone repository
+Last updated : 2021-10-19T00:07:18
+Keywords     : git github clone repository yesno
 
 .LINK
 
@@ -88,6 +88,76 @@ return $Repos;
 
 }
 #endregion ***** end of function Get-RepositoryName *****
+
+#----------------------------------------------------------
+
+#region ***** function Confirm-Delete *****
+function Confirm-Delete {
+   [CmdletBinding()]
+   [OutputType([System.Boolean])]
+   Param (
+       [parameter(Mandatory=$true,
+                  HelpMessage="Confirm remove local GIT repository")]
+       [ValidateNotNullOrEmpty()]
+       [String]$LocalRepo
+   ) #end param
+
+         Begin {
+
+           $retval = $false;
+           $cDescription = 'System.Management.Automation.Host.ChoiceDescription' -as [type];
+           $caption = "Remove file";
+           $message = @"
+   Confirm
+   Are you sure you want to perform this action?
+   Performing the operation "Remove Directory" on local Git repository
+   "$LocalRepo".
+   This action cannot be undone! Please make sure you have copied all
+   required files from this directory first, otherwise you will lose them.
+"@ #end of 'message' variable
+           Set-Variable -Name 'cDescription', 'caption', 'message' -Option ReadOnly
+
+           # Create a 'Collection' object of type
+           # 'System.Management.Automation.Host.ChoiceDescription'
+           # with the generic type of
+           # 'System.Management.Automation.Host.ChoiceDescription'
+           $choices = New-Object -TypeName "System.Collections.ObjectModel.Collection[$cDescription]";
+           $defaultChoice = 1;
+
+           $yes = $cDescription::new("&Yes"); # Label value
+           $yes.HelpMessage = "Remove local Git repository";
+           $choices.Add($yes);
+
+           $no = $cDescription::new("&No"); # Label value
+           $no.HelpMessage = "Do not remove local Git repository";
+           $choices.Add($no);
+
+           $exit = $cDescription::new("&Exit"); # Label value
+           $exit.HelpMessage = "Exit and do nothing";
+           $choices.Add($exit);
+         } #end of Begin block
+
+         Process {
+           # https://docs.microsoft.com/en-us/dotnet/api/system.management.automation.host.pshostuserinterface.promptforchoice?view=powershellsdk-7.0.0
+           # Returns an 'Int32' value which is the index of the choices
+           # element that corresponds to the option selected by the
+           # user.
+           $result = $host.ui.PromptForChoice($caption, $message, $choices, $defaultChoice)
+
+         }
+
+         End {
+
+          switch ($result) {
+             0 {$retval = $true; break}  # Response yes
+             1 {$retval = $false; break} # Response no
+             2 {$retval = $false; break} # Response exit
+          }
+
+           return $retval;
+         }
+   }
+   #endregion ***** end of function Confirm-Delete *****
 
 #----------------------------------------------------------
 
@@ -161,9 +231,19 @@ Param (
       #As we're going to clone to this directory, remove it
       #if it exists. Cloning into an existing directory is
       #only allowed if the directory is empty.
-      Write-Output ('Trying to remove unwanted directory {0}' -f $LocalRepo);
-      Remove-Item -Path $LocalRepo -Force -Recurse;
-      Write-Output ('Unwanted directory removed');
+
+      #Ensure all required files have been copied from the local
+      #Git repository before removing it.
+      if (Confirm-Delete -LocalRepo $LocalRepo) {
+
+         Write-Output ('Trying to remove unwanted directory {0}' -f $LocalRepo);
+         Remove-Item -Path $LocalRepo -Force -Recurse -ErrorAction Stop;
+         Write-Output ('Unwanted directory removed');
+
+      } else {
+         Write-Error -Message "Local Git repository $LocalRepo not removed at user request";
+      }
+
    }
 
    & $gitexe @cmdArgs;
