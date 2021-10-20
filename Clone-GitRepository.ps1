@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Clone-GitRepository.ps1
 Author       : Ian Molloy
-Last updated : 2021-10-19T00:07:18
+Last updated : 2021-10-19T19:20:46
 Keywords     : git github clone repository yesno
 
 .LINK
@@ -105,8 +105,10 @@ function Confirm-Delete {
          Begin {
 
            $retval = $false;
+           #Variable 'cDescription' is a shortcut to the .NET class
+           #'ChoiceDescription'
            $cDescription = 'System.Management.Automation.Host.ChoiceDescription' -as [type];
-           $caption = "Remove file";
+           $caption = "Remove directory";
            $message = @"
    Confirm
    Are you sure you want to perform this action?
@@ -115,23 +117,28 @@ function Confirm-Delete {
    This action cannot be undone! Please make sure you have copied all
    required files from this directory first, otherwise you will lose them.
 "@ #end of 'message' variable
-           Set-Variable -Name 'cDescription', 'caption', 'message' -Option ReadOnly
+           Set-Variable -Name 'cDescription', 'caption', 'message' -Option ReadOnly;
 
-           # Create a 'Collection' object of type
+           # Create a 'Collection' object of type (ChoiceDescription Class)
            # 'System.Management.Automation.Host.ChoiceDescription'
-           # with the generic type of
-           # 'System.Management.Automation.Host.ChoiceDescription'
+           # based upon the generic type of
+           # 'System.Collections.ObjectModel.Collection'.
+           #
+           # Choice values use a zero-based index.
            $choices = New-Object -TypeName "System.Collections.ObjectModel.Collection[$cDescription]";
            $defaultChoice = 1;
 
+           # Option choice 'yes'
            $yes = $cDescription::new("&Yes"); # Label value
            $yes.HelpMessage = "Remove local Git repository";
            $choices.Add($yes);
 
+           # Option choice 'no'
            $no = $cDescription::new("&No"); # Label value
            $no.HelpMessage = "Do not remove local Git repository";
            $choices.Add($no);
 
+           # Option choice 'exit'
            $exit = $cDescription::new("&Exit"); # Label value
            $exit.HelpMessage = "Exit and do nothing";
            $choices.Add($exit);
