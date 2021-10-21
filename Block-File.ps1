@@ -60,7 +60,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2021-07-04T12:52:28
+Last updated : 2021-10-21T20:18:34
 
 For a carriage return and a new line, use `r`n.
 Special Characters
@@ -143,7 +143,7 @@ Param (
    [parameter(Position=0,
               Mandatory=$false)]
    [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
-   [String[]]
+   [Object]
    $Path
 ) #end param
 
@@ -251,8 +251,8 @@ Param (
    [parameter(Position=0,
               Mandatory=$true)]
    [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
-   [String[]]
-   $fList
+   [String]
+   $BlockFile
 ) #end param
 
 Begin {
@@ -260,29 +260,26 @@ Begin {
 }
 
 Process {
-  # Loop round the array of files and set the Zone.Identifier accordingly.
-  foreach ($file in $fList) {
-    Write-Verbose -Message "Setting Zone.Identifier for file $file";
+
+    Write-Verbose -Message "Setting Zone.Identifier for file $BlockFile";
 
     #Make sure the file does not already have a Zone.Identifier. Returns an
     #object of the type:
     #TypeName: System.Management.Automation.Internal.AlternateStreamData
-    $zones = (Get-Item $file -Stream *).Stream;
+    $zones = (Get-Item $BlockFile -Stream *).Stream;
     [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
     if ($zones -contains 'Zone.Identifier') {
-      Write-Warning -Message "File [$file] already has a Zone.Identifier.`nNo further action taken";
+      Write-Warning -Message "File [$BlockFile] already has a Zone.Identifier.`nNo further action taken";
     } else {
-      Set-Content -Path $file -Stream 'Zone.Identifier' -Value '[ZoneTransfer]';
-      Add-Content -Path $file -Stream 'Zone.Identifier' -Value 'ZoneId=3';
+      Set-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value '[ZoneTransfer]';
+      Add-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value 'ZoneId=3';
 
       #List the streams on the file
-      Write-Output "Streams now on file [$file]";
-      Get-Item -Path $file -Stream * | Format-Table Stream,Length;
+      Write-Output "Streams now on file [$BlockFile]";
+      Get-Item -Path $BlockFile -Stream * | Format-Table Stream,Length;
 
     }
-
-  }
 
 }
 
@@ -332,15 +329,23 @@ intended.
 
 } #end of Invoke-Command -ScriptBlock
 
-if ($PSBoundParameters.ContainsKey('Path')) {
-   # Files have been supplied as a parameter.
-   $files = $Path;
+#Extract the filename to work with from the parameter
+if ($Path -is [String]) {
+    Write-Verbose 'The main parameter is a string';
+    $MyFile = Resolve-Path -Path $Path;
+
+} elseif ($Path -is [System.IO.FileInfo]) {
+    Write-Verbose 'The main parameter is FileInfo';
+    $MyFile = $Path.FullName;
+
 } else {
-   # No files supplied to the program. Get some to work with.
-   $files = Get-Filename -Title 'File(s) to block';
+    #No value has been supplied
+    Write-Verbose 'Not sure what the type of the main parameter is';
+    $MyFile = Get-Filename -Title 'File to block';
 }
 
-Start-MainRoutine -fList $files;
+
+Start-MainRoutine -BlockFile $MyFile;
 
 Write-Output '';
 Write-Output 'All done now';
