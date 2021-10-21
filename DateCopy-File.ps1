@@ -22,6 +22,15 @@ The date/time component used is:
 
 <filename>_YYYY-MM-DDTHH-MM-SS.<filename extension>
 
+.PARAMETER Path
+
+The file of which a copy will be made
+
+.PARAMETER ReadOnly
+
+An enumeration switch parameter indicating whether to set the copy
+of the file to read only when the copy operation is complete.
+
 .EXAMPLE
 
 PS> ./DateCopy-File.ps1
@@ -132,7 +141,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2021-10-14T15:33:11
+Last updated : 2021-10-22T00:05:25
 
 This program contains examples of using delegates.
 
