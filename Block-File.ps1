@@ -6,9 +6,9 @@ Blocks a file via a 'Zone.Identifier' Alternate Data Stream
 
 .DESCRIPTION
 
-'Blocks' files by setting the Zone.Identifier Alternate Data Stream,
-which has a value of "3" which indicates as if it was downloaded from
-the Internet. This means the Windows operating system will consider
+'Blocks' files by setting a 'Zone.Identifier' Alternate Data Stream,
+(ADS) which has a value of "3" which indicates as if it was downloaded
+from the Internet. This means the Windows operating system will consider
 the file to have been downloaded from the Internet Zone and results
 in the "Unblock" check box being displayed in the properties of the file.
 
@@ -31,22 +31,55 @@ information (for example summary information) for the file. Even 'Internet
 Explorer' adds the stream named 'Zone.Identifier' to every file downloaded
 from the internet.
 
+.PARAMETER Path
+
+The file on which a 'Zone.Identifier' Alternate Data Stream
+(ADS) will be created.
+
 .EXAMPLE
 
 ./Block-File.ps1
 
 As a parameter has not been supplied, an internal function is invoked
-to obtain the file(s) to block.
+to obtain the file to block.
 
 .EXAMPLE
 
-./Block-File.ps1 'file1.txt', 'file2.txt'
+./Block-File.ps1 'filename.txt'
 
-The file(s) supplied as parameters will be blocked.
+The file supplied as a positional parameter will be blocked.
 
 .EXAMPLE
 
 ./Block-File.ps1 -Path 'filename.txt'
+
+The file supplied as a named parameter will be blocked.
+
+.EXAMPLE
+
+./Block-File.ps1 $file
+
+The path to the file is passed as a positional parameter via
+the contents of variable 'file'. Variable file can be of type
+string or a System.IO.FileInfo object. This can be achieved
+with the following assignments:
+
+$file = 'C:\Gash\myfile.ps1'
+or
+$file = Get-Item 'myfile.ps1'
+
+.EXAMPLE
+
+./Secure-Delete.ps1 -Path $file
+
+The path to the file is passed as a named parameter via
+the contents of variable 'file'. Variable file can be of type
+string or a System.IO.FileInfo object. This can be achieved
+with the following assignments:
+
+$file = 'C:\Gash\myfile.ps1'
+or
+$file = Get-Item 'myfile.ps1'
 
 .INPUTS
 
@@ -132,7 +165,7 @@ End {
 }
 
 } #end of ScriptBlock
-Submit as a background job:
+Submit the scriptblock above as a background job in one of two ways:
 $job = Start-ThreadJob -ScriptBlock $sb -Name 'adssearch';
 or
 $job = Start-Job -ScriptBlock $sb -Name 'adssearch';
