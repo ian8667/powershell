@@ -27,7 +27,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Ringtons-NextVisit.ps1
 Author       : Ian Molloy
-Last updated : 2021-07-09T12:09:22
+Last updated : 2021-10-29T16:59:13
 
 Ringtons Ltd, Algernon Road, Newcastle upon Tyne, NE6 2YN
 Tel: 0800 052 2440
@@ -99,7 +99,7 @@ do {
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Output ('Ringtons next visit is on {0}' -f $tempDate.ToString($dateMask));
-$Difference = New-TimeSpan -Start $endDate -End $tempDate;
+$Difference = New-TimeSpan -Start $endDate.Date -End $tempDate.Date;
 if ($Difference.Days -eq 0) {
     Write-Warning -Message 'Which is today!';
 } else {
