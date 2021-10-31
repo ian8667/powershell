@@ -7,13 +7,13 @@ Blocks a file via a 'Zone.Identifier' Alternate Data Stream
 .DESCRIPTION
 
 'Blocks' files by setting a 'Zone.Identifier' Alternate Data Stream,
-(ADS) which has a value of "3" which indicates as if it was downloaded
+(ADS) with a value of "3" which indicates as if it was downloaded
 from the Internet. This means the Windows operating system will consider
 the file to have been downloaded from the Internet Zone and results
 in the "Unblock" check box being displayed in the properties of the file.
 
-Effectively this is the reverse of the 'Unblock-File' cmdlet which
-removes the Zone.Identifier alternate data stream.
+Effectively this is the reverse of the Microsoft provided 'Unblock-File'
+cmdlet which removes the Zone.Identifier alternate data stream.
 
 The NTFS file system includes support for Alternate Data Streams (ADS).
 This is not a well known feature and was included, primarily, to provide
@@ -93,7 +93,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2021-10-21T20:18:34
+Last updated : 2021-10-31T16:28:41
 
 For a carriage return and a new line, use `r`n.
 Special Characters
@@ -103,8 +103,8 @@ PS> Set-Content -Path 'fred.txt' -Stream 'Zone.Identifier' -Value "[ZoneTransfer
 
 Set-Content -Path 'ian.ian' -Stream 'Zone.Identifier' -Value '[ZoneTransfer]'
 Add-Content -Path 'ian.ian' -Stream 'Zone.Identifier' -Value 'ZoneId=3'
-Get-Content ???Path 'fred.txt' -Stream zone.identifier
-Get-Item -Path fred.txt -Stream zone*
+Get-Content -Path 'fred.txt' -Stream zone.identifier
+Get-Item -Path 'fred.txt' -Stream zone*
 
 .LINK
 
@@ -145,6 +145,14 @@ https://docs.microsoft.com/en-us/powershell/module/Microsoft.PowerShell.Utility/
 Alternate Data Streams in NTFS(2)
 https://docs.microsoft.com/en-us/archive/blogs/askcore/alternate-data-streams-in-ntfs
 
+
+How to write a cmdlet
+This article shows how to write a cmdlet. The Send-Greeting
+cmdlet takes a single user name as input and then writes a
+greeting to that user. Although the cmdlet does not do much
+work, this example demonstrates the major sections of a cmdlet.
+https://docs.microsoft.com/en-us/powershell/scripting/developer/cmdlet/how-to-write-a-simple-cmdlet?view=powershell-7.1
+
 System.Management.Automation.ScriptBlock
 Search for files with an alternate data stream (ADS)
 $sb = {
@@ -166,8 +174,10 @@ End {
 
 } #end of ScriptBlock
 Submit the scriptblock above as a background job in one of two ways:
+1.
 $job = Start-ThreadJob -ScriptBlock $sb -Name 'adssearch';
 or
+2.
 $job = Start-Job -ScriptBlock $sb -Name 'adssearch';
 #>
 
@@ -263,19 +273,19 @@ function Start-MainRoutine {
   <#
   .SYNOPSIS
 
-  Process files selected
+  Process the file selected
 
   .DESCRIPTION
 
-  Loop through each of the files in the array supplied as
-  a parameter and set the 'Zone.Identifier' alternate data
-  stream. No action is taken if the file concerned alrady
-  has a 'Zone.Identifier' alternate data stream except to
-  write a warning to the console to this effect.
-  
-  .PARAMETER fList
+  Set the Zone.Identifier Alternate Data Stream of the
+  file selected to a value of "3" which indicate that it
+  was downloaded from the Internet. Even if the file
+  wasn't downloaded, setting the Zone.Identifier like
+  this has the same effect.
 
-  List of file(s) to process
+  .PARAMETER BlockFile
+
+  File which will be blocked
   #>
 
 [CmdletBinding()]
@@ -288,33 +298,47 @@ Param (
    $BlockFile
 ) #end param
 
-Begin {
-  [String[]]$zones = '';
-}
+Begin {}
 
 Process {
 
-    Write-Verbose -Message "Setting Zone.Identifier for file $BlockFile";
+  Write-Verbose -Message "Setting Zone.Identifier for file $BlockFile";
 
-    #Make sure the file does not already have a Zone.Identifier. Returns an
-    #object of the type:
-    #TypeName: System.Management.Automation.Internal.AlternateStreamData
-    $zones = (Get-Item $BlockFile -Stream *).Stream;
-    [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
-    if ($zones -contains 'Zone.Identifier') {
-      Write-Warning -Message "File [$BlockFile] already has a Zone.Identifier.`nNo further action taken";
-    } else {
-      Set-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value '[ZoneTransfer]';
-      Add-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value 'ZoneId=3';
+  $ReadOnlyStatus = (Get-Item $BlockFile).IsReadOnly
+  (Get-Item $BlockFile).IsReadOnly = $false;
 
-      #List the streams on the file
-      Write-Output "Streams now on file [$BlockFile]";
-      Get-Item -Path $BlockFile -Stream * | Format-Table Stream,Length;
+  # Remove the 'Zone.Identifier' stream if it exists. Not all
+  # files have an Alternate Data Stream of course, so the
+  # Remove-Item cmdlet will generate an error which will be
+  # silently ignored.
+  #
+  # I've taken the decision to do this, as some files when downloaded
+  # from the Internet have other data in this stream such as:
+  #   [ZoneTransfer]
+  #   ZoneId=3
+  #   ReferrerUrl=<some URL>
+  #   HostUrl=<some URL>
+  # I'm removing the stream altogether and recreating it with my
+  # own content of:
+  #   [ZoneTransfer]
+  #   ZoneId=3
+  #
+  Remove-Item -Path $BlockFile -Stream 'Zone.Identifier' -ErrorAction Ignore;
 
-    }
+  [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
-}
+  Set-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value '[ZoneTransfer]';
+  Add-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value 'ZoneId=3';
+
+  #Set the read only property back to it's original value
+  (Get-Item $BlockFile).IsReadOnly = $ReadOnlyStatus;
+
+  #List all streams on the file just modified
+  Write-Output "Streams now on file [$BlockFile]";
+  Get-Item -Path $BlockFile -Stream * | Format-Table Stream,Length;
+
+} #end process block
 
 End {}
 
@@ -376,7 +400,6 @@ if ($Path -is [String]) {
     Write-Verbose 'Not sure what the type of the main parameter is';
     $MyFile = Get-Filename -Title 'File to block';
 }
-
 
 Start-MainRoutine -BlockFile $MyFile;
 
