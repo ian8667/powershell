@@ -9,6 +9,11 @@ Show when Ringtons tea van is next due
 Increments in steps of 14 days (two weeks) the date from a known
 start date to determine when the Ringtons tea van is next due
 
+The 'System.DateOnly' type is used within this program given that
+we're just dealing with dates between each Ringtons visit.
+The DateOnly type is a structure that is intended to represent
+only a date. In other words, just a year, month, and day.
+
 .EXAMPLE
 
 ./Ringtons-NextVisit.ps1
@@ -27,15 +32,24 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Ringtons-NextVisit.ps1
 Author       : Ian Molloy
-Last updated : 2021-10-29T16:59:13
+Last updated : 2021-12-10T18:31:40
 
 Ringtons Ltd, Algernon Road, Newcastle upon Tyne, NE6 2YN
 Tel: 0800 052 2440
 Email: tea@ringtons.co.uk
 
+Create a DateOnly object with the current year, month, day.
+$ddate = [System.DateOnly]::FromDateTime($(Get-Date));
+Create a TimeOnly object with the current hour, minute, seconds.
+$ttime = [System.TimeOnly]::FromDateTime($(Get-Date));
+
 .LINK
 
 https://www.ringtons.co.uk/
+
+"Date, Time, and Time Zone Enhancements in .NET 6"
+https://devblogs.microsoft.com/dotnet/date-time-and-time-zone-enhancements-in-net-6/
+
 #>
 
 [CmdletBinding()]
@@ -66,7 +80,7 @@ intended.
 #>
    Write-Output '';
    Write-Output "Date of Ringtons tea van next visit";
-   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
+   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy';
    Write-Output ('Today is {0}' -f $dateMask);
 
    if ($MyInvocation.OffsetInLine -ne 0) {
@@ -80,13 +94,15 @@ intended.
 
 $dateMask = 'dddd, dd MMMM yyyy';
 Set-Variable -Name 'dateMask' -Option ReadOnly;
-$startDate = Get-Date -Year 2021 -Month 06 -Day 09;
-$endDate = Get-Date;
-$DaysToAdd = 14; #ie, two weeks
+# Start date from which we will start our looping
+$startDate = [System.DateOnly]::new(2021, 06, 09); # year, month, day
+# Create a 'System.DateOnly' object with current date
+$endDate = [System.DateOnly]::FromDateTime($(Get-Date));
+$DaysToAdd = 14; #ie, every two weeks
 Set-Variable -Name 'startDate', 'endDate', 'DaysToAdd' -Option ReadOnly;
 
 Write-Verbose -Message ("Start date used: {0}" -f $startDate.ToString($dateMask));
-# loop in multiples of 14 days from the start date. This will
+# Loop in multiples of 14 days from the start date. This will
 # enable us to determine the next visit date. Potentially,
 # depending on when the next Ringtons visit is due, variable
 # '$tempDate' may well be several days into the future when
@@ -95,15 +111,17 @@ Write-Verbose -Message ("Start date used: {0}" -f $startDate.ToString($dateMask)
 $tempDate = $startDate;
 do {
     $tempDate = $tempDate.AddDays($DaysToAdd);
-} until ($tempDate.Date -ge $endDate.Date);
+} until ($tempDate.CompareTo($endDate) -ge 0);
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Output ('Ringtons next visit is on {0}' -f $tempDate.ToString($dateMask));
-$Difference = New-TimeSpan -Start $endDate.Date -End $tempDate.Date;
-if ($Difference.Days -eq 0) {
+#$Difference = New-TimeSpan -Start $endDate -End $tempDate;
+$Difference = $tempDate.DayNumber - $endDate.DayNumber;
+
+if ($Difference -eq 0) {
     Write-Warning -Message 'Which is today!';
 } else {
-    Write-Output ('In {0} days time' -f $Difference.Days);
+    Write-Output ('In {0} days time' -f $Difference);
 }
 
 ##=============================================
