@@ -74,7 +74,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2021-07-01T22:46:12
+Last updated : 2021-12-11T18:13:49
 Keywords     : contract end of week
 
 .LINK
@@ -125,12 +125,12 @@ Param(
 #region ***** function Show-WeekendingDates *****
 ##=============================================
 ## Function: Show-WeekendingDates
-## Created: 2017-01-01
+## Last updated: 2021-12-11
 ## Author: Ian Molloy
 ## Arguments: N/A
 ##=============================================
-## Purpose: display a list weekending dates (Sunday)
-## from the start of contract until the present.
+## Purpose: display a list weekending dates (Saturday)
+## from the start of contract until the present day.
 ##
 ## Returns: N/A
 ##=============================================
@@ -153,23 +153,24 @@ Begin {
   # should be, for example, the Saturday of the end of the
   # first week on the contract. This date should be earlier
   # than the end date.
-  $startDate = Get-Date -Year 2021 -Month 01 -Day 16;
+  $startDate = [System.DateOnly]::new(2021, 12, 11); # year, month, day
 
   # The end date is determined to be the current date, whatever
-  # today is. Our output will finish when it gets to this date.
-  $endDate = Get-Date;
+  # today is (i.e. whenever the script is run). Our output will
+  # finish when it gets past this date.
+  $endDate = [System.DateOnly]::FromDateTime($(Get-Date));
 
   # Check the start date is earlier than the end date. Throw
   # a terminating error if this is not the case.
-  $Result = (($startDate.Date).CompareTo($endDate.Date));
+  $Result = (($startDate).CompareTo($endDate));
   if ($Result -gt 0) {
-      throw "Start date $($startDate) must be earlier than end date $($endDate)";
+      throw "Start date [$($startDate.ToLongDateString())] must be earlier than end date [$($endDate.ToLongDateString())]";
   }
 
   # Check the start date is a Saturday. Throw a terminating
   # error if this is not the case.
   if (([System.DayOfWeek]::Saturday) -ne $startDate.DayOfWeek) {
-    throw "Start date used of $($startDate.ToString('dd MMMM yyyy')) must be a Saturday";
+    throw "Start date used [$($startDate.ToString('dd MMMM yyyy'))] must be a Saturday";
   }
 
   Set-Variable -Name 'blockSize', 'startDate', 'endDate' -Option ReadOnly;
@@ -183,7 +184,7 @@ Process {
   # loop in multiples of 7 days
   $tempDate = $startDate;
   do {
-   $weekCounter++;
+    $weekCounter++;
 
     Write-Output ("Week {0}, ending on {1}" -f $weekCounter, $tempDate.ToString("yyyy-MM-dd"));
 
@@ -192,7 +193,6 @@ Process {
        Write-Output "";
     }
     $tempDate = $tempDate.AddDays(7.0);
-    #$weekCounter++;
 
   } until ($tempDate -gt $endDate);
 
@@ -213,7 +213,7 @@ End {
 
 #----------------------------------------------------------
 
-#region ********** function Get-JulianDate **********
+#region ***** function Get-JulianDate *****
 ##=============================================
 ## Function: Get-JulianDate
 ## Created: 2013-06-30
@@ -292,11 +292,11 @@ End {
 
 }
 }
-#endregion ********** end of function Get-JulianDate **********
+#endregion ***** end of function Get-JulianDate *****
 
 #----------------------------------------------------------
 
-#region ********** function Show-DateInformation **********
+#region ***** function Show-DateInformation *****
 ##=============================================
 ## Function: Show-DateInformation
 ## Created: 2013-06-30
@@ -320,22 +320,17 @@ Begin {
   $myDate = Get-Date;
 
   # Get the Julian Date for the current date.
-  $jd = Get-JulianDate $myDate;
+  $jd = Get-JulianDate -CurrentDate $myDate;
 
   $greg = New-Object -TypeName System.Globalization.GregorianCalendar;
-  $time = [System.DateTime]::now;
   $rule = [System.Globalization.CalendarWeekRule]::FirstFullWeek;
   $dayofweek = [System.DayOfWeek]::Monday;
-  $weekNum = $greg.GetWeekOfYear($time, $rule, $dayofweek);
+  $weekNum = $greg.GetWeekOfYear($myDate, $rule, $dayofweek);
 }
 
 Process {
   # See whether this is a leap year.
-  if ([System.DateTime]::IsLeapYear($myDate.Year)) {
-    $leap = "True";
-  } else {
-    $leap = "False";
-  }
+  $leap = [System.DateTime]::IsLeapYear($myDate.Year);
 
   # get current culture object
   $Culture = [System.Globalization.CultureInfo]::CurrentCulture;
@@ -344,7 +339,7 @@ Process {
         DayNumber   = $myDate.DayOfYear.ToString("000");
         WeekNumber  = $weekNum.ToString();
         JulianDate  = [String]$jd;
-        LeapYear    = $leap;
+        LeapYear    = [System.DateTime]::IsLeapYear($myDate.Year);
   }
   $DayWeek = New-Object -TypeName PSObject -Property $hash;
 
@@ -352,7 +347,6 @@ Process {
 
 End {
 
-  Write-Output ("Today is {0:dddd, dd MMMM yyyy HH:mm}" -f $myDate);
   Write-Output ("ISO 8601 date/time is {0:s}" -f $myDate);
 
   Out-String -InputObject $DayWeek -Width 50;
@@ -369,7 +363,7 @@ End {
 #region ***** function Get-WeekendingDate *****
 ##=============================================
 ## Function: Get-WeekendingDate
-## Created: 2016-11-13
+## Last updated: 2021-12-11
 ## Author: Ian Molloy
 ## Arguments: N/A
 ##=============================================
@@ -388,7 +382,8 @@ Begin {
   $eow = [System.DayOfWeek]::Saturday; #end of week
   Set-Variable -Name 'eow' -Option ReadOnly;
 
-  $tempDate = Get-Date;
+  # Get todays date
+  $tempDate = [System.DateOnly]::FromDateTime($(Get-Date));
   # see what day of the week variable $tempDate is
   $weekday = $tempDate.DayOfWeek;
 }
