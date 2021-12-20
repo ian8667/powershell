@@ -74,7 +74,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2021-12-15T22:27:41
+Last updated : 2021-12-20T18:17:20
 Keywords     : contract end of week
 
 .LINK
@@ -107,6 +107,9 @@ http://www.epochconverter.com/weeks/2016
 
 Formatting Date Strings with PowerShell
 https://devblogs.microsoft.com/scripting/formatting-date-strings-with-powershell/
+
+ISO 8601 Date and Time format
+https://www.iso.org/iso-8601-date-and-time-format.html
 
 #>
 
@@ -173,7 +176,9 @@ Begin {
     throw "Start date used [$($startDate.ToString('dd MMMM yyyy'))] must be a Saturday";
   }
 
-  Set-Variable -Name 'blockSize', 'startDate', 'endDate' -Option ReadOnly;
+  $iso8601Date = "yyyy-MM-dd";
+
+  Set-Variable -Name 'blockSize', 'startDate', 'endDate', 'iso8601Date' -Option ReadOnly;
 
   Write-Output "Contract weekending information";
   Write-Output "";
@@ -186,7 +191,7 @@ Process {
   do {
     $weekCounter++;
 
-    Write-Output ("Week {0}, ending on {1}" -f $weekCounter, $tempDate.ToString("yyyy-MM-dd"));
+    Write-Output ("Week {0}, ending on {1}" -f $weekCounter, $tempDate.ToString($iso8601Date));
 
     # See whether we're due to insert a blank line in our output
     if (($weekCounter % $blockSize) -eq 0) {
