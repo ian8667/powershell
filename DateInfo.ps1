@@ -74,7 +74,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2021-12-11T18:13:49
+Last updated : 2021-12-15T22:27:41
 Keywords     : contract end of week
 
 .LINK
@@ -367,8 +367,9 @@ End {
 ## Author: Ian Molloy
 ## Arguments: N/A
 ##=============================================
-## Purpose: calculates the week ending date which is
-## the Saturday following the day this program is run.
+## Purpose: calculates the next week ending date which
+## is the Saturday following the day this program is
+## run.
 ##
 ## 'Today' is defined as the day this program is run.
 ##
@@ -390,7 +391,7 @@ Begin {
 
 Process {
   # keep looping until we find the next 'end of week' day
-  # from today
+  # from today (usually a Saturday).
   do {
     $tempDate = $tempDate.AddDays(1.0);
 
