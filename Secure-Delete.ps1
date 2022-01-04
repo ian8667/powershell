@@ -16,6 +16,9 @@ PowerShell cmdlet Remove-Item.
 The path to the file can be passed to the parameter as a string
 or a 'System.IO.FileInfo' object.
 
+.PARAMETER ShredFile
+The file which will be overwritten and then deleted
+
 .EXAMPLE
 
 ./Secure-Delete.ps1
@@ -75,7 +78,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2021-09-28T22:38:30
+Last updated : 2022-01-04T19:10:59
 Keywords     : yes no yesno secure shred delete
 
 See also
@@ -92,10 +95,6 @@ implementation provided by the cryptographic service provider (CSP).
 https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryptoserviceprovider?view=netframework-4.7.2
 
 #>
-
-#Search term: how to download a file with powershell from the web
-#How to Download a File with PowerShell from the Web
-#https://adamtheautomator.com/powershell-download-file/
 
 [CmdletBinding()]
 Param (
@@ -296,15 +295,16 @@ Param (
     Begin {
       [Byte]$PassCounter = 0;
       $BufferSize = 8KB;
-      $DataBuffer = [System.Byte[]]::new($BufferSize);
-      $BufferLen = $DataBuffer.Length;
+      $ByteBuffer = [System.Byte[]]::new($BufferSize);
+      $BufferLen = $ByteBuffer.Length;
       $ShredFile = Get-Item -Path $FileName;
       # Ensure the file is not read only before we attempt to
       # overwrite it.
       $ShredFile.IsReadOnly = $false;
 
       $deleteStream = $Get_FileStream.Invoke($ShredFile);
-      $rng = New-Object -TypeName 'System.Security.Cryptography.RNGCryptoServiceProvider';
+      #$rng = New-Object -TypeName 'System.Security.Cryptography.RNGCryptoServiceProvider';
+      $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create();
       Set-Variable -Name 'BufferSize', 'BufferLen', 'ShredFile', 'rng' -Option ReadOnly;
 
       [Long]$FileLength = $ShredFile.Length;
@@ -334,19 +334,19 @@ Param (
             while ($BytesWritten -lt $FileLength) {
                 #
                 $RemainingBytes = $FileLength - $BytesWritten;
-                $rng.GetBytes($DataBuffer);
+                $rng.GetBytes($ByteBuffer);
                 Write-Verbose -Message 'Random data refreshed. First four bytes...';
-                $VerboseMsg = ($DataBuffer[0..3] | ForEach-Object {Write-Output ("{0:X2}" -f $_)}) -join ' ';
+                $VerboseMsg = ($ByteBuffer[0..3] | ForEach-Object {Write-Output ("{0:X2}" -f $_)}) -join ' ';
                 Write-Verbose -Message $VerboseMsg
 
                 if ($RemainingBytes -gt $BufferLen) {
                     # Write a full buffer worth of data to the stream
-                    $deleteStream.Write($DataBuffer, 0, $BufferLen);
-                    $BytesWritten += $DataBuffer.LongLength;
+                    $deleteStream.Write($ByteBuffer, 0, $BufferLen);
+                    $BytesWritten += $ByteBuffer.LongLength;
                 } else {
                     # Write a partial buffer to the stream because
                     # this is all we have left
-                    $deleteStream.Write($DataBuffer, 0, $RemainingBytes);
+                    $deleteStream.Write($ByteBuffer, 0, $RemainingBytes);
                     $BytesWritten += $RemainingBytes;
                 }
 
@@ -365,7 +365,8 @@ Param (
        $deleteStream.Dispose();
        $rng.Dispose();
 
-       # Now we've overwritten the file, delete it
+       # Now we've overwritten the file with random bytes,
+       # we can delete it
        Remove-Item -Path $FileName -Force;
 
        # Confirm to the user whether the file has been deleted as intended
@@ -379,7 +380,7 @@ Param (
     }
 
     End {
-      Remove-Variable -Name 'DataBuffer' -Force;
+      Remove-Variable -Name 'ByteBuffer' -Force;
     }
 }
 #endregion ***** End of function Delete-File *****
