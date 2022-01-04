@@ -78,7 +78,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2022-01-04T19:10:59
+Last updated : 2022-01-04T19:52:18
 Keywords     : yes no yesno secure shred delete
 
 See also
@@ -88,6 +88,9 @@ DoD 5220.22-M National Industrial Security Program
 Operating Manual (NISPOM)
 
 .LINK
+
+RandomNumberGenerator Class
+https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator?view=net-6.0
 
 RNGCryptoServiceProvider Class
 Implements a cryptographic Random Number Generator (RNG) using the
@@ -303,7 +306,6 @@ Param (
       $ShredFile.IsReadOnly = $false;
 
       $deleteStream = $Get_FileStream.Invoke($ShredFile);
-      #$rng = New-Object -TypeName 'System.Security.Cryptography.RNGCryptoServiceProvider';
       $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create();
       Set-Variable -Name 'BufferSize', 'BufferLen', 'ShredFile', 'rng' -Option ReadOnly;
 
