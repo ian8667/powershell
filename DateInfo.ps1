@@ -74,8 +74,8 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2021-12-20T18:17:20
-Keywords     : contract end of week
+Last updated : 2022-01-10T19:24:33
+Keywords     : contract end of week jd julian
 
 .LINK
 
@@ -249,6 +249,11 @@ End {
 ##
 ## http://www.usno.navy.mil/USNO/earth-orientation/eo-info/read-me
 ## http://aa.usno.navy.mil/data/
+##
+## JD Date/Time Converter
+## Jet Propulsion Laboratory (JPL)
+## https://ssd.jpl.nasa.gov/tools/jdc/#/cd
+## https://ssd.jpl.nasa.gov/tools/jdc/#/jd
 ##
 ##=============================================
 function Get-JulianDate {
