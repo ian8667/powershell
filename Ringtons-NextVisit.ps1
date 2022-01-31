@@ -7,7 +7,7 @@ Show when Ringtons tea van is next due
 .DESCRIPTION
 
 Increments in steps of 14 days (two weeks) the date from a known
-start date to determine when the Ringtons tea van is next due
+start date to determine when the Ringtons tea van is next due.
 
 The 'System.DateOnly' type is used within this program given that
 we're just dealing with dates between each Ringtons visit.
@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Ringtons-NextVisit.ps1
 Author       : Ian Molloy
-Last updated : 2021-12-10T18:31:40
+Last updated : 2022-01-31T19:05:56
 
 Ringtons Ltd, Algernon Road, Newcastle upon Tyne, NE6 2YN
 Tel: 0800 052 2440
@@ -95,7 +95,7 @@ intended.
 $dateMask = 'dddd, dd MMMM yyyy';
 Set-Variable -Name 'dateMask' -Option ReadOnly;
 # Start date from which we will start our looping
-$startDate = [System.DateOnly]::new(2021, 06, 09); # year, month, day
+$startDate = [System.DateOnly]::new(2022, 01, 19); # year, month, day
 # Create a 'System.DateOnly' object with current date
 $endDate = [System.DateOnly]::FromDateTime($(Get-Date));
 $DaysToAdd = 14; #ie, every two weeks
