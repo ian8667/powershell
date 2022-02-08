@@ -141,7 +141,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2021-10-22T00:05:25
+Last updated : 2022-01-07T12:11:23
 
 This program contains examples of using delegates.
 
@@ -170,6 +170,31 @@ $file = 'C:\Gash\mygash_2020-10-01T22-47-03.pdf';
 $reg = '(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})';
 Get-ChildItem -File | Where-Object -Property 'name' -Match -Value $reg;
 $file -match $reg
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_regular_expressions?view=powershell-7.2
+
+#>
+
+<#
+New work:
+Ways of finding previous 'date-copy' files:
+put in some code to search for any other file with
+# ie a regular expression for the string (for example):
+# _2022-01-04T10-48-40
+$fileRegex = '_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}';
+
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+$file = 'C:\Gash\speak.ps1';
+$file = $file.Replace('\', '\\');
+if ([System.IO.Path]::HasExtension($file)) {
+  $pos = $file.LastIndexOf('.');
+  $file = $file.Insert($pos, $fileRegex);
+} else {
+  $file = [System.String]::Concat($file, $fileRegex);
+}
+Write-Output "file = $($file)";
+Get-ChildItem -File | Where-Object {$_.FullName -match $file} |
+Sort-Object -Property LastWriteTime;
 
 #>
 
