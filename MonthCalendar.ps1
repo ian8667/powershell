@@ -1,9 +1,45 @@
-﻿# MonthCalendar Class
-# https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.monthcalendar?view=netframework-4.7.1
-#
-# How to: Display More than One Month in the Windows Forms MonthCalendar Control
-# https://docs.microsoft.com/en-us/dotnet/framework/winforms/controls/display-more-than-one-month-wf-monthcalendar-control
-#
+<#
+.SYNOPSIS
+
+Displays a visual representation of monthly calendars
+
+.DESCRIPTION
+
+Displays a visual representation of three monthly calendars in one
+row. So this row will have three monthly calendars of, for example,
+January, February, March. The class used to display the monthly
+calendar is "System.Windows.Forms.MonthCalendar". The current month
+will be the one in the middle.
+
+.EXAMPLE
+
+PS> ./MonthCalendar.ps1
+
+No parameter required
+
+.INPUTS
+
+None, no .NET Framework types of objects are used as input.
+
+.OUTPUTS
+
+No .NET Framework types of objects are output from this script.
+
+.NOTES
+
+File Name    : MonthCalendar.ps1
+Author       : Ian Molloy
+Last updated : 2022-02-07T19:26:55
+
+.LINK
+
+MonthCalendar Class
+https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.monthcalendar?view=netframework-4.7.1
+
+How to: Display More than One Month in the Windows Forms MonthCalendar Control
+https://docs.microsoft.com/en-us/dotnet/framework/winforms/controls/display-more-than-one-month-wf-monthcalendar-control
+
+#>
 
 [CmdletBinding()]
 Param () #end param
@@ -158,6 +194,13 @@ $form1.Controls.Add($button1);
 # The form is centered on the current display, and has the
 # dimensions specified in the form's size.
 $form1.StartPosition = "CenterScreen";
+
+# 
+$message = @"
+Creating an external window to display the calendars.
+Please look behind other windows if you can’t see anything
+"@ #end of 'message' variable
+Write-Output $message;
 
 #Save the initial state of the form
 $InitialFormWindowState = $form1.WindowState;
