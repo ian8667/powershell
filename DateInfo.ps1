@@ -74,7 +74,7 @@ The next week ending coming up is Saturday, 2017-01-07
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2022-01-10T19:24:33
+Last updated : 2022-02-13T16:03:31
 Keywords     : contract end of week jd julian
 
 .LINK
@@ -156,7 +156,7 @@ Begin {
   # should be, for example, the Saturday of the end of the
   # first week on the contract. This date should be earlier
   # than the end date.
-  $startDate = [System.DateOnly]::new(2021, 12, 11); # year, month, day
+  $startDate = [System.DateOnly]::new(2022, 2, 12); # year, month, day
 
   # The end date is determined to be the current date, whatever
   # today is (i.e. whenever the script is run). Our output will
@@ -177,7 +177,6 @@ Begin {
   }
 
   $iso8601Date = "yyyy-MM-dd";
-
   Set-Variable -Name 'blockSize', 'startDate', 'endDate', 'iso8601Date' -Option ReadOnly;
 
   Write-Output "Contract weekending information";
