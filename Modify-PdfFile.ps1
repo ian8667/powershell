@@ -35,7 +35,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Modify-PdfFile.ps1
 Author       : Ian Molloy
-Last updated : 2022-02-01T19:02:43
+Last updated : 2022-02-25T19:31:16
 Keywords     : pdf itext modify
 
 This program requires the following DLL files:
@@ -122,12 +122,6 @@ https://www.red-gate.com/simple-talk/development/dotnet-development/whats-new-in
 More Implicit Uses of CAS Policy: loadFromRemoteSources
 https://docs.microsoft.com/en-us/archive/blogs/shawnfa/more-implicit-uses-of-cas-policy-loadfromremotesources
 
-#>
-
-<#
-New work:
-o remove password protection so I can update the PDF file  - can I do this?
-o upload to github
 #>
 
 [CmdletBinding()]
