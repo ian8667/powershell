@@ -141,7 +141,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2022-01-07T12:11:23
+Last updated : 2022-03-03T17:28:28
 
 This program contains examples of using delegates.
 
@@ -174,30 +174,6 @@ https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/abo
 
 #>
 
-<#
-New work:
-Ways of finding previous 'date-copy' files:
-put in some code to search for any other file with
-# ie a regular expression for the string (for example):
-# _2022-01-04T10-48-40
-$fileRegex = '_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}';
-
-
-[System.Linq.Enumerable]::Repeat("", 2); #blanklines
-$file = 'C:\Gash\speak.ps1';
-$file = $file.Replace('\', '\\');
-if ([System.IO.Path]::HasExtension($file)) {
-  $pos = $file.LastIndexOf('.');
-  $file = $file.Insert($pos, $fileRegex);
-} else {
-  $file = [System.String]::Concat($file, $fileRegex);
-}
-Write-Output "file = $($file)";
-Get-ChildItem -File | Where-Object {$_.FullName -match $file} |
-Sort-Object -Property LastWriteTime;
-
-#>
-
 [CmdletBinding()]
 Param (
    [parameter(Position=0,
@@ -220,11 +196,11 @@ $ErrorsFound = [Predicate[System.Collections.Generic.List[Byte]]]{
 The object passed in contains a list of positions within the
 filename string which are invalid. If the number of elements
 contained in the List is zero (the collection is empty),
-there are no errors.
+ie, there are no errors.
 
 Return true if there are errors; otherwise, false.
 #>
-param($x) $x.Count -gt 0
+param($x) $x.Count -gt 0;
 }
 Set-Variable -Name 'ErrorsFound' -Option ReadOnly;
 
@@ -255,6 +231,8 @@ https://docs.microsoft.com/en-us/dotnet/api/system.func-1?view=net-5.0
         $invalidChars.Add($PSItem);
     }
     $invalidChars.TrimExcess();
+
+    # Return the object created
     $invalidChars;
 }
 Set-Variable -Name 'invalids' -Option ReadOnly;
@@ -305,6 +283,107 @@ function Show-ErrorPositions {
     }
 }
 #endregion ***** end of function Show-ErrorPositions *****
+
+#----------------------------------------------------------
+
+#region ***** function Show_Files *****
+function Show_Files {
+<#
+.SYNOPSIS
+
+Lists the file which has just been copied and other copies made
+
+.DESCRIPTION
+
+Lists the file which has just been copied and all other copies
+made of it as created by this script.
+
+The way this program is designed to work, any copies of a file
+will be in the same directory. So, for example, if file
+'myfile.txt' in directory 'C:\Gash' is 'date copied' by this
+script, then all subsequent files created will also be found
+in directory 'C:\Gash'. Any such files in other directories
+will not be listed.
+
+.PARAMETER InputFilename
+
+A string parameter containing the filename of the file
+just copied.
+
+.OUTPUTS
+
+Sample output assuming file 'ggash.pdf' in directory 'C:\Gash'
+was copied:
+
+
+    Directory: C:\Gash
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a---          25/02/2022    23:08          49249 ggash.pdf
+-a---          28/02/2022    22:01          49249 ggash_2022-02-28T22-01-36.pdf
+-a---          28/02/2022    22:01          49249 ggash_2022-02-28T22-01-56.pdf
+-a---          03/03/2022    17:58          49249 ggash_2022-03-03T17-58-21.pdf
+-a---          03/03/2022    18:26          49249 ggash_2022-03-03T18-26-34.pdf
+-a---          03/03/2022    18:27          49249 ggash_2022-03-03T18-27-58.pdf
+
+#>
+
+[CmdletBinding()]
+param (
+    [parameter(Mandatory=$true,
+               HelpMessage="The filename(s) to display")]
+    [ValidateNotNullOrEmpty()]
+    [String]$InputFilename
+) #end param
+
+    begin {
+      # Regular expression for the (date/time) string
+      # _YYYY-MM-DDTHH-MM-SS
+      $DateCopyRegex = '_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}';
+      Set-Variable -Name 'DateCopyRegex' -Option ReadOnly;
+
+      # Original filename without any modifications to it.
+      $OrigFile = $InputFilename;
+      # I've done this so the code doesn't get confused with the
+      # regular expression part of the filename.
+      $OrigFile = $OrigFile.Replace('\', '\\');
+      Set-Variable -Name 'OrigFile' -Option ReadOnly;
+
+      # Get the parent path (base path) from the input filename.
+      # This is where all of the files we'll be dealing with are
+      # located.
+      # See the following article on the subject of parent
+      # paths:
+      # How to get the Parent's parent directory in Powershell?
+      # https://stackoverflow.com/questions/9725521/how-to-get-the-parents-parent-directory-in-powershell
+      $BasePath = Split-Path $OrigFile -Parent;
+      Set-Variable -Name 'BasePath' -Option ReadOnly;
+
+      if ([System.IO.Path]::HasExtension($OrigFile)) {
+        $pos = $OrigFile.LastIndexOf('.');
+        $FileRegex = $OrigFile.Insert($pos, $DateCopyRegex);
+      } else {
+        # This file doesn't have a file extension
+        $FileRegex = [System.String]::Concat($OrigFile, $DateCopyRegex);
+      }
+
+    }
+
+    process {
+      # I'm using the predicate
+      # ($_.Name -eq (Split-Path -Path $OrigFile -Leaf)) so that I
+      # match the name 'myfile.txt' for example, and not 'myfile.txt.bak'
+      Get-ChildItem -File -Path $BasePath |
+        Where-Object {($_.Name -eq (Split-Path -Path $OrigFile -Leaf)) -or ($_.FullName -match $FileRegex)} |
+        Sort-Object -Property LastWriteTime;
+
+    }
+
+    end {}
+
+} #end of the function
+#endregion ***** end of function Show_Files *****
 
 #----------------------------------------------------------
 
@@ -510,6 +589,7 @@ Begin {
 Process {}
 
 End {
+  # Return the object created
   return $newFilename;
 }
 
@@ -714,13 +794,14 @@ if (Test-Path -Path $NewFilename) {
      Set-ItemProperty -Path $NewFilename -Name 'IsReadOnly' -Value $True;
   }
 
-  #List the old and new filename objects.
+  #List the old (orig) and new filename objects.
   #I agree this is a convoluted way of listing the files used, but
   #this serves as a reminder of how to iterate over a PowerShell
   #'PSCustomObject' object.
-  $m = $OldNewName.psobject.Members |
-         Where-Object -Property 'MemberType' -like -Value 'NoteProperty';
-  foreach ($item in $m) {Get-ChildItem -Path $item.value -File}
+  #$m = $OldNewName.psobject.Members |
+  #       Where-Object -Property 'MemberType' -like -Value 'NoteProperty';
+  #foreach ($item in $m) {Get-ChildItem -Path $item.value -File}
+  Show_Files -InputFilename $OldNewName.OldFilename;
 
 } else {
   Write-Error -Message "Can't seem to find new file $($NewFilename)";
