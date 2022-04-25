@@ -16,9 +16,10 @@ iTextSharp (https://itextpdf.com/en).
 
 No parameters are required. The action of this program
 is to read in a PDF file and write the modifications to
-an output file. The input PDF filename is hardcoded
-within the program with the ouput filename being derived
-from the input filename.
+a separate output file. The input PDF filename is hardcoded
+within the program with the output filename being derived
+from the input filename. The input file is not modified at
+all.
 
 Input file (and thus the output file) are assigned in
 Func<TResult> Delegate 'Get_Datafiles'.
@@ -35,16 +36,20 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Modify-PdfFile.ps1
 Author       : Ian Molloy
-Last updated : 2022-02-25T19:31:16
+Last updated : 2022-04-25T19:17:49
 Keywords     : pdf itext modify
 
 This program requires the following DLL files:
-  BouncyCastle.Crypto.dll
-  Common.Logging.Core.dll
-  Common.Logging.dll
-  itext.io.dll
-  itext.kernel.dll
-  itext.layout.dll
+    BouncyCastle.Crypto.dll
+    Common.Logging.Core.dll
+    Common.Logging.dll
+    itext.commons.dll
+    itext.io.dll
+    itext.kernel.dll
+    itext.layout.dll
+    Microsoft.Extensions.Logging.Abstractions.dll
+    Microsoft.Extensions.Logging.dll
+    Microsoft.Extensions.Options.dll
 
 
 PowerShell Add-Type Error:
@@ -75,7 +80,7 @@ with the use of the following static method to load DLL files:
 Starting with the .NET Framework 4, Code Access Security (CAS)
 policy is disabled and assemblies are loaded in full trust.
 Ordinarily, this would grant full trust to assemblies loaded
-with the Assembly.LoadFrom method that previously had been
+with the 'Assembly.LoadFrom' method that previously had been
 sandboxed. To prevent this, the ability to run code in
 assemblies loaded from a remote source is disabled by default.
 
@@ -107,14 +112,17 @@ iText Core 7.1.15 is the second quarterly release for 2021
 of our multifunctional PDF SDK.
 https://github.com/itext/itext7-dotnet/releases/tag/7.1.15
 
-iText Java API docs URL
-https://api.itextpdf.com/iText7/java/7.1.15/
-
-iText 7 7.1.15 API Documentation URL
-https://api.itextpdf.com/iText7/dotnet/7.2.0/
-
 iText company web site
 https://itextpdf.com/en
+
+API documentation (Java/.NET)
+https://itextpdf.com/en/resources/api-documentation
+
+iText 7 7.2.2 Java API docs URL
+https://api.itextpdf.com/iText7/java/7.2.2/
+
+iText 7 7.2.2 .NET API Documentation
+https://api.itextpdf.com/iText7/dotnet/7.2.2/
 
 What's New in Code Access Security (CAS) in .NET Framework 4.0 ? Part I
 https://www.red-gate.com/simple-talk/development/dotnet-development/whats-new-in-code-access-security-in-net-framework-4-0-part-i/
@@ -178,14 +186,17 @@ a value of the type specified by the TResult parameter.
 
 Input and output files used.
 #>
-  $input = 'C:\Gash\casio_fx-991ES_plus.pdf'; # <-- Change accordingly
-  $output = $input + '-new'; # The output file is derived from the input file.
+  $input = 'C:\Gash\gashpdf.pdf'; # <-- Change accordingly
+  $output = $input + '-new.pdf'; # The output file is derived from the input file.
+
+  #$file = ([System.Io.Path]::GetRandomFileName()) + '.new.pdf';
+  #$output = [System.IO.Path]::Combine($Env:Temp, $file);
   $DataFile = [PSCustomObject]@{
       Source       = $input
       Destination  = $output
-}
+  }
 
-# Return the value
+# Return the object created
 $DataFile;
 
 } #end [Func[PSCustomObject]]
@@ -251,8 +262,8 @@ Invoke-Command -ScriptBlock {
 #PowerShell class 'ValidatePathExistsAttribute' checks the
 #following and throws a terminating error if these checks
 #do not succeed.
-#1. The directory path exists
-#2. The directory contains at least one dll file
+# o The directory path exists
+# o The directory contains at least one dll file
 [ValidatePathExists()]
 $libdir = 'C:\Family\powershell\lib'; # <-- Change accordingly
 
@@ -261,9 +272,13 @@ $dllfiles = @(
     "$libdir\itext.layout.dll";
     "$libdir\itext.io.dll";
     "$libdir\itext.kernel.dll";
+    "$libdir\itext.commons.dll";
     "$libdir\BouncyCastle.Crypto.dll";
     "$libdir\Common.Logging.dll";
     "$libdir\Common.Logging.Core.dll";
+    "$libdir\Microsoft.Extensions.Logging.Abstractions.dll";
+    "$libdir\Microsoft.Extensions.Logging.dll";
+    "$libdir\Microsoft.Extensions.Options.dll";
 );
 Set-Variable -Name 'libdir', 'dllfiles' -Option ReadOnly;
 
@@ -272,10 +287,9 @@ foreach ($dll in $dllfiles) {
     $counter++;
 
     try {
-        $AssemblyPath = $dll;
         # Load an assembly into the load-from context, bypassing
         # some security checks.
-        [System.Reflection.Assembly]::UnsafeLoadFrom($AssemblyPath);
+        [System.Reflection.Assembly]::UnsafeLoadFrom($dll) | Out-Null;
     } catch {
         Write-Host "Message: $($_.Exception.Message)"
         Write-Host "StackTrace: $($_.Exception.StackTrace)"
@@ -296,12 +310,19 @@ if ($IsPdfFile.Invoke($DataFile.Source)) {
         Remove-Item -Path $DataFile.Destination -Force;
     }
 
-    $reader = New-Object -typeName 'iText.Kernel.Pdf.PdfReader' -ArgumentList $DataFile.Source;
+    # PdfReader
+    $reader = New-Object -TypeName 'iText.Kernel.Pdf.PdfReader' -ArgumentList $DataFile.Source;
     $reader.SetUnethicalReading($true) | Out-Null;
     $reader.SetCloseStream($true);
-    $writer = New-Object -typeName 'iText.Kernel.Pdf.PdfWriter' -ArgumentList $DataFile.Destination;
+
+    # PdfWriter
+    $writer = New-Object -TypeName 'iText.Kernel.Pdf.PdfWriter' -ArgumentList $DataFile.Destination;
     $writer.SetCloseStream($true);
-    $pdfDoc = New-Object -typeName 'iText.Kernel.Pdf.PdfDocument' -ArgumentList $reader, $writer;
+
+    # PdfDocument
+    $pdfDoc = New-Object -TypeName 'iText.Kernel.Pdf.PdfDocument' -ArgumentList $reader, $writer;
+    $pdfDoc.SetCloseReader($false);
+    $pdfDoc.SetCloseWriter($false);
     $numPages = $pdfDoc.GetNumberOfPages();
 
     #Has type of iText.Kernel.Pdf.PdfDocumentInfo Class
@@ -323,14 +344,19 @@ if ($IsPdfFile.Invoke($DataFile.Source)) {
 
         $metadata.setMoreInfo("Breakfast", "Bacon and eggs");
         $metadata.setMoreInfo("Curry", "Chicken tikka masala");
-        $dt = Get-Date -Format 's';
+        $dt = (Get-Date).ToLongDateString();
         $metadata.setMoreInfo("DateTime", $dt);
 
     }
 
+    $writer.Flush();
+
     $pdfDoc.Close();
+    $pdfDoc.Dispose();
     $writer.Close();
+    $writer.Dispose();
     $reader.Close();
+    $reader.Dispose();
 
     Get-ChildItem -File -Path $DataFile.Source, $DataFile.Destination;
     Write-Output ('Pages in input file: {0}' -f $numPages);
