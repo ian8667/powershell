@@ -1,5 +1,6 @@
 #------------------------------------------------
 # My local Powershell configuration file.
+# Suitable for PowerShell PSVersion 5.1 (Desktop)
 #
 # See also
 # http://stackoverflow.com/questions/138144/whats-in-your-powershell-profile-ps1file
