@@ -57,18 +57,31 @@ compile, Java errors are shown in the usual way.
 
 File Name    : compile.ps1
 Author       : Ian Molloy
-Last updated : 2021-11-30T14:10:46
+Last updated : 10 October 2022 17:41:19
+
 
 .LINK
 
-JDK 17 Documentation
-https://docs.oracle.com/en/java/javase/17/
+JDK 19 Documentation
+https://docs.oracle.com/en/java/javase/19/
 
-Java SE Version 17 API docs
-https://docs.oracle.com/en/java/javase/17/docs/api/index.html
+Java SE Version 19 API docs
+https://docs.oracle.com/en/java/javase/19/docs/api/index.html
 
-javac - Java programming language compiler
-http://docs.oracle.com/javase/8/docs/technotes/tools/windows/javac.html
+JSR 394: Java SE 19: Annex 3
+Final Release Specification
+JLS & JVMS
+https://cr.openjdk.java.net/~iris/se/19/latestSpec/java-se-19-annex-3.html
+
+The Java Tutorials`
+https://docs.oracle.com/javase/tutorial/
+
+The Destination for Java Developers
+https://dev.java/
+
+iText Core/Community 7.2.3
+Newer versions of iText
+https://github.com/itext/itext7/releases/tag/7.2.3
 
 #>
 
@@ -193,10 +206,10 @@ Invoke-Command -ScriptBlock {
 Write-Verbose -Message "Declaring variables and constants";
 
 #Set the Java CLASSPATH
-New-Variable -Name "CPATH" -Option Constant -Value "C:\Family\Ian";
+New-Variable -Name "CPATH" -Option Constant -Value "C:\Family\Ian;C:\Program Files\Java\iText723\*";
 #'Java_Top' is the root directory of the currently
 #installed Java SDK
-New-Variable -Name "JAVA_TOP" -Option Constant -Value 'C:\Program Files\Java\jdk-17.0.1';
+New-Variable -Name "JAVA_TOP" -Option Constant -Value 'C:\Program Files\Java\jdk-19';
 New-Variable -Name "JAVAEXE" -Option Constant -Value "$JAVA_TOP\bin\javac.exe";
 Write-Verbose -Message "Java CLASSPATH used is:`n$CPATH";
 [String]$ProgramName = "";
@@ -209,7 +222,7 @@ Set-Variable -Name 'aLine' -Option ReadOnly;
 # versions. Check the location really exists and that we've
 # not forgotten to change it to the most recent Java update
 # file path.
-if (-not (Test-Path -Path $JAVA_TOP)) {
+if (-not (Test-Path -Path $JAVA_TOP -PathType 'Container')) {
     throw [System.IO.DirectoryNotFoundException] "JAVA_TOP $JAVA_TOP not found";
 }
 
