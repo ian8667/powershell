@@ -42,7 +42,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Camborne-TrevithickDay.ps1
 Author       : Ian Molloy
-Last updated : 2021-10-31T20:24:28
+Last updated : 2022-10-12T22:10:51
 
 .LINK
 
@@ -56,23 +56,35 @@ https://www.cornwalls.co.uk/events/trevithick-day
 
 https://cambornecommunitychurch.org.uk/community/trevithick-day
 
+Math.Clamp Method
+#>
+
+<#
+new work:
+o Use DateOnly Struct in [Func[Int32,DateTime]]$Get_TrevithickDate?
+o [Int32[]]$fred = 1..5; foreach ($num in $fred) {$num}
 #>
 
 [CmdletBinding()]
-Param ( ) #end param
+Param() #end param
 
 #----------------------------------------------------------
 # Start of delegates
 #----------------------------------------------------------
 
 [Func[Int32,DateTime]]$Get_TrevithickDate = {
-param($x)
+param($TheYear)
 
+#Our day of interest. Always a Saturday
 $saturday = [System.DayOfWeek]::Saturday;
-$year = $x;
+#Our month (number) of interest. Always April
 $april = 4;
-$TempDate = Get-Date -Year $year -Month  $april -Day 30;
-Set-Variable -name 'saturday', 'year','april' -Option ReadOnly;
+#Admittedly, April should always have 30 days. But this
+#hows you can find the number of days in a month
+$DaysInMonth = [System.DateTime]::DaysInMonth($TheYear, $april) #year, month
+#Start from the last day in April until we find a Saturday
+$TempDate = Get-Date -Year $TheYear -Month  $april -Day $DaysInMonth;
+Set-Variable -name 'saturday', 'april' -Option ReadOnly;
 
 while ($TempDate.DayOfWeek -ne $saturday) {
    # Go backwards from the end of the month until
@@ -80,12 +92,14 @@ while ($TempDate.DayOfWeek -ne $saturday) {
    $TempDate = $TempDate.AddDays(-1);
 }
 
+# Return the date found
 $TempDate;
 } #end Func
 
 #----------------------------------------------------------
 
 [Func[String]]$TrevithickDay_Message = {
+  # Brief explanation of Camborne Trevithick Day
   $message = @"
   Camborne Trevithick Day
 
@@ -146,7 +160,7 @@ Invoke-Command -ScriptBlock {
   intended.
   #>
      Write-Output '';
-     Write-Output "Camborne Trevithick Day for the next couple of yesrs";
+     Write-Output "Camborne Trevithick Day for the next couple of years";
      $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
      Write-Output ('Today is {0}' -f $dateMask);
 
@@ -167,12 +181,19 @@ $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
 $dateMask = 'dddd, dd MMMM';
-$yy = (Get-Date).year;
-foreach ($year in $yy..($yy+4)) {
+Set-Variable -Name 'dateMask' -Option ReadOnly;
+
+$CurrentYear = (Get-Date).year;
+Set-Variable -Name 'CurrentYear' -Option ReadOnly;
+
+#Find Trevithick Day for the current year plus the
+#next four years (five years in total)
+foreach ($year in $CurrentYear..($CurrentYear+4)) {
   $result = $Get_TrevithickDate.Invoke($year);
-  Write-Output ('Trevithick day for {0} is {1}' -f $year,$result.ToString($dateMask));
+  Write-Output ('Trevithick Day for {0} is {1}' -f $year,$result.ToString($dateMask));
 }
 
+Write-Output '';
 Write-Output 'End of list';
 
 ##=============================================
