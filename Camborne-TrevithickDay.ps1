@@ -42,7 +42,11 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Camborne-TrevithickDay.ps1
 Author       : Ian Molloy
-Last updated : 2022-10-12T22:10:51
+Last updated : 2022-10-20T12:30:36
+
+
+Initialise with current date
+[System.DateOnly]::FromDateTime($(Get-Date));
 
 .LINK
 
@@ -59,12 +63,6 @@ https://cambornecommunitychurch.org.uk/community/trevithick-day
 Math.Clamp Method
 #>
 
-<#
-new work:
-o Use DateOnly Struct in [Func[Int32,DateTime]]$Get_TrevithickDate?
-o [Int32[]]$fred = 1..5; foreach ($num in $fred) {$num}
-#>
-
 [CmdletBinding()]
 Param() #end param
 
@@ -77,18 +75,23 @@ param($TheYear)
 
 #Our day of interest. Always a Saturday
 $saturday = [System.DayOfWeek]::Saturday;
+
 #Our month (number) of interest. Always April
-$april = 4;
-#Admittedly, April should always have 30 days. But this
-#hows you can find the number of days in a month
+$april = 04;
+
+#Admittedly, April should always have 30 days so this already
+#known to us. But this shows you can find the number of days
+#in a month if you wish to
 $DaysInMonth = [System.DateTime]::DaysInMonth($TheYear, $april) #year, month
-#Start from the last day in April until we find a Saturday
+
+#Initialise the variable to the last day in April for the
+#year passed in as a parameter
 $TempDate = Get-Date -Year $TheYear -Month  $april -Day $DaysInMonth;
 Set-Variable -name 'saturday', 'april' -Option ReadOnly;
 
 while ($TempDate.DayOfWeek -ne $saturday) {
    # Go backwards from the end of the month until
-   # we get to a Saturday.
+   # we get to the first Saturday.
    $TempDate = $TempDate.AddDays(-1);
 }
 
@@ -189,8 +192,8 @@ Set-Variable -Name 'CurrentYear' -Option ReadOnly;
 #Find Trevithick Day for the current year plus the
 #next four years (five years in total)
 foreach ($year in $CurrentYear..($CurrentYear+4)) {
-  $result = $Get_TrevithickDate.Invoke($year);
-  Write-Output ('Trevithick Day for {0} is {1}' -f $year,$result.ToString($dateMask));
+  $TrevDay = $Get_TrevithickDate.Invoke($year);
+  Write-Output ('Trevithick Day for the year {0} is {1}' -f $year,$TrevDay.ToString($dateMask));
 }
 
 Write-Output '';
