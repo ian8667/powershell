@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 
 Displays active TCP connections
@@ -99,8 +99,21 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-NetstatPno.ps1
 Author       : Ian Molloy
-Last updated : 2019-05-29
+Last updated : 2022-02-08T23:08:47
 Keywords     : netstat tcp connection server ip address
+
+$iasyncresult = TypeName: System.Threading.Tasks.TaskToApm+TaskAsyncResult
+$iasyncresult.AsyncWaitHandle = TypeName: System.Threading.ManualResetEvent
+
+The WaitHandle is signaled when the asynchronous call
+completes, and you can wait for it by calling the
+WaitOne method.
+
+'WaitOne()' is a method of System.Threading.WaitHandle Class
+and blocks the current thread until the current WaitHandle receives
+a signal, using a 32-bit signed integer to specify the time
+interval. The return type from boolean method WaitOne is true if
+the current instance receives a signal; otherwise, false.
 
 .LINK
 
@@ -123,8 +136,78 @@ Namespace:
 System.Text.RegularExpressions
 https://docs.microsoft.com/en-us/dotnet/api/system.text.regularexpressions.match?redirectedfrom=MSDN&view=netframework-4.8
 
+System IAsyncResult Interface
+https://docs.microsoft.com/en-us/dotnet/api/system.iasyncresult?view=netcore-3.1
+
+System IAsyncResult.AsyncWaitHandle Property
+https://docs.microsoft.com/en-us/dotnet/api/system.iasyncresult.asyncwaithandle?view=netcore-3.1#System_IAsyncResult_AsyncWaitHandle
+
+Gathering Network Statistics with PowerShell
+https://devblogs.microsoft.com/scripting/gathering-network-statistics-with-powershell/
+
+System.Diagnostics.Process Class
+https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.process?view=net-6.0
+
+WaitOne(Int32, Boolean)
+https://docs.microsoft.com/en-us/dotnet/api/system.threading.waithandle.waitone?view=netcore-3.1#System_Threading_WaitHandle_WaitOne_System_Int32_System_Boolean_
+
+Interesting to see that in this web site, they use similiar code as I
+use for variable '$response'. Is this how '$iasyncresult' should be
+used?
+measure-command { $succ = $iasyncresult.AsyncWaitHandle.WaitOne(3000, $true) } |
+ % totalseconds
+https://www.powershelladmin.com/wiki/Check_for_open_TCP_ports_using_PowerShell
+
+#####
+$Process01 = @{
+  Name = 'ProcessName'
+  Expression = { (Get-Process -Id $_.OwningProcess).Name }
+}
+
+$Process02 = @{
+  Name = 'ProcName'
+  Expression = {
+    # Get the process path
+    Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).ProcessName
+  }
+}
+
+$Process03 = @{
+  Name = 'Path'
+  Expression = {
+    # Get the process path
+    Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).Path
+  }
+}
+
+$darkAgent = @{
+  Name = 'ExternalIdentity'
+  Expression = {
+    $ip = $_.RemoteAddress
+    (Invoke-RestMethod -Uri "http://ipinfo.io/$ip/json" -UseBasicParsing -ErrorAction Ignore).org
+
+  }
+}
+Get-NetTCPConnection -RemotePort 443 -State Established |
+  Select-Object -Property RemoteAddress, OwningProcess, $process, $darkAgent;
+Source: https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/identifying-origin-of-network-access
+#####
+
+Outgoing connections
+
+$procid = @{Name='ID'; Expression={$_.OwningProcess}}
+$procname = @{Name='Process'; Expression={(Get-Process -Id $_.OwningProcess).Name}}
+Set-Variable -Name 'procid', 'procname' -Option ReadOnly;
+
+Get-NetTCPConnection -State Established |
+Select-Object -Property RemoteAddress, RemotePort, $procid, $procname;
+
 #>
 
+<#
+new work:
+upload to github
+#>
 [CmdletBinding()]
 Param (
    [parameter(Position=0,
@@ -167,18 +250,17 @@ Param (
     [String]$IpAddress
 ) #end param
 
-  $timeout = 750; # milliseconds timeout
+  [Int32]$timeout = 750; # The number of milliseconds to wait
   $iasyncresult = [System.Net.Dns]::BeginGetHostEntry($IpAddress, $null, $null);
   $response = $iasyncresult.AsyncWaitHandle.WaitOne($timeout, $true);
 
-  if ($response)
-  {
+  if ($response) {
       # Returns a TypeName: System.Net.IPHostEntry object
       $result = [System.Net.Dns]::EndGetHostEntry($iasyncresult);
       $retval = $result.HostName;
-  }
-  else
-  {
+
+      $iasyncresult.AsyncWaitHandle.Close();
+    } else {
       $retval = 'HOST NAME UNKNOWN';
   }
 
