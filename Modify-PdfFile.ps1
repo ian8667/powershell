@@ -36,7 +36,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Modify-PdfFile.ps1
 Author       : Ian Molloy
-Last updated : 2022-04-25T19:17:49
+Last updated : 2022-09-04T00:04:14
 Keywords     : pdf itext modify
 
 This program requires the following DLL files:
@@ -186,14 +186,14 @@ a value of the type specified by the TResult parameter.
 
 Input and output files used.
 #>
-  $input = 'C:\Gash\gashpdf.pdf'; # <-- Change accordingly
-  $output = $input + '-new.pdf'; # The output file is derived from the input file.
+  $inputFile = 'C:\Gash\gashpdf.pdf'; # <-- Change accordingly
+  $outputFile = $inputFile + '-new.pdf'; # The output file is derived from the input file.
 
   #$file = ([System.Io.Path]::GetRandomFileName()) + '.new.pdf';
   #$output = [System.IO.Path]::Combine($Env:Temp, $file);
   $DataFile = [PSCustomObject]@{
-      Source       = $input
-      Destination  = $output
+      Source       = $inputFile
+      Destination  = $outputFile
   }
 
 # Return the object created
