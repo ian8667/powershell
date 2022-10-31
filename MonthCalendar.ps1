@@ -29,7 +29,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : MonthCalendar.ps1
 Author       : Ian Molloy
-Last updated : 2022-02-07T19:26:55
+Last updated : 2022-04-01T00:33:53
 
 .LINK
 
@@ -39,6 +39,15 @@ https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.monthcalendar?v
 How to: Display More than One Month in the Windows Forms MonthCalendar Control
 https://docs.microsoft.com/en-us/dotnet/framework/winforms/controls/display-more-than-one-month-wf-monthcalendar-control
 
+#>
+
+<#
+new work:
+See also:
+https://www.codeproject.com/articles/10840/another-month-calendar
+o MonthCalendar.MaxSelectionCount Property -use this?
+o MonthCalendar.MonthlyBoldedDates Property -shall I bother with
+bolded date for holidays for example?
 #>
 
 [CmdletBinding()]
