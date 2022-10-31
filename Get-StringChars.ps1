@@ -58,7 +58,7 @@ example.
 
 File Name    : Get-StringChars.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-04T15:25:42
+Last updated : 2022-03-30T22:57:03
 
 .LINK
 
@@ -70,6 +70,12 @@ https://technet.microsoft.com/en-us/library/hh847834.aspx
 
 https://ramblingcookiemonster.wordpress.com/2013/12/08/building-powershell-functions-best-practices/
 
+#>
+
+<#
+new work:
+function 'Get-LetterCase' - use [System.Char]::GetUnicodeCategory($m);
+to determine whether upper, lower case or digit?
 #>
 
 [CmdletBinding()]
