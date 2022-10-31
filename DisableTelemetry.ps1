@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2021-01-26T13:53:29
+Last updated : 2022-01-23T21:52:10
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -124,18 +124,18 @@ Why do I have recent files in the above directory when I don't use Edge?
 
 o Services
 what are these services? Have a look in more detail.
-get-Service -Name RetailDemo
+get-Service -Name RetailDemo ==
 get-Service -Name wercplsupport
 get-Service -Name TapiSrv
 get-Service -Name WbioSrvc
 get-Service -Name wcncsvc
-get-Service -Name winrm
+get-Service -Name winrm ==
 get-Service -Name XblAuthManager
 get-Service -Name XblGameSave
 get-Service -Name XboxNetApiSvc
 
 o Scheduled tasks
-Do I need to disable these tasks?
+Do I need to disable the following tasks?
 
 "Microsoft\Windows\Power Efficiency Diagnostics\AnalyzeSystem",
 # Initializes Family Safety monitoring and enforcement.
@@ -199,12 +199,78 @@ o Example program (contains LOTS of enable/disables)
 mughuara/windows10_debloat_OneDrive.txt
 https://gist.github.com/mughuara/fd71e3b297bc6f20b07327f131f265dc
 
+o Search the Registry Using PowerShell
+PowerShell allows you to search registry. The next script searches
+the HKCU:\Control Panel\Desktop the parameters, whose names contain
+the *dpi* key.
+
+$Path = (Get-ItemProperty 'HKCU:\Control Panel\Desktop');
+$Path.PSObject.Properties | ForEach-Object {
+   If ($_.Name -like '*dpi*') {
+      Write-Host $_.Name ' = ' $_.Value
+   }
+} #end ForEach-Object
+http://woshub.com/how-to-access-and-manage-windows-registry-with-powershell/
+
+* -----
+-- Do I need this section in my code?
+-- o Deletes most of one's own passwords and other cached
+-- secrets from Credential Manager in Control Panel.
+-- Does not delete other users' saved credentials.
+-- Does not require administrative privileges.
+-- Cannot delete all the credentials stored here for
+-- some unknown reason, e.g., a cred may be seen in
+-- Credential Manager in Control Panel but not be
+-- listed by cmdkey.exe (???).
+
+cmdkey.exe /list |
+select-string -pattern ':target=(.+)' |
+foreach { $_.matches.groups[1].value } |
+foreach { cmdkey.exe /delete:$_ }
+
+-- Delete Remote Access Server (RAS) creds:
+cmdkey.exe /delete /ras
+
+* -----
+
 #>
 
 #requires -RunAsAdministrator
 
 [CmdletBinding()]
 Param() #end param
+
+#----------------------------------------------------------
+# Start of delegates
+#----------------------------------------------------------
+
+[Action]$CheckClickToRun = {
+<#
+ClickToRunSvc - if this service is disabled, we get the
+following error when starting MS Word:
+  Something went wrong
+  We couldn't start, try repairing Office from 'Programs and Features' in the Control Panel.
+  Error Code: 0x426-0x0
+Enable this service if you need to use MS Word.
+#>
+    $InformationPreference = 'Continue';
+    Write-Information -MessageData '';
+
+    $StartType = (Get-Service -name 'ClickToRunSvc').StartType;
+    $Disabled = [System.ServiceProcess.ServiceStartMode]::Disabled;
+    $Code = "Set-Service -Name 'ClickToRunSvc' -StartupType Manual;";
+
+    if ($StartType -eq $Disabled) {
+        Write-Information -MessageData 'Service <ClickToRunSvc> is disabled';
+        Write-Information -MessageData 'If you wish to run MS Word, run the following code in elevated mode first:';
+        Write-Information -MessageData $Code;
+    }
+
+}
+
+#----------------------------------------------------------
+# End of delegates
+#----------------------------------------------------------
 
 #----------------------------------------------------------
 # Start of functions
@@ -304,14 +370,33 @@ on your Windows 10 PC, you may need this service. This
 service checks for compatibility problems while installing
 an application.
 
-Name: stisvc
-DisplayName: Windows Image Acquisition (WIA)
-Windows Image Acquisition (WIA) is the still image acquisition
-platform in the Windows family of operating systems
-https://docs.microsoft.com/en-us/windows/win32/wia/-wia-startpage
-
-See also:
+o Notes
+MS Windows Services - registry 'start' values
 Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services
+Use following values of your choice
+0 = Boot. Loaded by kernel loader.
+1 = System
+2 = Automatic
+3 = Manual
+4 = Disabled
+5 = Delayed start
+
+o Notes
+'start' key for the following services has been set to '4' (Disabled).
+Computer\HKLM\SYSTEM\CurrentControlSet\Services\OneSyncSvc
+Computer\HKLM\SYSTEM\CurrentControlSet\Services\OneSyncSvc_5c6c1
+
+o Notes
+See also
+System.ServiceProcess.ServiceController Class
+
+o Notes
+ClickToRunSvc - if this service is disabled, we get the
+following error when starting MS Word:
+  Something went wrong
+  We couldn't start, try repairing Office from 'Programs and Features' in the Control Panel.
+  Error Code: 0x426-0x0
+Enable this service if you need to use MS Word.
 
 * -----
 Currently working on:
@@ -329,7 +414,7 @@ param ()
         #The 'display name' can be seen in the comments.
         Write-Output 'Stopping some unwanted services';
         $services = @(
-          'AdobeARMservice'     # Adobe Acrobat Update Service
+          #'AdobeARMservice'     # Adobe Acrobat Update Service
           'ClickToRunSvc'       # Microsoft Office Click-to-Run Service
           'WinRM'               # Windows Remote Management (WS-Management)
           'AJRouter'            # AllJoyn Router Service
@@ -347,7 +432,6 @@ param ()
           'XblGameSave'         # Xbox Live Game Save
           'XboxGipSvc'          # Xbox Accessory Management Service
           'XboxNetApiSvc'       # Xbox Live Networking Service
-          'OneSyncSvc*'         # Sync Host_4fe3c
           #Can't seem to stop this service. It gives an error
           #'TabletInputService'  # Touch Keyboard and Handwriting Panel Service
         )
@@ -356,7 +440,7 @@ param ()
     }
 
     process {
-        # Loop to disable services
+        # Loop to disable unnecessary startup entries
         foreach ($service in $services) {
             Stop-Service -Force -Name $service;
             Set-Service -Name $service -StartupType Disabled;
@@ -365,7 +449,9 @@ param ()
 
     }
 
-    end {}
+    end {
+        $CheckClickToRun.Invoke();
+    }
 }
 #endregion ***** end of function Disable-Services *****
 
@@ -394,7 +480,7 @@ code to put in from the above text file
         # Loop to disable scheduled tasks
         foreach ($service in $services) {
             Stop-Service -Force -Name $service;
-          }
+        }
 
     }
 
