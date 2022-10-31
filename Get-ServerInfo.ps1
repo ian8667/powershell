@@ -75,6 +75,25 @@ http://technet.microsoft.com/en-us/library/hh847743.aspx
 
 Cmdlet Parameter Sets
 http://msdn.microsoft.com/en-us/library/windows/desktop/dd878348(v=vs.85).aspx
+
+Gathering Network Statistics with PowerShell
+https://devblogs.microsoft.com/scripting/gathering-network-statistics-with-powershell/
+
+
+More things to think about:
+Collecting information
+Get information about the make and model of a computer:Get-CimInstance -Class Win32_ComputerSystem
+Get information about the BIOS of the current computer:Get-CimInstance -Class Win32_BIOS -ComputerName .
+List installed hotfixes -- QFEs, or Windows Update files:Get-CimInstance -Class Win32_QuickFixEngineering -ComputerName .Get the username of the person currently logged on to a computer:
+Get-CimInstance -Class Win32_ComputerSystem -Property UserName -ComputerName .
+Find just the names of installed applications on the current computer:
+Get-CimInstance -Class 'Win32_Product' -ComputerName . | Format-Wide -Column 1
+Get IP addresses assigned to the current computer:Get-CimInstance -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName . | Format-Table -Property IPAddress
+Get a more detailed IP configuration report for the current machine:Get-CimInstance -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName . | Select-Object -Property [a-z]* -ExcludeProperty IPX*,WINS*
+Find network cards with DHCP enabled on the current computer:Get-CimInstance -Class Win32_NetworkAdapterConfiguration -Filter "DHCPEnabled=true" -ComputerName .
+Enable DHCP on all network adapters on the current computer:
+Get-CimInstance -Class Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=true' -ComputerName . | ForEach-Object -Process {$_.EnableDHCP()}
+
 #>
 
 [cmdletbinding()]
@@ -109,9 +128,9 @@ function Show-OsInfo {
 
    $params=@{
       ComputerName = $ComputerName
-      Class = 'Win32_OperatingSystem'
+      Class = 'CIM_OperatingSystem'
    }
-   $win32OS = Get-WmiObject @params;
+   $win32OS = Get-CimInstance @params;
 
    $OS = $win32OS.Caption;
 
@@ -121,7 +140,7 @@ function Show-OsInfo {
       $architecture = "32-Bit";
    }
 
-   $sType = (Get-WmiObject -ComputerName $ComputerName -Class win32_computersystem).SystemType;
+   $sType = (Get-CimInstance -ComputerName $ComputerName -ClassName CIM_ComputerSystem).SystemType;
 
    # Obtain the last boot time.
 
@@ -168,9 +187,9 @@ function Show-OsInfo {
 
 #----------------------------------------------------------
 
-#region ***** function Show-OracleProcesses *****
+#region ***** function Show_OracleProcesses *****
 ##=============================================
-## Function: Show-OracleProcesses
+## Function: Show_OracleProcesses
 ## Created: 2013-05-25
 ## Author: Ian Molloy
 ## Arguments: none
@@ -182,12 +201,13 @@ function Show-OsInfo {
 ## See also: Using the Get-Service Cmdlet
 ## http://technet.microsoft.com/en-us/library/ee176858.aspx
 ##=============================================
-function Show-OracleProcesses {
+function Show_OracleProcesses {
 [CmdletBinding()]
 
   $svcStopped = 0;
   $svcRunning = 0;
-
+`
+  [System.Linq.Enumerable]::Repeat("", 3); #blanklines
   Write-Output "Looking for Oracle services (if any)";
   $colItems = Get-Service -Name Oracle*;
 
@@ -227,9 +247,9 @@ function Show-OracleProcesses {
 
 #----------------------------------------------------------
 
-#region ***** function Get-Script-Info *****
+#region ***** function Get_ScriptInfo *****
 ##=============================================
-## Function: Get-Script-Info
+## Function: Get_ScriptInfo
 ## Created: 2013-05-25
 ## Author: Ian Molloy
 ## Arguments: none
@@ -238,8 +258,9 @@ function Show-OracleProcesses {
 ## where the script is running from.
 ## Returns: N/A
 ##=============================================
-function Get-Script-Info {
+function Get_ScriptInfo {
 [CmdletBinding()]
+Param ()
 
    if ($MyInvocation.ScriptName) {
        $p1 = Split-Path -Leaf $MyInvocation.ScriptName;
@@ -280,7 +301,7 @@ param (
      $myarray[$m] = ' ';
   }
   Write-Output $myarray;
-  
+
 }
 #endregion ***** end of function PrintBlankLines *****
 
@@ -288,7 +309,7 @@ param (
 
 #region ***** function Get-DiskSpace *****
 ##=============================================
-## Function: Get-DiskSpace
+## Function: Get_DiskSpace
 ## Created: 2013-05-25
 ## Author: Ian Molloy
 ## Arguments: none
@@ -296,8 +317,9 @@ param (
 ## Purpose: displays disk space for the computer being checked.
 ## Returns: N/A
 ##=============================================
-function Get-DiskSpace {
+function Get_DiskSpace {
 [CmdletBinding()]
+Param ()
 
   New-Variable -Name spaceUnit -Value "1GB" -Option Constant;
 
@@ -358,13 +380,15 @@ function Get-DiskSpace {
   # Parameters supplied to the Get-WMiObject Cmdlet.
   # See also: http://technet.microsoft.com/en-us/library/ee176860.aspx
   $params = @{
-    'Class' = 'Win32_LogicalDisk'
+    'ClassName' = 'CIM_LogicalDisk'
     'Filter' = 'DriveType=3'
     'Namespace' = 'root/cimv2'
-    'Computername' = $ComputerName
   }
+    #'Computername' = $ComputerName
+#Get-CimInstance -ClassName 'CIM_LogicalDisk'| where DriveType -eq "3" -verbose
+#"{0:f3}" -f $fred
 
-  Get-WmiObject @params |
+  Get-CimInstance @params |
       Select-Object -Property $name, $drivetype, $size, $free, $used, $pcfree, $pcused | Format-Table
 
 }
@@ -441,6 +465,7 @@ Param (
 ##=============================================
 function main_routine {
 [CmdletBinding()]
+Param ()
 
   if ($PSBoundParameters['Verbose']) {
      Write-Host "doing some verbose things";
@@ -449,12 +474,12 @@ function main_routine {
 
   if (Ping($ComputerName)) {
 
-    Get-Script-Info;
+    Get_ScriptInfo;
 
-    Show-OracleProcesses;
+    Show_OracleProcesses;
 
-    Get-DiskSpace;
-    
+    Get_DiskSpace;
+
     Show-OsInfo;
   } else {
     Write-Warning "Computer $ComputerName is not online";
