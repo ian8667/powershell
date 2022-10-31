@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Clone-GitRepository.ps1
 Author       : Ian Molloy
-Last updated : 2021-10-19T19:20:46
+Last updated : 2022-02-28T17:47:44
 Keywords     : git github clone repository yesno
 
 .LINK
@@ -42,6 +42,45 @@ https://git-scm.com/doc
 About Object Creation
 Explains how to create objects in PowerShell.
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_object_creation?view=powershell-7
+#>
+
+<#
+new work:
+Possible code to use in order to select the Git repository?
+
+
+$fred = Invoke-RestMethod -Uri 'https://api.github.com/users/ian8667/repos';
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+Write-Output 'load the hashtable';
+$menu = @{}
+$counter = 1;
+#Populate our menu of choices
+foreach ($item in $fred) {
+
+    #Add(Key, Value)
+    $menu.Add($counter, $item.name);
+
+    $counter++;
+}
+$menu.Add($counter, 'Exit');
+Set-Variable -Name 'menu' -Option ReadOnly;
+
+
+
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+Write-Output 'Github repositories found';
+#Display the contents of our menu
+foreach ($item in $menu.GetEnumerator() | Sort-Object Name ) {
+    '{0} - {1}' -f $item.Name, $item.Value;
+}
+[Int32]$ans = 0;
+do {
+  $ans = Read-Host -Prompt 'Please choooose an item by number';
+} until ($ans -in 1..$menu.Count);
+$selection = $menu.Item($ans);
+Write-Output "Your choice is: $($selection)";
+
 #>
 
 [CmdletBinding()]
@@ -67,7 +106,7 @@ Please select a GitHub repository to clone
 2 javaFX
 3 Learn-Java
 4 java
-5 Quit
+5 Exit
 
 "@
 
@@ -80,8 +119,8 @@ switch($Response) {
    2 {$Repos = 'javaFX'; break}
    3 {$Repos = 'Learn-Java'; break}
    4 {$Repos = 'java'; break}
-   5 {$Repos = 'quit'; break}
-   Default {$Repos = 'quit'; break}
+   5 {$Repos = 'Exit'; break}
+   Default {$Repos = 'Exit'; break}
 }
 
 return $Repos;
@@ -256,7 +295,8 @@ Param (
    & $gitexe @cmdArgs;
    $rc = $LastExitCode;
    Write-Output "Clone of repository exit code = $rc";
-
+#shall I use this?
+#Exit setup process (Return code: 0)
 }
 #endregion ***** end of function Clone-Repository *****
 
@@ -301,11 +341,11 @@ Set-Variable -Name 'uri' -Option ReadOnly;
 
 #The last segment of the URI contains the name of the actual
 #repository that will be cloned. i.e., 'powershell' repository,
-#'java' repository, etc. If the user has chosen to quit, then
-#this segment will contain the value 'Quit'. Exit if this is
+#'java' repository, etc. If the user has chosen to exit, then
+#this segment will contain the value 'Exit'. Exit if this is
 #the case with no further action.
 $lastSegment = $uri.Segments[-1];
-if ($lastSegment -eq 'Quit') {
+if ($lastSegment -eq 'Exit') {
    Write-Warning -Message 'Quitting at user request. No further action taken';
    return;
 }
