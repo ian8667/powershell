@@ -16,13 +16,35 @@ Greater than zero - $tempDate is later than $endDate, or value is null.
 
 File Name    : Get-WorkingDays.ps1
 Author       : Ian Molloy
-Last updated : 2020-10-01T16:03:20
+Last updated : 2022-02-26T18:23:08
 Keywords     : count working days
 
 [System.Enum]::GetNames( [System.DayOfWeek] )
 
 PowerShell: Creating Custom Objects
 https://social.technet.microsoft.com/wiki/contents/articles/7804.powershell-creating-custom-objects.aspx
+#>
+
+<#
+new work:
+o Can I convert this program to use System.DateOnly structures
+instead of System.DateTime?
+
+o Shall I put my holidays and weekend structures in a delegate?
+$fred = [System.DateOnly]::Parse('2022-02-10') ;works
+
+example code:
+# Populate the holiday structure like this
+[DateOnly[]]$hh = @(
+  #Date format to use for holidays; YYYY-MM-DD
+  [System.DateOnly]::Parse('2022-02-10');
+  [System.DateOnly]::Parse('2022-02-12');
+  [System.DateOnly]::Parse('2022-02-14');
+)
+# Test like this
+$fred = [System.DateOnly]::Parse('2022-02-21');
+$hh.Contains($fred); # returns true or false
+
 #>
 
 [CmdletBinding()]
@@ -33,7 +55,7 @@ Param() #end param
 ## Main routine starts here
 ##=============================================
 Set-StrictMode -Version Latest;
-$ErrorActionPreference = "Continue";
+$ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
 
@@ -55,7 +77,7 @@ $mask = 'dddd, dd MMMM yyyy';
 $StartEndDates = [PSCustomObject]@{
    # Change accordingly
    PSTypeName = 'StartEnd';
-   StartDate  = Get-Date -Year 2020 -Month 09 -Day 23;
+   StartDate  = Get-Date -Year 2022 -Month 02 -Day 07;
    EndDate    = Get-Date;
 }
 
@@ -83,8 +105,7 @@ $StartEndDates = [PSCustomObject]@{
 #array. i.e., $holidays = @()
 [DateTime[]]$Holidays = @(
   #Date format to use for holidays; YYYY-MM-DD
-  (Get-Date -Date '2020-02-18')
-  (Get-Date -Date '2020-02-25')
+  (Get-Date -Date '2022-02-10')
 )
 
 Write-Output ('Start date used: {0}' -f $($StartEndDates.StartDate).ToString($mask));
@@ -111,7 +132,7 @@ $tempDate = $StartEndDates.StartDate;
 do {
   #date loop
   if ( ($Weekend.Contains($tempDate.DayOfWeek.ToString())) -or
-        ($Holidays.Contains($tempDate.Date)) ) {
+       ($Holidays.Contains($tempDate.Date)) ) {
 
     #This day will be ignored as it is either a weekend or a holiday
     $msg = [System.String]::Format('{0} date ignored, - holiday or weekend', $tempDate.ToString($mask));
@@ -129,7 +150,7 @@ do {
 
 Write-Output '';
 Write-Output ('Number of working days is {0}' -f ($WorkdayCounter));
-Write-Output ('Total elapsed days (including weekends) is {0}' -f ($DateInterval.Days + 1));
+Write-Output ('Total elapsed days (including weekends/holidays) is {0}' -f ($DateInterval.Days + 1));
 Write-Output 'All done now';
 
 ##=============================================
