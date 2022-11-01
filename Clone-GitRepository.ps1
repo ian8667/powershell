@@ -31,8 +31,27 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Clone-GitRepository.ps1
 Author       : Ian Molloy
-Last updated : 2022-02-28T17:47:44
+Last updated : 2022-11-01T14:41:13
 Keywords     : git github clone repository yesno
+
+; ----------
+PowerShell: Download script or file from GitHub
+An interesting article on downloading a single from from GitHub
+https://www.thomasmaurer.ch/2021/07/powershell-download-script-or-file-from-github/
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/thomasmaurer/demo-cloudshell/master/helloworld.ps1 -OutFile 'C:\gash\helloworld.ps1';
+or
+To download a test file from one of my repositories:
+$address = 'https://raw.githubusercontent.com/ian8667/powershell/master/gash.abc';
+$splat = @{
+# Splat data for use with Write-Error cmdlet.
+    Uri               = New-Object -TypeName 'System.Uri' -ArgumentList $address;
+    OutFile           = 'C:\gash\downloaded_file.ps1'
+    TimeoutSec        = 5
+    MaximumRetryCount = 5
+    RetryIntervalSec  = 3
+    ErrorAction       = 'Stop'
+}
+Invoke-WebRequest  @splat;
 
 .LINK
 
