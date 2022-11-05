@@ -23,12 +23,15 @@ to parameter 'CharPositions'.
 (mandatory) contains the password or phrase from which characters
 will be extracted in order to be displayed to the user.
 
+For sanity reasons (to keep things sensible), the parameter is
+restricted to a length of between 5 to 20 characters inclusive.
+
 .PARAMETER CharPositions
 
 (mandatory) a [System.Byte] array containing the positions from
-which to display (extract) the requested characters. If the
-first, second and fifth characters are required, then enter a
-value of 1,2,5.
+which to display (extract) the requested characters. For example,
+if the first, second and fifth characters are required, then enter
+the values of 1,2,5.
 
 Due to the intended use of this program, only two or three characters
 can be selected. Any other number of integer digits entered will
@@ -58,7 +61,11 @@ example.
 
 File Name    : Get-StringChars.ps1
 Author       : Ian Molloy
-Last updated : 2022-03-30T22:57:03
+Last updated : 2022-11-04T17:00:46
+
+.NET uses the Char structure to represent Unicode code points
+by using UTF-16 encoding. The value of a Char object is its
+16-bit numeric (ordinal) value.
 
 .LINK
 
@@ -72,22 +79,16 @@ https://ramblingcookiemonster.wordpress.com/2013/12/08/building-powershell-funct
 
 #>
 
-<#
-new work:
-function 'Get-LetterCase' - use [System.Char]::GetUnicodeCategory($m);
-to determine whether upper, lower case or digit?
-#>
-
 [CmdletBinding()]
-Param (
+Param(
     [parameter(Position=0,
                Mandatory=$true,
                HelpMessage="Phrase or password to look at")]
-    [ValidateScript({$_.Length -ge 5})]
+    [ValidateLength(5,20)]
     [String]$Phrase,
     [parameter(Position=1,
                Mandatory=$true,
-               HelpMessage="Character positions of interest to look at")]
+               HelpMessage="Character positions from the phrase to look at")]
     [ValidateCount(2,3)]
     [Byte[]]$CharPositions
 ) #end param
@@ -99,25 +100,15 @@ Param (
 #region ***** function Get-LetterCase *****
 function Get-LetterCase {
 [CmdletBinding()]
-Param (
+Param(
     [parameter(Position=0,
                Mandatory=$true,
-               HelpMessage="Character to determine whether it is upper or lower case")]
+               HelpMessage="Determine whether the parameter is upper case, lower case or a digit")]
     [ValidateScript({$_.ToString().Length -eq 1})]
     [Char]$Letter
 ) #end param
 
-# The numeric values used to determine whether the parameter
-# supplied is upper or lower case are decimal values.
-
-[String]$case = '';
-$num = [Byte]$Letter;
-switch ($num) {
-    {48..57 -contains $PSItem} {$case = "(digit)"; Break}      #digits 0 - 9
-    {65..90 -contains $PSItem} {$case = "(uppercase)"; Break}  #characters A - Z
-    {97..122 -contains $PSItem} {$case = "(lowercase)"; Break} #characters a - z
-    default {$case = ""; Break}
-}
+$case = [System.Char]::GetUnicodeCategory($Letter);
 
 return $case;
 }
@@ -128,22 +119,20 @@ return $case;
 #region ***** function Indicate-Positions *****
 function Indicate-Positions {
 [CmdletBinding()]
-Param (
+Param(
     [parameter(Position=0,
                Mandatory=$true,
                HelpMessage="Phrase or password to look at")]
-    [ValidateScript({$_.Length -ge 5})]
     [String]$Phrase,
     [parameter(Position=1,
                Mandatory=$true,
-               HelpMessage="Character positions of interest to look at")]
-    [ValidateCount(2,3)]
+               HelpMessage="Character positions from phrase to look at")]
     [Byte[]]$ByteArray
 ) #end param
 
 $len = $Phrase.Length;
-$ba = New-Object -TypeName System.Collections.BitArray -ArgumentList $len;
-$sb = New-Object -TypeName System.Text.StringBuilder -ArgumentList $len, $len;
+$ba = New-Object -TypeName 'System.Collections.BitArray' -ArgumentList $len;
+$sb = New-Object -TypeName 'System.Text.StringBuilder' -ArgumentList $len, $len;
 
 # Manages a compact array of bit values, which are represented
 # as Booleans, where true indicates that the bit is on (1) and
@@ -172,7 +161,6 @@ foreach ($item in $ByteArray) {
 # StringBuilder object position with a space.
 [String]$m = '';
 foreach ($num in 0..($len-1)) {
-    #
     $m = (($ba.Item($num)) ? "^" : " "); #Ternary operator
     $sb.Append($m) | Out-Null;
 }
@@ -233,8 +221,7 @@ Write-Output ("`nPhrase supplied: {0}     ({1} characters)" -f `
 # input string supplied.
 Write-Output ("Looking for characters at positions: {0}  (1-based)" -f
               [System.String]::Join(", ", $CharPositions));
-Write-Output "";
-
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
 # Find and display the characters requested.
 # One is subtracted from the number requested, as positions in
@@ -242,17 +229,18 @@ Write-Output "";
 # (as supplied by the user) in [System.Byte] array
 # 'CharPositions' are are 1-based. So if the character at
 # position 1 is requested, it will be found at string index
-# 0 not 1.
+# 0, not 1.
 foreach ($num in $CharPositions) {
-     $letter = $Phrase[$num - 1];
-     $case = Get-LetterCase -Letter $letter;
-     Write-Output ('Position {0}:  {1}     {2}' -f $num, $letter, $case);
+    $letter = $Phrase[$num - 1];
+    $case = Get-LetterCase -Letter $letter;
+    Write-Output ('Position {0}:  {1}     {2}' -f $num, $letter, $case);
 }
 $result = Indicate-Positions -Phrase $Phrase -ByteArray $CharPositions;
-Write-Output "";
+[System.Linq.Enumerable]::Repeat("", 1); #blanklines
 Write-Output "Positions indicated in phrase:";
 Write-Output $Phrase;
 Write-Output $result;
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
 ##=============================================
 ## END OF SCRIPT: Get-StringChars.ps1
