@@ -61,7 +61,8 @@ example.
 
 File Name    : Get-StringChars.ps1
 Author       : Ian Molloy
-Last updated : 2022-11-04T17:00:46
+Last updated : 2022-11-08T11:50:13
+
 
 .NET uses the Char structure to represent Unicode code points
 by using UTF-16 encoding. The value of a Char object is its
@@ -95,25 +96,6 @@ Param(
 
 #----------------------------------------------------------
 # Start of functions
-#----------------------------------------------------------
-
-#region ***** function Get-LetterCase *****
-function Get-LetterCase {
-[CmdletBinding()]
-Param(
-    [parameter(Position=0,
-               Mandatory=$true,
-               HelpMessage="Determine whether the parameter is upper case, lower case or a digit")]
-    [ValidateScript({$_.ToString().Length -eq 1})]
-    [Char]$Letter
-) #end param
-
-$case = [System.Char]::GetUnicodeCategory($Letter);
-
-return $case;
-}
-#endregion ***** end of function Get-LetterCase *****
-
 #----------------------------------------------------------
 
 #region ***** function Indicate-Positions *****
@@ -232,7 +214,7 @@ Write-Output ("Looking for characters at positions: {0}  (1-based)" -f
 # 0, not 1.
 foreach ($num in $CharPositions) {
     $letter = $Phrase[$num - 1];
-    $case = Get-LetterCase -Letter $letter;
+    $case = [System.Char]::GetUnicodeCategory($letter);
     Write-Output ('Position {0}:  {1}     {2}' -f $num, $letter, $case);
 }
 $result = Indicate-Positions -Phrase $Phrase -ByteArray $CharPositions;
