@@ -31,7 +31,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2022-01-23T21:52:10
+Last updated : 2022-11-12T23:33:28
 Keywords     : scheduled task service windows disable admin
 
 To run a specific script from an elevated (admin) window.
@@ -232,7 +232,10 @@ foreach { cmdkey.exe /delete:$_ }
 cmdkey.exe /delete /ras
 
 * -----
+windows/R
 
+C:\Users\ianm7\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp
 #>
 
 #requires -RunAsAdministrator
