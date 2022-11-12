@@ -99,7 +99,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-NetstatPno.ps1
 Author       : Ian Molloy
-Last updated : 2022-02-08T23:08:47
+Last updated : 2022-11-01T15:12:27
 Keywords     : netstat tcp connection server ip address
 
 $iasyncresult = TypeName: System.Threading.Tasks.TaskToApm+TaskAsyncResult
@@ -206,7 +206,8 @@ Select-Object -Property RemoteAddress, RemotePort, $procid, $procname;
 
 <#
 new work:
-upload to github
+o refactor the code to use PowerShell cmdlets instead of netstat
+o upload to github
 #>
 [CmdletBinding()]
 Param (
