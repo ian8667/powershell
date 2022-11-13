@@ -32,7 +32,8 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Get-Lastlines.ps1
 Author       : Ian Molloy
-Last updated : 2021-05-30T00:14:52
+Last updated : 2022-11-13T00:14:15
+Keywords     : pscustomobject pstypename
 
 .LINK
 
@@ -45,6 +46,9 @@ https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/abo
 Get-Content (parameter -Tail)
 Specifies the number of lines from the end of a file to list.
 https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-content?view=powershell-7.1#parameters
+
+Custom objects and PSTypeName
+https://powershellstation.com/2016/05/22/custom-objects-and-pstypename/
 
 #>
 

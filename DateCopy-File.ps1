@@ -141,7 +141,8 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2022-03-03T17:28:28
+Last updated : 2022-11-13T00:20:12
+Keywords     : pscustomobject pstypename
 
 This program contains examples of using delegates.
 
@@ -164,6 +165,9 @@ https://en.wikipedia.org/wiki/MD5
 
 The MD5 Message-Digest Algorithm
 https://www.ietf.org/rfc/rfc1321.txt
+
+Custom objects and PSTypeName
+https://powershellstation.com/2016/05/22/custom-objects-and-pstypename/
 
 How to find these files again:
 $file = 'C:\Gash\mygash_2020-10-01T22-47-03.pdf';
