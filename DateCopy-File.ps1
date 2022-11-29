@@ -14,9 +14,11 @@ revert to it. The date and time show when the file was copied and by
 having a time component, we can make more than one copy of a file
 per day.
 
+The file that is copied will not be changed or modified in any way.
+
 File 'fred.txt', for example, will be copied to a file named with a
-format of 'fred_2018-04-22T14-52-26.txt'. The file when copied can be
-set to ReadOnly if required.
+format of 'fred_2018-04-22T14-52-26.txt'. The file, when copied, can
+be set to ReadOnly if required.
 
 The date/time component used is:
 
@@ -141,7 +143,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2022-11-13T00:20:12
+Last updated : 2022-11-29T18:23:01
 Keywords     : pscustomobject pstypename
 
 This program contains examples of using delegates.
@@ -169,6 +171,10 @@ https://www.ietf.org/rfc/rfc1321.txt
 Custom objects and PSTypeName
 https://powershellstation.com/2016/05/22/custom-objects-and-pstypename/
 
+Everything you wanted to know about PSCustomObject
+(PSTypeName for custom object types)
+https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-pscustomobject?view=powershell-7.2
+
 How to find these files again:
 $file = 'C:\Gash\mygash_2020-10-01T22-47-03.pdf';
 $reg = '(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})';
@@ -179,15 +185,17 @@ https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/abo
 #>
 
 [CmdletBinding()]
-Param (
+Param(
    [parameter(Position=0,
-              Mandatory=$false)]
+              Mandatory=$false,
+              HelpMessage='File to be date copied')]
    [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
    [Object]
    $Path,
 
    [parameter(Position=1,
-              Mandatory=$false)]
+              Mandatory=$false,
+              HelpMessage='Whether to set copied file to readonly')]
    [Switch]
    $ReadOnly
 ) #end param
@@ -299,8 +307,8 @@ Lists the file which has just been copied and other copies made
 
 .DESCRIPTION
 
-Lists the file which has just been copied and all other copies
-made of it as created by this script.
+Lists the file which has just been copied and all other date
+copies made of it as created by this script (if any).
 
 The way this program is designed to work, any copies of a file
 will be in the same directory. So, for example, if file
@@ -334,8 +342,9 @@ Mode                 LastWriteTime         Length Name
 #>
 
 [CmdletBinding()]
-param (
-    [parameter(Mandatory=$true,
+param(
+    [parameter(Position=0,
+               Mandatory=$true,
                HelpMessage="The filename(s) to display")]
     [ValidateNotNullOrEmpty()]
     [String]$InputFilename
@@ -357,6 +366,7 @@ param (
       # Get the parent path (base path) from the input filename.
       # This is where all of the files we'll be dealing with are
       # located.
+      #
       # See the following article on the subject of parent
       # paths:
       # How to get the Parent's parent directory in Powershell?
@@ -396,7 +406,7 @@ function Get-OldFilename {
 <#
 .SYNOPSIS
 
-Gets the name of the file to copy
+Gets the name of a file to date copy
 
 .DESCRIPTION
 
@@ -416,7 +426,7 @@ https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?
 
 [CmdletBinding()]
 [OutputType([System.String])]
-Param (
+Param(
    [parameter(Position=0,
               Mandatory=$true,
               HelpMessage="ShowDialog box title")]
@@ -432,11 +442,12 @@ Begin {
 
   $myok = [System.Windows.Forms.DialogResult]::OK;
   [String]$retFilename = "";
+
   $ofd.AddExtension = $false;
   $ofd.CheckFileExists = $true;
   $ofd.CheckPathExists = $true;
   $ofd.DefaultExt = ".txt";
-  $ofd.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+  $ofd.Filter = 'Text files (*.txt)|*.txt|PowerShell files (*.ps1)|*.ps1|All files (*.*)|*.*';
   $ofd.InitialDirectory = "C:\Family\powershell";
   $ofd.Multiselect = $false;
   $ofd.Title = $Boxtitle; # sets the file dialog box title
@@ -502,10 +513,10 @@ java.security.MessageDigest Class
 
 [CmdletBinding()]
 [OutputType([System.Boolean])]
-Param (
+Param(
    [parameter(Position=0,
               Mandatory=$true,
-              HelpMessage="Data files to compare")]
+              HelpMessage="Data files to hash compare")]
    [ValidateNotNullOrEmpty()]
    [PSTypeName('OldNew')]$DataFile
 ) #end param
@@ -550,7 +561,7 @@ Filename from which to construct a new filename
 
 [CmdletBinding()]
 [OutputType([System.String])]
-Param (
+Param(
    [parameter(Position=0,
               Mandatory=$true,
               HelpMessage="The filename to rename")]
@@ -584,7 +595,8 @@ Begin {
 
   if (-not ([System.String]::IsNullOrEmpty($f3))) {
       # The original filename has a file extension. Insert
-      # it back into our new filename
+      # it back into our new filename which now contains
+      # the date and time of the file copy
       $newFilename = ("$($newFilename){0}" -f $f3);
   }
 
@@ -629,7 +641,7 @@ https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?
 #>
 
     [CmdletBinding()]
-    param (
+    param(
         [parameter(Mandatory=$true,
                    HelpMessage="Check filename for invalid characters")]
         [ValidateNotNullOrEmpty()]
