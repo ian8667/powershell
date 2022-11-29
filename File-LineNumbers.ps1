@@ -19,7 +19,8 @@ All file names used are hard coded within the program.
 
 ./File-LineNumbers.ps1
 
-No parameters are used
+No parameters are used. Input and output filenames are
+hard coded within the program.
 
 Sample output
 
@@ -47,7 +48,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : File-LineNumbers.ps1
 Author       : Ian Molloy
-Last updated : 2021-05-23T16:29:43
+Last updated : 2022-11-29T17:31:10
 
 .LINK
 
@@ -60,8 +61,7 @@ https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/abo
 #>
 
 [CmdletBinding()]
-Param (
-) #end param
+Param() #end param
 
 ##=============================================
 ## SCRIPT BODY
@@ -71,21 +71,21 @@ Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
 Invoke-Command -ScriptBlock {
-   <#
-   $MyInvocation
-   TypeName: System.Management.Automation.InvocationInfo
-   This automatic variable contains information about the current
-   command, such as the name, parameters, parameter values, and
-   information about how the command was started, called, or
-   invoked, such as the name of the script that called the current
-   command.
+<#
+$MyInvocation
+TypeName: System.Management.Automation.InvocationInfo
+This automatic variable contains information about the current
+command, such as the name, parameters, parameter values, and
+information about how the command was started, called, or
+invoked, such as the name of the script that called the current
+command.
 
-   $MyInvocation is populated differently depending upon whether
-   the script was run from the command line or submitted as a
-   background job. This means that $MyInvocation may not be able
-   to return the path and file name of the script concerned as
-   intended.
-   #>
+$MyInvocation is populated differently depending upon whether
+the script was run from the command line or submitted as a
+background job. This means that $MyInvocation may not be able
+to return the path and file name of the script concerned as
+intended.
+#>
    Write-Output '';
    Write-Output 'Adding numbers to lines';
    $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
@@ -106,11 +106,11 @@ Invoke-Command -ScriptBlock {
 # number. The cmdlet creates the file in your
 # $Env:Temp folder. To find out what this directory is:
 # PS> Write-Output $Env:TEMP;
-$TempFile = New-TemporaryFile;
+#$TempFile = New-TemporaryFile;
 
 $config = @{
-   Inputfile   = 'C:\Gash\gash02.txt';  # <-- Change accordingly
-   Outputfile  = $TempFile.FullName;              # <-- Change accordingly
+   Inputfile   = 'C:\gash\x.x';  # <-- Change accordingly
+   Outputfile  = (New-TemporaryFile).FullName;  # <-- Change accordingly
 }
 
 # If we've used the New-TemporaryFile cmdlet to create a
@@ -123,17 +123,9 @@ if (Test-Path -Path $config.Outputfile) {
    Clear-Content -Path $config.Outputfile;
 }
 
-$splat = @{
-    # Splat data for use with New-Variable cmdlet.
-    Name        = 'BUFFSIZE'
-    Value       = 8KB
-    Option      = 'Constant'
-    Description = 'Buffer size used with file I/O'
-}
-New-Variable @splat;
-
+$buffsize = 8KB;
 $separator = ' | ';
-$myAscii = New-Object -TypeName 'System.Text.ASCIIEncoding';
+$myAscii = [System.Text.ASCIIEncoding]::new();
 Set-Variable -Name 'config', 'separator', 'myAscii' -Option ReadOnly;
 
 #
@@ -144,7 +136,7 @@ $myargs = @(
     $config.Inputfile  #The complete file path to be read.
     $myAscii  #The character encoding to use.
     $false  #whether to look for byte order marks at the beginning of the file.
-    $BUFFSIZE  #minimum buffer size, in number of 16-bit characters
+    $buffsize  #minimum buffer size, in number of 16-bit characters
 )
 $parameters = @{
     #General parameters
@@ -164,7 +156,7 @@ $myargs = @(
             #parameter has no effect, and the constructor creates
             #a new file.
     $myAscii  #The character encoding to use.
-    $BUFFSIZE  #The buffer size, in bytes.
+    $buffsize  #The buffer size, in bytes.
 )
 $parameters = @{
     #General parameters
@@ -180,7 +172,7 @@ $sw = New-Object -typeName 'System.Diagnostics.Stopwatch';
 $sw.Start();
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
-Write-Output "Line numbering file $($config.Inputfile)";
+Write-Output "Line numbering file [$($config.Inputfile)]";
 Write-Output ("Input file length is {0:N0} bytes" -f  $($reader.BaseStream.Length));
 
 try {
@@ -198,7 +190,7 @@ try {
     $Error[0].Exception.Message;
     # As we've hit an error, the output file is no use
     # to us now.
-    Remove-Item -Path $TempFile -Force;
+    Remove-Item -Path $config.Outputfile -Force;
 } finally {
    Write-Output "`nCleaning up ..."
    # clean-up things
@@ -213,11 +205,10 @@ try {
 
 }
 
+
 Write-Output "`nElapsed time:";
-# Returns a read-only TimeSpan object representing the total
-# elapsed time to process the input file.
 $elapsed = $sw.Elapsed.Duration();
-$elapsed | Format-Table Days, Hours, Minutes, Seconds, Milliseconds -AutoSize;
+$elapsed | Format-Table Hours, Minutes, Seconds, Milliseconds -AutoSize;
 
 #Write-Output "`n$($counter) lines processed from input file";
 Write-Output ("`n{0:N0} lines processed from input file" -f $counter);
