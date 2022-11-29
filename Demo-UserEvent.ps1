@@ -26,8 +26,8 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Demo-UserEvent.ps1
 Author       : Ian Molloy
-Last updated : 2020-12-16T18:48:27
-Keywords     : func delegate
+Last updated : 2022-11-17T18:19:36
+Keywords     : func delegate user event
 
 .LINK
 
@@ -75,24 +75,32 @@ Param() #end param
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
 
-# Demonstrates using "Func<T1,T2,TResult> Delegate" which
-# encapsulates a method that has two Int32 parameters
-# and returns a value of the type specified by the
-# TResult (Boolean) parameter.
-$pred = [Func[Int32,Int32,Boolean]]{param($x, $y) $x -eq $y }
+#----------------------------------------------------------
+
+$pred = [Func[Int32,Int32,Boolean]]{
+<#
+There are other ways of doing this but it shows the use of a
+delegate in action.
+
+x - current loop number
+y - target number at which we want to fire our event
+#>
+param($x, $y) $x -eq $y }
 Set-Variable -Name 'pred' -Option ReadOnly;
 
+#----------------------------------------------------------
+
 $ActionBlock = {
-    <#
-    ScriptBlock passed to parameter 'Action' of cmdlet
-    Register-EngineEvent.
+<#
+ScriptBlock passed to parameter 'Action' of cmdlet
+Register-EngineEvent.
 
-    $Event is of type:
-    TypeName: System.Management.Automation.PSEventArgs
+$Event is of type:
+TypeName: System.Management.Automation.PSEventArgs
 
-    $EventSubscriber is of type:
-    TypeName: System.Management.Automation.PSEventSubscriber
-    #>
+$EventSubscriber is of type:
+TypeName: System.Management.Automation.PSEventSubscriber
+#>
     $timestamp = ('time is {0}' -f (Get-Date -Format 's'));
 
     Write-Host '';
@@ -105,15 +113,10 @@ $ActionBlock = {
     Write-Host '';
     Write-Host 'Possible useful properties from $Event';
     Write-Host '';
-    #Additional user data associated with this event
     Write-Host "Event.MessageData: $($Event.MessageData)";
-    #The object that generated this event
     Write-Host "Event.Sender: $($Event.Sender)";
-    #The list of arguments captured by the original event source
     Write-Host "Event.SourceArgs: $($Event.SourceArgs)";
-    #The identifier associated with the source of this event
     Write-Host "Event.SourceIdentifier: $($Event.SourceIdentifier)";
-    #Time and date that this event was generated
     Write-Host "Event.TimeGenerated: $($Event.TimeGenerated)";
 
     # -----
@@ -122,7 +125,6 @@ $ActionBlock = {
     Write-Host '';
     Write-Host 'Possible useful properties from $EventSubscriber';
     Write-Host '';
-    #The identifier that identifies the source of these events
     Write-Host "EventSubscriber.SourceIdentifier: $($EventSubscriber.SourceIdentifier)";
 
     # -----
@@ -139,8 +141,12 @@ $ActionBlock = {
     Write-Host '';
 
 } #end of scriptblock $ActionBlock
+Set-Variable -Name 'ActionBlock' -Option ReadOnly;
+
+#----------------------------------------------------------
+
 $SourceIdent = "helen";
-Set-Variable -Name 'ActionBlock', 'SourceIdent' -Option ReadOnly;
+Set-Variable -Name 'SourceIdent' -Option ReadOnly;
 
 Write-Output 'This is a test ps1 file';
 
@@ -156,7 +162,8 @@ Write-Output 'Done';
 #For the purpose of this demonstration, we're going to use
 #the range of numbers 1..10. For this reason, variable
 #'$target' will lie within this range.
-$target = 4;
+[ValidateRange(1,10)]
+$target = 2;
 Set-Variable -Name 'target' -Option ReadOnly;
 Write-Output "The target value is: $target";
 
@@ -164,7 +171,7 @@ foreach ($num in 1..10) {
     Write-Output "num is now: $num";
     if ($pred.Invoke($num, $target)) {
         #Fire up the event now we've reached our target figure
-        $msgData = "We've reached our target of $num";
+        $msgData = "We've reached our target number of $num. Let's fire an event";
         $splat = @{
             SourceIdentifier = $SourceIdent;
             Sender = "foreach loop";
@@ -176,6 +183,7 @@ foreach ($num in 1..10) {
     }
 } #end of foreach loop
 
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
 Write-Output 'All done now';
 ##=============================================
 ## END OF SCRIPT: Demo-UserEvent.ps1
