@@ -6,7 +6,35 @@ Displays date related information
 .DESCRIPTION
 
 Displays date related information such as the current date/time,
-ISO 8601 date/time, day number and week number.
+ISO 8601 date/time, day number and week number. Also shows
+contract weekending dates if required.
+
+ISO 8601 date (and time) format tackles date uncertainty by
+setting out an internationally agreed way to represent dates
+in the format of:
+
+YYYY-MM-DD
+
+For example, September 27, 2022 is represented as 2022-09-27.
+
+Information shown:
+
+DayNumber - the day of the year expressed as a value between 1
+and 365 (366 in leap years). January 1 is day 1, January 2 is
+day 2, February 2 is day 32 and so on until you get to the end
+of the year.
+
+WeekNumber - the week number within the year.
+
+JulianDate - the elapsed time in days and fractions of a day
+since January 1, 4713 BC Greenwich noon. The purpose of the
+Julian date is to make it easy for computing difference between
+one calendar date and another calendar date.
+
+LeapYear - whether the current year is a leap year (True or False).
+
+IsDST - whether this instance of DateTime is within the daylight
+saving time range for the current time zone (True or False).
 
 .PARAMETER WeekEndingDates
 
@@ -30,52 +58,63 @@ will be a Sunday. I can't explain why some contracts are like this.
 
 .EXAMPLE
 
-PS> ./DateInfo.ps1
+PS> .\DateInfo.ps1
+
+Date related information
+Today is Wednesday, 30 November 2022 16:04:42
+Running script DateInfo.ps1 in directory C:\Family\powershell
 
 
-Today is Sunday, 13 November 2016 21:42
-ISO 8601 date/time is 2016-11-13T21:42:11
+Current ISO 8601 date/time is 2022-11-30T16:04:42
 
-DayNumber    WeekNumber   JulianDate   LeapYear
----------    ----------   ----------   --------
-318          46           2457705.5    True
+DayNumber WeekNumber JulianDate LeapYear IsDST
+--------- ---------- ---------- -------- -----
+334       48         2459913.5     False False
 
+All done now!
 
 .EXAMPLE
 
-PS> .\DateInfo.ps1 -WeekEndingDates
+PS> ./DateInfo.ps1 -WeekEndingDates
+
+Date related information
+Today is Wednesday, 30 November 2022 18:32:50
+Running script DateInfo.ps1 in directory C:\Family\powershell
 
 
-Today is Monday, 02 January 2017 16:26
-ISO 8601 date/time is 2017-01-02T16:26:45
+Current ISO 8601 date/time is 2022-11-30T18:32:50
 
-DayNumber    WeekNumber   JulianDate   LeapYear
----------    ----------   ----------   --------
-002          1            2457755.5    False
+DayNumber WeekNumber JulianDate LeapYear IsDST
+--------- ---------- ---------- -------- -----
+334       48         2459913.5     False False
 
-Weekending information
+Contract weekending information
 
-Week 1, ending on 2016-10-29
-Week 2, ending on 2016-11-05
-Week 3, ending on 2016-11-12
-Week 4, ending on 2016-11-19
+Week 1, ending on 2022-10-08
+Week 2, ending on 2022-10-15
+Week 3, ending on 2022-10-22
+Week 4, ending on 2022-10-29
+Week 5, ending on 2022-11-05
 
-Week 5, ending on 2016-11-26
-Week 6, ending on 2016-12-03
-Week 7, ending on 2016-12-10
-Week 8, ending on 2016-12-17
+Week 6, ending on 2022-11-12
+Week 7, ending on 2022-11-19
+Week 8, ending on 2022-11-26
 
-Week 9, ending on 2016-12-24
-Week 10, ending on 2016-12-31
 
-The next week ending coming up is Saturday, 2017-01-07
+
+******************************
+Weeks listed: 8
+The first weekending date used: Saturday, 08 October 2022
+
+The next week ending coming up after today is: Saturday, 03 December 2022
+All done now!
 
 .NOTES
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2022-02-13T16:03:31
-Keywords     : contract end of week jd julian
+Last updated : 2022-11-30T14:21:23
+Keywords     : contract end of week jd julian dst
 
 .LINK
 
@@ -156,12 +195,12 @@ Begin {
   # should be, for example, the Saturday of the end of the
   # first week on the contract. This date should be earlier
   # than the end date.
-  $startDate = [System.DateOnly]::new(2022, 2, 12); # year, month, day
+  $startDate = Get-Date -Year 2022 -Month 10 -Day 08;
 
   # The end date is determined to be the current date, whatever
   # today is (i.e. whenever the script is run). Our output will
   # finish when it gets past this date.
-  $endDate = [System.DateOnly]::FromDateTime($(Get-Date));
+  $endDate = Get-Date;
 
   # Check the start date is earlier than the end date. Throw
   # a terminating error if this is not the case.
@@ -204,7 +243,7 @@ Process {
 
 End {
 
-  [System.Linq.Enumerable]::Repeat("", 3); #blanklines
+  [System.Linq.Enumerable]::Repeat("", 2); #blanklines
   Write-Output ('*' * 30);
 
   Write-Output ('Weeks listed: {0}' -f $weekCounter.ToString());
@@ -331,15 +370,13 @@ Begin {
   # Get the Julian Date for the current date.
   $jd = Get-JulianDate -CurrentDate $myDate;
 
-  $greg = New-Object -TypeName System.Globalization.GregorianCalendar;
+  $greg = [System.Globalization.GregorianCalendar]::new();
   $rule = [System.Globalization.CalendarWeekRule]::FirstFullWeek;
   $dayofweek = [System.DayOfWeek]::Monday;
   $weekNum = $greg.GetWeekOfYear($myDate, $rule, $dayofweek);
 }
 
 Process {
-  # See whether this is a leap year.
-  $leap = [System.DateTime]::IsLeapYear($myDate.Year);
 
   # get current culture object
   $Culture = [System.Globalization.CultureInfo]::CurrentCulture;
@@ -349,6 +386,7 @@ Process {
         WeekNumber  = $weekNum.ToString();
         JulianDate  = [String]$jd;
         LeapYear    = [System.DateTime]::IsLeapYear($myDate.Year);
+        IsDST       = $myDate.IsDaylightSavingTime();
   }
   $DayWeek = New-Object -TypeName PSObject -Property $hash;
 
@@ -356,10 +394,9 @@ Process {
 
 End {
 
-  Write-Output ("ISO 8601 date/time is {0:s}" -f $myDate);
+  Write-Output ("Current ISO 8601 date/time is {0:s}" -f $myDate);
 
-  Out-String -InputObject $DayWeek -Width 50;
-
+  Write-Output $DayWeek | Format-Table *;
   Write-Verbose -Message "function Show-DateInformation done";
 
 }
@@ -393,14 +430,14 @@ Begin {
   Set-Variable -Name 'eow' -Option ReadOnly;
 
   # Get todays date
-  $tempDate = [System.DateOnly]::FromDateTime($(Get-Date));
+  $tempDate = Get-Date;
   # see what day of the week variable $tempDate is
   $weekday = $tempDate.DayOfWeek;
 }
 
 Process {
   # keep looping until we find the next 'end of week' day
-  # from today (usually a Saturday).
+  # from today.
   do {
     $tempDate = $tempDate.AddDays(1.0);
 
