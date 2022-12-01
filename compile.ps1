@@ -57,7 +57,7 @@ compile, Java errors are shown in the usual way.
 
 File Name    : compile.ps1
 Author       : Ian Molloy
-Last updated : 10 October 2022 17:41:19
+Last updated : 2022-12-01T18:21:52
 
 
 .LINK
@@ -83,10 +83,13 @@ iText Core/Community 7.2.3
 Newer versions of iText
 https://github.com/itext/itext7/releases/tag/7.2.3
 
+Learn Java
+https://dev.java/learn/
+
 #>
 
 [CmdletBinding()]
-Param (
+Param(
    [parameter(Position=0,
               Mandatory=$false)]
    [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
@@ -206,7 +209,7 @@ Invoke-Command -ScriptBlock {
 Write-Verbose -Message "Declaring variables and constants";
 
 #Set the Java CLASSPATH
-New-Variable -Name "CPATH" -Option Constant -Value "C:\Family\Ian;C:\Program Files\Java\iText723\*";
+New-Variable -Name "CPATH" -Option Constant -Value "C:\Family\Ian;C:\Program Files\Java\iText_v724\*";
 #'Java_Top' is the root directory of the currently
 #installed Java SDK
 New-Variable -Name "JAVA_TOP" -Option Constant -Value 'C:\Program Files\Java\jdk-19';
