@@ -32,16 +32,24 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Ringtons-NextVisit.ps1
 Author       : Ian Molloy
-Last updated : 2022-01-31T19:05:56
+Last updated : 2022-12-02T19:39:13
 
 Ringtons Ltd, Algernon Road, Newcastle upon Tyne, NE6 2YN
 Tel: 0800 052 2440
 Email: tea@ringtons.co.uk
 
-Create a DateOnly object with the current year, month, day.
-$ddate = [System.DateOnly]::FromDateTime($(Get-Date));
-Create a TimeOnly object with the current hour, minute, seconds.
-$ttime = [System.TimeOnly]::FromDateTime($(Get-Date));
+
+TimeOnly and DateOnly Struct (Namespace: System).
+
+DateTime.Now Property
+An object whose value is the current local date and time.
+DateTime.Today Property
+An object that is set to today's date, with the time component set to 00:00:00.
+
+To get current date only:
+$dateNow = [System.DateOnly]::FromDateTime([System.DateTime]::Today);
+To get current time only:
+$timeNow = [System.TimeOnly]::FromDateTime([System.DateTime]::Now);
 
 .LINK
 
@@ -53,7 +61,7 @@ https://devblogs.microsoft.com/dotnet/date-time-and-time-zone-enhancements-in-ne
 #>
 
 [CmdletBinding()]
-Param () #end param
+Param() #end param
 
 ##=============================================
 ## SCRIPT BODY

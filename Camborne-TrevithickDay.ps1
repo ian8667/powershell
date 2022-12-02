@@ -42,11 +42,20 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Camborne-TrevithickDay.ps1
 Author       : Ian Molloy
-Last updated : 2022-10-20T12:30:36
+Last updated : 2022-12-02T19:26:51
 
 
-Initialise with current date
-[System.DateOnly]::FromDateTime($(Get-Date));
+TimeOnly and DateOnly Struct (Namespace: System).
+
+DateTime.Now Property
+An object whose value is the current local date and time.
+DateTime.Today Property
+An object that is set to today's date, with the time component set to 00:00:00.
+
+To get current date only:
+$dateNow = [System.DateOnly]::FromDateTime([System.DateTime]::Today);
+To get current time only:
+$timeNow = [System.TimeOnly]::FromDateTime([System.DateTime]::Now);
 
 .LINK
 

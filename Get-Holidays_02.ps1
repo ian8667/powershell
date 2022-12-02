@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
 
+Trying to improve the original script
 Displays a list of bank holidays for the current year
 
 .DESCRIPTION
@@ -50,7 +51,7 @@ Column 3: Any notes regarding the holiday. In the above example,
           the holiday.
 Column 4: Whether the holiday is in the 'Past' or the 'Future'. If
           the script were to be run on Christmas Day, apart from
-          getting some nice presents this column will read 'Today'
+          getting some nice presents, this column will read 'Today'
           indicating the holiday in question is the day of running
           the script.
 Column 4: Day of the week the holiday falls on.
@@ -65,9 +66,9 @@ No .NET Framework types of objects are output from this script.
 
 .NOTES
 
-File Name    : Get-Holidays.ps1
+File Name    : Get-Holidays_02.ps1
 Author       : Ian Molloy
-Last updated : 2022-12-02T19:33:00
+Last updated : 2022-12-02T19:34:31
 
 TimeOnly and DateOnly Struct (Namespace: System).
 
@@ -112,9 +113,20 @@ https://goo.gl/uGWE36
 Troubleshooting Comment-Based Help
 https://www.sapien.com/blog/2015/02/18/troubleshooting-comment-based-help/
 
+
+$fred = [dateonly]::parseexact('2020-04-10', 'yyyy-MM-dd', $null)
+
+; -----
+Bits and pieces of code
+
+[ValidateSet("Future", "Today", "Past", "Unknown")]
+[ValidateScript({ Test-Path -Path $_ -PathType Leaf })]
+'2020-05-08' -match '\d{4}-\d{2}-\d{2}'
+'111-222-332233' -match '\d{3}-\d{3}-\d{4}'
+
 #>
 [CmdletBinding()]
-Param () #end param
+Param() #end param
 
 #----------------------------------------------------------
 # Start of functions
@@ -124,13 +136,13 @@ Param () #end param
 function Get-DayOfWeek {
 [CmdletBinding()]
 [OutputType([System.String])]
-Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $HolidayDate
-      ) #end param
+Param(
+    [parameter(Mandatory=$true,
+               Position=0)]
+    [ValidateNotNullOrEmpty()]
+    [System.String]
+    $HolidayDate
+) #end param
 
 Begin {
   $holDate = [System.DateTime]$HolidayDate;
@@ -151,13 +163,13 @@ End {
 function Get-PastFuture {
 [CmdletBinding()]
 [OutputType([System.String])]
-Param (
-        [parameter(Mandatory=$true,
-                   Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [System.String]
-        $HolidayDate
-      ) #end param
+Param(
+    [parameter(Mandatory=$true,
+               Position=0)]
+    [ValidateNotNullOrEmpty()]
+    [System.String]
+    $HolidayDate
+) #end param
 
 Begin {
   $dateDifference = ([System.DateTime]::Today - [System.DateTime]$HolidayDate);
@@ -170,7 +182,7 @@ Process {
       -1  {$indicator = 'Future'; break;} # the holiday is in the future
        0  {$indicator = 'Today'; break;}  # the holiday is today
        1  {$indicator = 'Past'; break;}   # the holiday is in the past
-      default {$indicator = ('diffResult = {0}' -f $diffResult);}
+       default {$indicator = 'Unknown';}
    }
 }
 
@@ -187,34 +199,36 @@ End {
 function Start-MainRoutine {
 [CmdletBinding()]
 [OutputType([System.Void])]
-Param () #end param
+Param() #end param
 
 Begin {
   $uri = "https://www.gov.uk/bank-holidays.json";
-  $wantedYear = (Get-Date).Year; # year of interest
+  $wantedYear = (Get-Date).year.ToString(); #holidays for this year will be retrieved
   $holidays = Invoke-RestMethod -Uri $uri |
               Select-Object -ExpandProperty 'england-and-wales';
 
-  [System.Byte]$holidayCount = 0;
+  [Byte]$holidayCount = 0;
   $notes2 = '';
   $DayOfWeek = '';
 
-  Write-Output ("`nEngland and Wales holiday dates for the year {0}`n" -f $wantedYear.ToString());
+  [System.Linq.Enumerable]::Repeat("", 2); #blanklines
+  Write-Output ("England and Wales holiday dates for the year {0}" -f $wantedYear);
+  [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
 }
 
 Process {
   $holidays.events |
-    Where-Object {$_.date -Match $wantedYear.ToString()} |
+    Where-Object {$wantedYear -Match $_.date} |
     ForEach-Object `
        -Process {
-            $event = $_;
+            $holidayData = $_;
             $holidayCount++;
-            $notes2 = Get-PastFuture $event.date;
-            $DayOfWeek = Get-DayOfWeek $event.date;
+            $notes2 = Get-PastFuture -HolidayDate $holidayData.date;
+            $DayOfWeek = Get-DayOfWeek -HolidayDate $holidayData.date;
 
             Write-Output ('{0,-26}{1,-12}{2,-18}{3,-8}{4}' -f
-                          $event.title, $event.date, $event.notes, $notes2, $DayOfWeek);
+                          $holidayData.title, $holidayData.date, $holidayData.notes, $notes2, $DayOfWeek);
        } `
        -End {
           Write-Output ("`nHolidays listed: {0}`n" -f $holidayCount.ToString());
@@ -254,5 +268,5 @@ Invoke-Command -ScriptBlock {
 Start-MainRoutine;
 
 ##=============================================
-## END OF SCRIPT: Get-Holidays.ps1
+## END OF SCRIPT: Get-Holidays_02.ps1
 ##=============================================

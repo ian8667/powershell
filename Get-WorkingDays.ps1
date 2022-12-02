@@ -16,8 +16,21 @@ Greater than zero - $tempDate is later than $endDate, or value is null.
 
 File Name    : Get-WorkingDays.ps1
 Author       : Ian Molloy
-Last updated : 2022-02-26T18:23:08
+Last updated : 2022-12-02T19:36:47
 Keywords     : count working days
+
+TimeOnly and DateOnly Struct (Namespace: System).
+
+DateTime.Now Property
+An object whose value is the current local date and time.
+DateTime.Today Property
+An object that is set to today's date, with the time component set to 00:00:00.
+
+To get current date only:
+$dateNow = [System.DateOnly]::FromDateTime([System.DateTime]::Today);
+To get current time only:
+$timeNow = [System.TimeOnly]::FromDateTime([System.DateTime]::Now);
+
 
 [System.Enum]::GetNames( [System.DayOfWeek] )
 
@@ -29,6 +42,10 @@ https://social.technet.microsoft.com/wiki/contents/articles/7804.powershell-crea
 new work:
 o Can I convert this program to use System.DateOnly structures
 instead of System.DateTime?
+
+o insert advanced comments in file header
+
+o structure the program a bit (?)
 
 o Shall I put my holidays and weekend structures in a delegate?
 $fred = [System.DateOnly]::Parse('2022-02-10') ;works
