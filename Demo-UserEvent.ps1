@@ -5,14 +5,22 @@ Demonstrate use of a user defined event
 
 .DESCRIPTION
 
-Demonstrate a user defined event via the cmdlet Register-EngineEvent.
-When the event is fired, a scriptblock is executed.
+In order to demonstarte a user defined event, an integer number
+is entered as a parameter and when a 'foreach' loop reaches that
+number, the event is fired (triggered). This is just a simple
+demonstartion so the program doesn't do anything else.
 
 .EXAMPLE
 
-./Demo-UserEvent.ps1
+./Demo-UserEvent.ps1 -TargetNumber X
 
-No parameters are required
+Where X is an integer number in the range 1 to 10 inclusive.
+
+.EXAMPLE
+
+./Demo-UserEvent.ps1 X
+
+Where X is an integer number in the range 1 to 10 inclusive.
 
 .INPUTS
 
@@ -26,7 +34,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Demo-UserEvent.ps1
 Author       : Ian Molloy
-Last updated : 2022-11-17T18:19:36
+Last updated : 2022-12-07T12:09:19
 Keywords     : func delegate user event
 
 .LINK
@@ -66,7 +74,14 @@ https://docs.microsoft.com/en-us/dotnet/api/system.func-3?view=netcore-3.1
 #>
 
 [CmdletBinding()]
-Param() #end param
+Param(
+   [parameter(Position=0,
+              Mandatory=$true,
+              HelpMessage='Enter integer number (1 - 10) at which to fire a test event')]
+   [ValidateRange(1,10)]
+   [int]
+   $TargetNumber
+) #end param
 
 ##=============================================
 ## SCRIPT BODY
@@ -80,7 +95,7 @@ $ErrorActionPreference = "Stop";
 $pred = [Func[Int32,Int32,Boolean]]{
 <#
 There are other ways of doing this but it shows the use of a
-delegate in action.
+delegate in action. 
 
 x - current loop number
 y - target number at which we want to fire our event
@@ -93,7 +108,8 @@ Set-Variable -Name 'pred' -Option ReadOnly;
 $ActionBlock = {
 <#
 ScriptBlock passed to parameter 'Action' of cmdlet
-Register-EngineEvent.
+Register-EngineEvent. This scriptblock will be
+executed when the event is fired.
 
 $Event is of type:
 TypeName: System.Management.Automation.PSEventArgs
@@ -104,6 +120,7 @@ TypeName: System.Management.Automation.PSEventSubscriber
     $timestamp = ('time is {0}' -f (Get-Date -Format 's'));
 
     Write-Host '';
+    Write-Host ('=' * 45);
     Write-Host "The timestamp is now  - $timestamp";
     Write-Host 'This is from ScriptBlock called ActionBlock';
 
@@ -138,6 +155,7 @@ TypeName: System.Management.Automation.PSEventSubscriber
     Write-Host "Trying to stop job name [$JobName]";
     Remove-Job -Force -Name $JobName;
     Write-Host "Cleanup done";
+    Write-Host ('=' * 45);
     Write-Host '';
 
 } #end of scriptblock $ActionBlock
@@ -148,28 +166,23 @@ Set-Variable -Name 'ActionBlock' -Option ReadOnly;
 $SourceIdent = "helen";
 Set-Variable -Name 'SourceIdent' -Option ReadOnly;
 
-Write-Output 'This is a test ps1 file';
-
-Write-Output 'Trying to register an engine';
+Write-Output 'Trying to register an engine event';
 $splat = @{
     SourceIdentifier = $SourceIdent;
     Action = $ActionBlock;
 }
 Register-EngineEvent @splat | Out-Null;
 #Get-EventSubscriber;
-Write-Output 'Done';
+Write-Output 'engine event done';
 
 #For the purpose of this demonstration, we're going to use
-#the range of numbers 1..10. For this reason, variable
-#'$target' will lie within this range.
-[ValidateRange(1,10)]
-$target = 2;
-Set-Variable -Name 'target' -Option ReadOnly;
-Write-Output "The target value is: $target";
+#the range of numbers 1..10. For this reason, parameter
+#variable '$TargetNumber' will lie within this range.
+Write-Output "The target value is: $TargetNumber";
 
 foreach ($num in 1..10) {
     Write-Output "num is now: $num";
-    if ($pred.Invoke($num, $target)) {
+    if ($pred.Invoke($num, $TargetNumber)) {
         #Fire up the event now we've reached our target figure
         $msgData = "We've reached our target number of $num. Let's fire an event";
         $splat = @{
@@ -182,8 +195,9 @@ foreach ($num in 1..10) {
 
     }
 } #end of foreach loop
+Write-Output 'Test loop complete';
 
-[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+[System.Linq.Enumerable]::Repeat("", 1); #blanklines
 Write-Output 'All done now';
 ##=============================================
 ## END OF SCRIPT: Demo-UserEvent.ps1
