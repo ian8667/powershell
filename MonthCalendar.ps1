@@ -29,7 +29,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : MonthCalendar.ps1
 Author       : Ian Molloy
-Last updated : 2022-04-01T00:33:53
+Last updated : 2022-12-09T14:04:09
 
 .LINK
 
@@ -39,19 +39,13 @@ https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.monthcalendar?v
 How to: Display More than One Month in the Windows Forms MonthCalendar Control
 https://docs.microsoft.com/en-us/dotnet/framework/winforms/controls/display-more-than-one-month-wf-monthcalendar-control
 
-#>
-
-<#
-new work:
-See also:
+Another Month Calendar
 https://www.codeproject.com/articles/10840/another-month-calendar
-o MonthCalendar.MaxSelectionCount Property -use this?
-o MonthCalendar.MonthlyBoldedDates Property -shall I bother with
-bolded date for holidays for example?
+
 #>
 
 [CmdletBinding()]
-Param () #end param
+Param() #end param
 
 #----------------------------------------------------------
 # Start of functions
@@ -126,8 +120,8 @@ Represents an ordered pair of integer X- and Y-coordinates
 that defines a point in a two-dimensional plane. This
 structure is typically used to set the location of form
 components.
-X - the horizontal position of the point.
-Y - the vertical position of the point.
+  X - the horizontal position of the point.
+  Y - the vertical position of the point.
 #>
 $DrawPoint = [System.Drawing.Point]::new(0,0); #X, Y
 
@@ -145,8 +139,7 @@ $form1.Text = "My Calendar";
 
 # monthCalendar1
 $monthCalendar1.DataBindings.DefaultDataSourceUpdateMode = 0;
-#$monthCalendar1.FirstDayOfWeek = [System.DayOfWeek]::Saturday
-$monthCalendar1.FirstDayOfWeek = 6; # Start the week on Sunday
+$monthCalendar1.FirstDayOfWeek = [System.Windows.Forms.Day]::Sunday; # Start the week on Sunday
 $DrawPoint.X = 20;
 $DrawPoint.Y = 20;
 $monthCalendar1.Location = $DrawPoint;
@@ -165,6 +158,13 @@ $monthCalendar1.MinDate = $Today.AddMonths(-3);
 $monthCalendar1.MaxDate = $Today.AddMonths(4);
 $monthCalendar1.BackColor = [System.Drawing.Color]::LemonChiffon;
 
+[DateTime[]]$Holidays = @(
+  #Date format to use for holidays; YYYY-MM-DD
+  (Get-Date -Date '2022-12-25')
+  (Get-Date -Date '2022-12-26')
+)
+$monthCalendar1.AnnuallyBoldedDates = $Holidays;
+
 # The 'System.Drawing.Size' structure is really used to specify
 # a height and width through the Size property for various
 # graphics classes. In this example though, we're using it to
@@ -172,8 +172,8 @@ $monthCalendar1.BackColor = [System.Drawing.Color]::LemonChiffon;
 #
 # ie, display 3 columns by 1 row of month calendars.
 #$mysize = New-Object -TypeName 'System.Drawing.Size' -Property @{
-#    Width  = 3 #Columns
-#    Height = 1 #Rows
+#    Width  = 3 -Columns
+#    Height = 1 -Rows
 #}
 $DrawSize.Width  = 3; #Columns
 $DrawSize.Height = 1; #Rows
@@ -192,7 +192,7 @@ $DrawSize.Width = 75;
 $button1.Size = $DrawSize;
 $button1.TabIndex = 0;
 $button1.TabStop = $True;
-$button1.Text = "Close";
+$button1.Text = "Exit";
 $button1.UseVisualStyleBackColor = $True;
 $button1.add_Click($button1_OnClick);
 
