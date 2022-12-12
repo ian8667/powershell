@@ -1,0 +1,139 @@
+An idea of how to monitor sql server backup directories at work.
+
+
+Collecting information about computers
+Cmdlets from CimCmdlets module
+(Get-CimInstance -ClassName <classname>) are the most important
+cmdlets for general system management tasks. All critical
+subsystem settings are exposed through WMI. generic WMI access
+allows you to perform some advanced tasks with very little work.
+
+This is a very good article on using Get-CimInstance cmdlet to
+obtain system related information.
+
+https://learn.microsoft.com/en-us/powershell/scripting/samples/collecting-information-about-computers?view=powershell-7.3
+
+
+Last updated: 12 December 2022
+
+===============================================================
+
+Measure-Object -Average -Maximum -Minimum -Sum
+ls -file | Measure-Object -Minimum -Maximum -Average -sum
+
+$directory = Get-Item .
+
+$directory | Get-ChildItem |  Measure-Object -Sum Length | Select-Object `
+    @{Name="Average"; Expression={$directory.Average}},
+    @{Name="Name"; Expression={$directory.Name}},
+    @{Name="Files"; Expression={$_.Count}},
+    @{Name="Size"; Expression={$_.Sum}}
+
+
+
+TypeName: System.IO.FileInfo
+Get-ChildItem -Path 'C:\SomeFolder' -Recurse -Force -File |
+   Select-Object -Property FullName, @{Name='SizeGB';Expression={$_.Length / 1GB}}, @{Name='SizeMB';Expression={$_.Length / 1MB}},@{Name='SizeKB';Expression={$_.Length / 1KB}} |
+    Sort-Object { $_.SizeKB } -Descending | Out-GridView
+
+@{Name='SizeMB';Expression={$_.Length / 1MB}}
+
+
+DirectoryInfo.GetFileSystemInfos Method
+Returns an array of strongly typed FileSystemInfo entries
+representing all the files and subdirectories in a
+directory.
+Namespace:
+System.IO.DirectoryInfo
+System.IO.FileSystemInfo[] GetFileSystemInfos ();
+$path = "c:\temp"
+Get-ChildItem -Directory -Path $path |
+Select-Object FullName,@{Name="HasChildren";Expression={if ($_.GetFileSystemInfos().Count -gt 0) {$True} else {$False}}}
+
+# -----
+
+$pp = 'C:\test\rman';
+
+Set-Location -Path C:\test\rman;
+# System.IO.FileInfo
+$fred = Get-ChildItem -file;
+foreach ($file in $fred) {
+    Write-Host $file.Length;
+}
+
+# -----
+
+$pp = 'C:\test\rman';
+
+$folderSize = Get-Childitem -Path $pp -Force -ErrorAction SilentlyContinue |
+    Measure-Object -Property Length -Sum -ErrorAction SilentlyContinue
+
+"{0:N4} Mb" -f ($folderSize.Sum / 1MB)
+
+# -----
+$folderObject = [PSCustomObject]@{
+   FolderName = $folderBaseName
+   FullPath = $fullPath
+   'Size(Bytes)' = $folderSize.Sum
+   'Size(MB)' = $folderSizeInMB
+   'Size(GB)' = $folderSizeInGB
+}
+
+# -----
+
+PS C:\> $FSO = New-Object -ComObject Scripting.FileSystemObject
+PS C:\> $FSO.GetFolder('C:\temp').Size
+
+New-Object -ComObject Scripting.FileSystemObject
+
+# -----
+
+function Get-FolderSize {
+[CmdletBinding()]
+Param (
+[Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+$Path,
+[ValidateSet("KB","MB","GB")]
+$Units = "MB"
+)
+  if ( (Test-Path $Path) -and (Get-Item $Path).PSIsContainer ) {
+    $Measure = Get-ChildItem $Path -Recurse -Force -ErrorAction SilentlyContinue |
+        Measure-Object -Property Length -Sum
+    $Sum = $Measure.Sum / "1$Units"
+    [PSCustomObject]@{
+      "Path" = $Path
+      "Size($Units)" = $Sum
+    }
+  }
+}
+
+# -----
+
+get filder sizes with Robocopy?
+$RoboCopyList = Invoke-Expression -Command "Robocopy $Dir NULL /L /S /NJH /NJS /BYTES /FP /NC /NDL /XJ /TS /R:0 /W:0"
+
+(robocopy "c:\program files" "c:\temp" /zb /e /l /r:1 /w:1 /nfl /ndl /nc /fp /bytes /np /njh | ? {
+$_ -match "Bytes :"}).trim().split(" ")[2]
+
+# -----
+$pp = 'C:\test';
+Set-Location -Path $pp;
+
+#$folders = @('rman');
+$folders = Get-ChildItem -Directory;
+[System.UInt16]$counter = 0;
+
+foreach ($dir in $folders) {
+    $counter++;
+    $fullp = Resolve-Path $dir
+    $filelist = Get-ChildItem -File -Path $fullp;
+    $FSO = New-Object -ComObject Scripting.FileSystemObject
+    $dirSize = $FSO.GetFolder($fullp).Size
+
+    Write-Output ("($counter)# Directory '{0}' is size {1:N4} Mb containing {2} files" -f `
+                     $dir, ($dirSize / 1MB), $filelist.Count
+                 );
+    Write-Output '';
+}
+
+# -----

@@ -56,7 +56,7 @@ Additional Notes, eg:
 
 File Name    : Get-ServerInfo.ps1
 Author       : Ian Molloy
-Last updated : 2020-08-04T15:18:35
+Last updated : 2022-12-12T19:55:17
 
 For information regarding this subject (comment-based help),
 execute the command:
@@ -94,13 +94,25 @@ Find network cards with DHCP enabled on the current computer:Get-CimInstance -Cl
 Enable DHCP on all network adapters on the current computer:
 Get-CimInstance -Class Win32_NetworkAdapterConfiguration -Filter 'IPEnabled=true' -ComputerName . | ForEach-Object -Process {$_.EnableDHCP()}
 
+Collecting information about computers
+Cmdlets from CimCmdlets module
+(Get-CimInstance -ClassName <classname>) are the most important
+cmdlets for general system management tasks. All critical
+subsystem settings are exposed through WMI. generic WMI access
+allows you to perform some advanced tasks with very little work.
+
+This is a very good article on using Get-CimInstance cmdlet to
+obtain system related information.
+
+https://learn.microsoft.com/en-us/powershell/scripting/samples/collecting-information-about-computers?view=powershell-7.3
+
 #>
 
 [cmdletbinding()]
-Param (
-    [parameter(Mandatory=$true,
-               HelpMessage="Enter the computer name to check",
-               Position=0)]
+Param(
+    [parameter(Position=0,
+               Mandatory=$true,
+               HelpMessage="Enter the computer name to check")]
     [ValidateNotNullOrEmpty()]
     [String]
     $ComputerName
