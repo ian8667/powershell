@@ -32,7 +32,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Ringtons-NextVisit.ps1
 Author       : Ian Molloy
-Last updated : 2022-12-02T19:39:13
+Last updated : 2023-01-20T09:35:07
 
 Ringtons Ltd, Algernon Road, Newcastle upon Tyne, NE6 2YN
 Tel: 0800 052 2440
@@ -48,8 +48,14 @@ An object that is set to today's date, with the time component set to 00:00:00.
 
 To get current date only:
 $dateNow = [System.DateOnly]::FromDateTime([System.DateTime]::Today);
+or
+$dateNow = Get-Date -Format 'D'; (ie, gives: 02 December 2022)
+
+
 To get current time only:
 $timeNow = [System.TimeOnly]::FromDateTime([System.DateTime]::Now);
+or
+$timeNow = Get-Date -Format 'T'; (ie, gives: 12:54:03)
 
 .LINK
 
@@ -100,12 +106,19 @@ intended.
 
 } #end of Invoke-Command -ScriptBlock
 
+[System.Globalization.CultureInfo]::CurrentCulture = 'en-GB';
+[System.Globalization.CultureInfo]::CurrentUICulture = 'en-GB';
+
 $dateMask = 'dddd, dd MMMM yyyy';
 Set-Variable -Name 'dateMask' -Option ReadOnly;
-# Start date from which we will start our looping
-$startDate = [System.DateOnly]::new(2022, 01, 19); # year, month, day
-# Create a 'System.DateOnly' object with current date
-$endDate = [System.DateOnly]::FromDateTime($(Get-Date));
+
+# Start date from which we will start our looping.
+# This is the first visit of 2023; hence why specific hard
+# coded values are used.
+$startDate = [System.DateOnly]::new(2023, 01, 18); # year, month, day
+
+$endDate = [System.DateOnly]::FromDateTime($(Get-Date -Format 'D'));
+
 $DaysToAdd = 14; #ie, every two weeks
 Set-Variable -Name 'startDate', 'endDate', 'DaysToAdd' -Option ReadOnly;
 
