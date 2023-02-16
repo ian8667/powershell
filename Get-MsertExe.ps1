@@ -43,7 +43,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Get-MsertExe.ps1
 Author       : Ian Molloy
-Last updated : 2021-07-12T15:40:09
+Last updated : 2023-02-14T18:45:06
 Keywords     : msert scan malware
 
 $Event
@@ -115,6 +115,30 @@ https://docs.microsoft.com/en-us/dotnet/api/system.net.webclient.downloadfilecom
 
 Gavsto-Public-Scripts/Find-MicrosoftSecurityScannerViolations.ps1
 https://github.com/gavsto/Gavsto-Public-Scripts/blob/master/Find-MicrosoftSecurityScannerViolations.ps1
+
+Handle and raising events
+https://docs.microsoft.com/en-us/dotnet/standard/events/?view=netcore-3.1
+
+There's two .NET class you can use in PowerShell to download files;
+System.Net.WebClient Class
+System.Net.Http.HttpClient Class
+
+Download a File with an Alternative PowerShell wget Command
+A nice blog tutorial showing  how to download files, among other
+ways, with System.Net.WebClient Class and
+System.Net.Http.HttpClient Class.
+https://adamtheautomator.com/powershell-download-file/
+
+Enumerating key-value pairs "$($Event.MessageData)"
+Try this out sometime to see if I can list the contents
+of $($Event.MessageData),
+foreach ($kvp in $var.GetEnumerator()) {
+    $key = $kvp.Key
+    $val = $kvp.Value
+}
+$myhashtable.GetEnumerator();
+https://stackoverflow.com/questions/37635820/how-can-i-enumerate-a-hashtable-as-key-value-pairs-filter-a-hashtable-by-a-col/37635938
+
 #>
 
 [CmdletBinding()]
@@ -144,9 +168,11 @@ function Get-MsertFile {
 
   $uri = New-Object -TypeName 'System.Uri' -ArgumentList $InputFile;
   $wc = New-Object -TypeName 'System.Net.WebClient';
+  Set-Variable -Name 'uri', 'wc' -Option ReadOnly;
+
   $sourceIdent = 'msertdownload';
   $msertLogfile = 'C:\Windows\Debug\msert.log';
-  Set-Variable -Name 'sourceIdent', 'uri', 'msertLogfile' -Option ReadOnly;
+  Set-Variable -Name 'sourceIdent', 'msertLogfile' -Option ReadOnly;
 
   if (Test-Path -Path $OutputFile) {
       Clear-Content -Path $OutputFile;
@@ -157,22 +183,22 @@ function Get-MsertFile {
   }
 
   $ActionBlock = {
-    # ScriptBlock passed to parameter 'Action' of cmdlet
-    # Register-ObjectEvent.
+    # ScriptBlock which is passed to parameter 'Action' of
+    # cmdlet Register-ObjectEvent.
     #
     Write-Host ('(action block) message data is:');
-    $($Event.MessageData);
     [String]$OutputFile = $Event.MessageData.OutFile;
     [String]$JobName = $Event.MessageData.JobName;
     [String]$LogFile = $Event.MessageData.LogFile;
-
+    Write-Host "Output file: $($Event.MessageData.OutFile)";
+    Write-Host "Job name: $($Event.MessageData.JobName)";
+    Write-Host "Msert log file: $($Event.MessageData.LogFile)";
+    Write-Host "";
 
     $timestamp = ('time is {0}' -f (Get-Date -Format 's'));
-    #$downloaddir = Split-Path -Path $Event.MessageData.OutFile -Parent;
     $downloaddir = Split-Path -Path $OutputFile -Parent;
     Write-Host "File download should be complete`nin directory $downloaddir - $timestamp";
     Get-ChildItem -File -Path $OutputFile, $LogFile;
-
 
     Write-Host "Cleaning up unwanted jobs and events";
     $EventSubscriber | Unregister-Event -Force;
@@ -244,12 +270,13 @@ Invoke-Command -ScriptBlock {
 }
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
-# URL of the resource to download.
-$inputFile = 'http://definitionupdates.microsoft.com/download/definitionupdates/safetyscanner/amd64/msert.exe';
+# URL of the resource to download (source file).
+$Filename = 'msert.exe';
+$inputFile = "http://definitionupdates.microsoft.com/download/definitionupdates/safetyscanner/amd64/$Filename";
 
 # The name of the file to be placed on the local computer.
 # i.e., the destination of the file which is downloaded.
-$outputFile = 'C:\Temp\msert.exe';
+$outputFile = Join-Path -Path $Env:Temp -ChildPath $Filename;
 
 $msg = @"
 Background job submitted to download the required file.
