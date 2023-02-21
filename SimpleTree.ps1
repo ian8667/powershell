@@ -33,7 +33,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : SimpleTree.ps1
 Author       : Ian Molloy
-Last updated : 2023-01-06T18:48:12
+Last updated : 2023-02-21T17:27:25
 Keywords     : java jtree treeview nodes tree event demo
 
 .LINK
@@ -142,6 +142,7 @@ Param(
   }
 
   Process {
+
     $newNode.Name = $NodeName;
     $newNode.Text = $NodeText;
     $newNode.Tag = $NodeTag;
@@ -157,6 +158,81 @@ Param(
 
 #----------------------------------------------------------
 
+#region ***** Function Add-DatabaseNodes *****
+function Add-DatabaseNodes {
+  <#
+  .SYNOPSIS
+
+  Add database node to a server node
+
+  .DESCRIPTION
+
+  Add database nodes to server nodes as determined by the parameters
+  supplied
+
+  .PARAMETER DatabaseList
+
+  A list of database names to add to a server node
+
+  .PARAMETER ServerNode
+
+  The server node to which the databases will be added
+
+  .LINK
+
+  TreeView Class
+  Displays a hierarchical collection of labeled items, each represented by a TreeNode.
+  https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.treeview?view=windowsdesktop-7.0
+
+  TreeNode Class
+  Represents a node of a TreeView.
+  https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.treenode?view=windowsdesktop-7.0
+
+  #>
+
+[CmdletBinding()]
+[OutputType([System.Windows.Forms.TreeNode])]
+Param(
+   [parameter(Position=0,
+              Mandatory=$true,
+              HelpMessage="List of databases to add to a server node")]
+   [ValidateNotNullOrEmpty()]
+   [String[]]
+   $DatabaseList,
+   [parameter(Position=1,
+              Mandatory=$true,
+              HelpMessage="Server node where the databases will be added")]
+   [ValidateNotNullOrEmpty()]
+   [System.Windows.Forms.TreeNode]
+   $ServerNode
+) #end param
+
+  Begin {}
+
+  Process {
+
+    foreach ($dbName in $DatabaseList) {
+
+      $splat = @{NodeName = $dbName
+                 NodeText = $dbName
+                 NodeTag = $dbName
+                 NodeToolTip = "Database $dbName"};
+      $tempDbNode = Get-NewNode @splat;
+      $ServerNode.Nodes.Add($tempDbNode) | Out-Null;
+
+    } #end foreach loop
+
+  }
+
+  End {
+    return $ServerNode;
+  }
+  }
+  #endregion ***** End of function Add-DatabaseNodes *****
+
+#----------------------------------------------------------
+
+#region ***** Function GenerateForm *****
 Function GenerateForm {
 
     Add-Type -AssemblyName "System.Windows.Forms";
@@ -342,138 +418,72 @@ $treeView1.AutoSize = $true;
 
 $treeView1.Nodes.Add($treeRoot) | Out-Null;
 
-# ----------
+#------------------------------------------------
 
-# Operating system node
+#Create operating system type nodes. For the purpose
+#of this program, the only two operating systems used
+#are Unix and MS Windows
+#Unix O/S node
 $splat = @{NodeName = 'Unix'
            NodeText = 'Unix'
            NodeTag = 'Unix'
            NodeToolTip = 'Unix operating system servers'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes.Add($tempNode) | Out-Null;
+$osNodeUnix = Get-NewNode @splat;
+$treeRoot.Nodes.Add($osNodeUnix) | Out-Null;
 
-# ----------
-
-# Server node
-$splat = @{NodeName = 'uk-sol-007-f02'
-           NodeText = 'uk-sol-007-f02'
-           NodeTag = 'uk-sol-007-f02'
-           NodeToolTip = 'Server uk-sol-007-f02'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-#Database node
-$splat = @{NodeName = 'iasdb'
-           NodeText = 'iasdb'
-           NodeTag = 'iasdb'
-           NodeToolTip = 'Database iasdb'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes[0].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-# Server node
-$splat = @{NodeName = 'uk-sol-007-f03'
-           NodeText = 'uk-sol-007-f03'
-           NodeTag = 'uk-sol-007-f03'
-           NodeToolTip = 'Server uk-sol-007-f03'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-#Database node
-$splat = @{NodeName = 'csd'
-           NodeText = 'csd'
-           NodeTag = 'csd'
-           NodeToolTip = 'Database csd'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes[1].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-#Database node
-$splat = @{NodeName = 'eve'
-           NodeText = 'eve'
-           NodeTag = 'eve'
-           NodeToolTip = 'Database eve'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes[1].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-#Database node
-$splat = @{NodeName = 'hlp'
-           NodeText = 'hlp'
-           NodeTag = 'hlp'
-           NodeToolTip = 'Database hlp'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes[1].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-#Database node
-$splat = @{NodeName = 'deve'
-           NodeText = 'deve'
-           NodeTag = 'deve'
-           NodeToolTip = 'Database deve'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes[1].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-#Database node
-$splat = @{NodeName = 'ssdb'
-           NodeText = 'ssdb'
-           NodeTag = 'ssdb'
-           NodeToolTip = 'Database ssdb'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes[1].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-#Database node
-$splat = @{NodeName = 'tsrs'
-           NodeText = 'tsrs'
-           NodeTag = 'tsrs'
-           NodeToolTip = 'Database tsrs'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[0].Nodes[1].Nodes.Add($tempNode) | Out-Null;
-
-# ----------
-
-# Operating system node
+#MS Windows O/S node
 $splat = @{NodeName = 'MS-Windows'
            NodeText = 'MS-Windows'
            NodeTag = 'MS-Windows'
            NodeToolTip = 'MS-Windows operating system servers'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes.Add($tempNode) | Out-Null;
+$osNodeMsWindows = Get-NewNode @splat;
+$treeRoot.Nodes.Add($osNodeMsWindows) | Out-Null;
 
 # ----------
 
-# Server node
+#Create server nodes. 
+#Unix server node UK-SOL-007-F02
+$splat = @{NodeName = 'uk-sol-007-f02'
+           NodeText = 'uk-sol-007-f02'
+           NodeTag = 'uk-sol-007-f02'
+           NodeToolTip = 'Server uk-sol-007-f02'};
+$unixSrvUksolf02 = Get-NewNode @splat;
+$osNodeUnix.Nodes.Add($unixSrvUksolf02) | Out-Null;
+
+#Unix server node UK-SOL-007-F03
+$splat = @{NodeName = 'uk-sol-007-f03'
+           NodeText = 'uk-sol-007-f03'
+           NodeTag = 'uk-sol-007-f03'
+           NodeToolTip = 'Server uk-sol-007-f03'};
+$unixSrvUksolf03 = Get-NewNode @splat;
+$osNodeUnix.Nodes.Add($unixSrvUksolf03) | Out-Null;
+
+#MS Windows server node SERVER01
 $splat = @{NodeName = 'server01'
            NodeText = 'server01'
            NodeTag = 'server01'
            NodeToolTip = 'Server server01'};
-$tempNode = Get-NewNode @splat;
-#$os.Nodes.Add((Get-NewNode @splat)) | Out-Null;
-$treeView1.Nodes[0].Nodes[1].Nodes.Add($tempNode) | Out-Null;
+$winSrvServer01 = Get-NewNode @splat;
+$osNodeMsWindows.Nodes.Add($winSrvServer01) | Out-Null;
 
 # ----------
 
-#Database node
-$splat = @{NodeName = 'dummy'
-           NodeText = 'dummy'
-           NodeTag = 'dummy'
-           NodeToolTip = 'Database dummy'};
-$tempNode = Get-NewNode @splat;
-$treeView1.Nodes[0].Nodes[1].Nodes[0].Nodes.Add($tempNode) | Out-Null;
+#Add databases to each of the server nodes
+#Server UK-SOL-007-F02
+[String[]]$dbList = @('iasdb');
+$unixSrvUksolf02 = Add-DatabaseNodes -DatabaseList $dbList -ServerNode $unixSrvUksolf02;
 
-# ----------
+#Server UK-SOL-007-F02
+$dblist.Clear();
+$dbList = @('csd','eve','hlp','deve','ssdb','tsrs');
+$unixSrvUksolf03 = Add-DatabaseNodes -DatabaseList $dbList -ServerNode $unixSrvUksolf03;
+
+#Server SERVER01
+$dblist.Clear();
+$dbList = @('dummy01','dummy02');
+$winSrvServer01 = Add-DatabaseNodes -DatabaseList $dbList -ServerNode $winSrvServer01;
+
+#------------------------------------------------
 
 $treeView1.EndUpdate();
 
@@ -494,6 +504,7 @@ $form1.add_Load($OnLoadForm_StateCorrection);
 $form1.ShowDialog() | Out-Null;
 
 } #End Function GenerateForm
+#endregion ***** End of function GenerateForm *****
 
 #-------------------------------------------------
 # End of functions
