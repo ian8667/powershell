@@ -23,6 +23,10 @@ has at least one data stream. In Windows, this default data stream is
 called :$DATA. A common use of ADS is to indicate that a file downloaded
 by Internet Explorer came from the Internet Zone.
 
+By using the PowerShell cmdlet's 'Set-Content' and 'Add-Content', you
+are able to read and write to alternate data streams. Note that
+directories can also have alternate data streams
+
 Any such stream associated with a file/folder is not visible when viewed
 through conventional utilities such as Windows Explorer or PowerShell
 Get-ChildItem command or any other file browser tools. It is used
@@ -93,18 +97,22 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2021-10-31T16:28:41
+Last updated : 2023-03-06T17:47:02
 
 For a carriage return and a new line, use `r`n.
 Special Characters
 `r    Carriage return
 `n    New line
-PS> Set-Content -Path 'fred.txt' -Stream 'Zone.Identifier' -Value "[ZoneTransfer]`r`nZoneId=3"
+or
+$crlf = [string]::new(([char]0x0d, [char]0x0a));
+write-host ('hello{0}world{0}how{0}you' -f $crlf);
 
-Set-Content -Path 'ian.ian' -Stream 'Zone.Identifier' -Value '[ZoneTransfer]'
-Add-Content -Path 'ian.ian' -Stream 'Zone.Identifier' -Value 'ZoneId=3'
-Get-Content -Path 'fred.txt' -Stream zone.identifier
-Get-Item -Path 'fred.txt' -Stream zone*
+PS> Set-Content -Path 'myfile.txt' -Stream 'Zone.Identifier' -Value "[ZoneTransfer]`r`nZoneId=3"
+
+Set-Content -Path 'myfile.txt' -Stream 'Zone.Identifier' -Value '[ZoneTransfer]'
+Add-Content -Path 'myfile.txt' -Stream 'Zone.Identifier' -Value 'ZoneId=3'
+Get-Content -Path 'myfile.txt' -Stream zone.identifier
+Get-Item -Path 'myfile.txt' -Stream zone *
 
 .LINK
 
@@ -144,6 +152,9 @@ https://docs.microsoft.com/en-us/powershell/module/Microsoft.PowerShell.Utility/
 
 Alternate Data Streams in NTFS(2)
 https://docs.microsoft.com/en-us/archive/blogs/askcore/alternate-data-streams-in-ntfs
+
+Sysinternals utility 'Streams' currently at version 1.6
+https://learn.microsoft.com/en-us/sysinternals/downloads/streams
 
 
 How to write a cmdlet
