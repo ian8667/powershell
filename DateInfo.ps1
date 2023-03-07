@@ -113,7 +113,7 @@ All done now!
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2022-11-30T14:21:23
+Last updated : 2023-03-07T17:45:47
 Keywords     : contract end of week jd julian dst
 
 .LINK
@@ -137,12 +137,15 @@ Switch parameters:
 System.Management.Automation.SwitchParameter
 https://msdn.microsoft.com/en-us/library/system.management.automation.switchparameter(v=vs.85).aspx
 
-Julian Date Converter, U.S. Naval Observatory, Astronomical
-Applications Department
-http://aa.usno.navy.mil/data/docs/JulianDate.php
+Converting Between Julian Dates and Gregorian Calendar Dates
+The Julian date (JD) is a continuous count of days from
+01 January 4713 BC (= -4712 January 1), Greenwich mean noon
+(= 12h UT1).
+[Contains some sample code to use]
+https://aa.usno.navy.mil/faq/JD_formula.html
 
 Week numbers:
-http://www.epochconverter.com/weeks/2016
+https://www.epochconverter.com/weeks/2023 #for the year 2023
 
 Formatting Date Strings with PowerShell
 https://devblogs.microsoft.com/scripting/formatting-date-strings-with-powershell/
@@ -296,7 +299,7 @@ End {
 ##=============================================
 function Get-JulianDate {
 [cmdletbinding()]
-Param (
+Param(
     [parameter(Mandatory=$true,
                Position=0)]
     [ValidateNotNullOrEmpty()]
