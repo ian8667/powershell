@@ -31,8 +31,9 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : DisableTelemetry.ps1
 Author       : Ian Molloy
-Last updated : 2022-11-12T23:33:28
-Keywords     : scheduled task service windows disable admin
+Last updated : 2023-02-23T19:13:50
+Keywords     : scheduled task service windows admin disable microsoft telemetry
+
 
 To run a specific script from an elevated (admin) window.
 PS> $myArgs = @('-NoProfile','-File','C:\Family\powershell\DisableTelemetry.ps1');
@@ -236,6 +237,20 @@ windows/R
 
 C:\Users\ianm7\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
 C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp
+
+* -----
+A treasure trove of information about telemetry in MS Office
+Limit Office 365 Telemetry with this undocumented setting.
+https://www.ghacks.net/2020/11/15/limit-office-365-telemetry-with-this-undocumented-setting/
+o Go to HKEY_CURRENT_USER\Software\Policies\Microsoft\office\
+common\clienttelemetry\.
+o Create missing keys by right-clicking on the previous key and selecting New > Key. Name them according to the path information.
+o Right-click on clienttelemetry and select New > Dword (32-bit) Value.
+o Name it DisableTelemetry.
+o Set its value to 1 to disable some of the data collecting that goes on normally.
+[23 February 2023 19:12:50]
+* -----
+
 #>
 
 #requires -RunAsAdministrator
