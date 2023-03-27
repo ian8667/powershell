@@ -57,16 +57,16 @@ compile, Java errors are shown in the usual way.
 
 File Name    : compile.ps1
 Author       : Ian Molloy
-Last updated : 2022-12-01T18:21:52
+Last updated : 2023-03-27T19:31:03
 
 
 .LINK
 
-JDK 19 Documentation
-https://docs.oracle.com/en/java/javase/19/
+JDK 20 Documentation home
+https://docs.oracle.com/en/java/javase/20/index.html
 
-Java SE Version 19 API docs
-https://docs.oracle.com/en/java/javase/19/docs/api/index.html
+Java SE Version 20 API docs
+https://docs.oracle.com/en/java/javase/20/docs/api/index.html
 
 JSR 394: Java SE 19: Annex 3
 Final Release Specification
@@ -212,7 +212,7 @@ Write-Verbose -Message "Declaring variables and constants";
 New-Variable -Name "CPATH" -Option Constant -Value "C:\Family\Ian;C:\Program Files\Java\iText_v724\*";
 #'Java_Top' is the root directory of the currently
 #installed Java SDK
-New-Variable -Name "JAVA_TOP" -Option Constant -Value 'C:\Program Files\Java\jdk-19';
+New-Variable -Name "JAVA_TOP" -Option Constant -Value 'C:\Program Files\Java\jdk-20';
 New-Variable -Name "JAVAEXE" -Option Constant -Value "$JAVA_TOP\bin\javac.exe";
 Write-Verbose -Message "Java CLASSPATH used is:`n$CPATH";
 [String]$ProgramName = "";
