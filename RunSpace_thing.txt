@@ -1,0 +1,652 @@
+
+##===========================================
+## New item
+## Collection of Runspace things
+##===========================================
+
+Last updated: 29 March 2023 23:33:49
+
+#------------------------------------------------
+
+# Creating a constrained runspace
+# https://msdn.microsoft.com/en-us/library/dn614668(v=vs.85).aspx
+#
+# System.Management.Automation.Runspaces.Runspace Class
+#
+# Beginning Use of PowerShell Runspaces: Part 1
+# https://blogs.technet.microsoft.com/heyscriptingguy/2015/11/26/beginning-use-of-powershell-runspaces-part-1/
+# https://devblogs.microsoft.com/scripting/beginning-use-of-powershell-runspaces-part-1/
+# https://devblogs.microsoft.com/scripting/beginning-use-of-powershell-runspaces-part-2/
+# https://devblogs.microsoft.com/scripting/beginning-use-of-powershell-runspaces-part-3/
+#
+# True Multithreading in PowerShell
+# http://www.get-blog.com/?p=189
+#
+# CTP3: The [RunspaceFactory] and [PowerShell] Accelerators
+# http://www.nivot.org/post/2009/01/22/CTP3TheRunspaceFactoryAndPowerShellAccelerators
+#
+# https://serverfault.com/questions/626711/how-do-i-run-my-powershell-scripts-in-parallel-without-using-jobs
+#
+# Listing all type accelerators
+# PowerShell has type accelerators built in.
+# [PSObject].Assembly.GetType('System.Management.Automation.TypeAccelerators')::Get;
+#
+# Creating Runspaces
+# A runspace is the operating environment for the commands that are
+# invoked by a host application. This environment includes the
+# commands and data that are currently present, and any language
+# restrictions that currently apply.
+# Host applications can use the default runspace that is provided by
+# Windows PowerShell, which includes all available core commands,
+# or create a custom runspace that includes only a subset of the
+# available commands.
+# https://docs.microsoft.com/en-us/powershell/scripting/developer/hosting/creating-runspaces?view=powershell-7.2
+# https://docs.microsoft.com/en-us/powershell/scripting/developer/hosting/creating-an-initialsessionstate?view=powershell-7.2
+# InitialSessionState Class
+# System.Management.Automation.Runspaces
+#
+# Creating an InitialSessionState
+# At present I don't know which one is best to use.
+# $initState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault();
+# or (?)
+# $initState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault2();
+# See: https://docs.microsoft.com/en-us/powershell/scripting/developer/hosting/creating-an-initialsessionstate?view=powershell-7.2
+
+# Runspace Samples
+# This section includes sample code that shows how to use
+# different types of runspaces to run commands synchronously
+# and asynchronously.
+# See: https://docs.microsoft.com/en-us/powershell/scripting/developer/hosting/runspace-samples?view=powershell-7.2
+
+# The PowerShell and runspace APIs
+# A very good article of using runspace APIs to create and
+# run commands in a runspace pipeline
+# See: https://linotes.net/powershell_notes/PS_Runsapce/
+#------------------------------------------------
+# $pshell - PowerShell Class
+# System.Management.Automation.PowerShell
+#
+# $rspace - Runspace Class
+# System.Management.Automation.Runspaces.LocalRunspace
+#
+# Keywords: runspace thread
+#
+$sb = {
+  # ScriptBlock
+  Write-Output 'hello world';
+  Get-ChildItem -file -Path 'C:\family\powershell' -Filter '*.txt';
+  Write-Output 'That was fun';
+}
+
+$sb = {
+    # ScriptBlock
+    Get-Date;
+
+    Write-Information -MessageData 'hello information';
+    $WarningPreference = 'Continue';
+    Write-Warning -Message 'hello warning message' -WarningAction Continue;
+
+    $outputfile = 'C:\Gash\ian.ian';
+    write-output 'hello from sbsbsb';
+    Write-Output 'That was fun from sb' | Out-File -FilePath $outputfile -Encoding ascii;
+}
+
+# this code works! #
+
+#$fred = [PowerShell]::Create().AddScript($sb);
+$fred = [PowerShell]::Create() # TypeName: System.Management.Automation.PowerShell
+$fred.AddScript($sb);
+
+$fred.Runspace;
+$job = $fred.BeginInvoke();
+$fred.Commands | fl *
+$job.IsCompleted;
+
+$result = $fred.EndInvoke($job);
+Write-Output $result;
+$fred.Dispose();
+Clear-Variable -Name result;
+
+
+# -----
+How do I run my PowerShell scripts in parallel without using Jobs?
+http://bit.ly/2BtIAIi
+
+$data = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+
+#Add an collector object that will store the data
+$Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+
+#Create a variable to check the status
+$Handle = $PSinstance.BeginInvoke($Object,$Object)
+
+#So if you want to check the status simply type:
+$Handle
+
+#If you want to see the data collected, type:
+$Object
+
+
+Powershell.Create(get-date).Invoke();
+Source: https://learn-powershell.net/2013/04/19/sharing-variables-and-live-objects-between-powershell-runspaces/
+
+System.Management.Automation.Runspaces Namespace
+https://docs.microsoft.com/en-us/dotnet/api/system.management.automation.runspaces?view=powershellsdk-1.1.0
+
+https://learn-powershell.net/2015/09/21/finding-the-powershellasyncresult-on-powershell-object-after-using-begininvoke/
+
+##===========================================
+## New item
+## Working code. This section works!
+## 31 August 2021
+##===========================================
+
+$pshell
+TypeName: System.Management.Automation.PowerShell
+
+$rspace
+TypeName: System.Management.Automation.Runspaces.LocalRunspace
+
+$sb = {
+  #test ScriptBlock
+  Get-Date;
+  Start-Sleep -Seconds 21;
+  Get-Date;
+  Write-Output 'end of test';
+}
+
+$initState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault();
+  #will these lines of code work?
+  $initState.ThreadOptions = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread;
+  $initState.ApartmentState = [System.Threading.ApartmentState]::STA;
+  #yes, they do work. Bit long winded though?
+$reuse = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread;
+$sta = [System.Threading.ApartmentState]::STA; #The Thread will create and enter a single-threaded apartment.
+
+
+$rspace = [RunspaceFactory]::CreateRunspace($initState);
+$rspace.Name = 'MyRunspace';
+$rspace.ThreadOptions = $reuse;
+$rspace.ApartmentState = $sta;
+
+$pshell = [PowerShell]::Create();
+$pshell.Runspace = $rspace;
+$rspace.Open();
+$pshell.AddScript($sb);
+$AsyncObject = $pshell.BeginInvoke();
+$AsyncObject.IsCompleted;  #Completed yet?
+$Results = $pshell.EndInvoke($AsyncObject);
+$pshell.HadErrors;
+$Results;
+
+$pshell.Dispose();
+$rspace.Close();
+$rspace.Dispose();
+Clear-Variable -Name 'Results';
+
+
+NOTE:
+If pshell incurs an error during execution of the ScriptBlock ($sb),
+then variable 'Results' will be empty and you should see output in
+the error stream for pshell telling you what the error is.
+ie
+PS> $pshell.Streams;
+
+Error       : {Cannot find path 'C:\Family\powershell\x.x' because it does not exist.}
+Progress    : {}
+Verbose     : {}
+Debug       : {}
+Warning     : {}
+Information : {}
+or
+$pshell.Streams.Error;
+
+We can confirm errors have occurred with the boolean output from:
+$pshell.HadErrors
+
+
+Source: https://www.linkedin.com/pulse/working-runspace-windows-powershell-sunil-chauhan
+
+##===========================================
+## New item
+## Working example
+## 29 April 2018
+##===========================================
+This section works!
+
+# -----
+Events:
+System.Management.Automation.PowerShell.InvocationStateChanged
+Event raised when PowerShell Execution State Changes.
+
+System.Management.Automation.Runspaces.RunspacePool.StateChanged
+Event raised when RunspacePoolState changes.
+
+System.Management.Automation.Runspaces.Runspace.AvailabilityChanged
+Event raised when the availability of the Runspace changes.
+
+System.Management.Automation.Runspaces.Runspace.StateChanged
+Event raised when RunspaceState changes.
+# -----
+
+o Scriptblock created.
+
+# TypeName: System.Management.Automation.PowerShell
+$fred = [PowerShell]::Create() # TypeName: System.Management.Automation.PowerShell
+
+$fred.AddScript($sb);
+# System.Management.Automation.PSCommand
+# $fred.Commands.Clear() - if you wish to clear the commands at any time.
+$fred.Commands | fl * # to see what commands we have allocated.
+
+o # Start the job off
+# -----
+# Instead of waiting for the job to complete, try the following.
+# This means the (some) data will be available before the job
+# finishes in variable 'obj'. When you execute the 'EndInvoke'
+# method, you'll see the data in variable 'obj' not variable
+# 'result'.
+#   $obj = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+#   $job = $fred.BeginInvoke($obj, $obj);
+# -----
+$job = $fred.BeginInvoke();
+# TypeName: System.Management.Automation.PowerShellAsyncResult
+$job.IsCompleted;
+
+o # Complete (end) the job
+# TypeName: System.IO.FileInfo
+$result = $fred.EndInvoke($job);
+
+o Have a look at the contents of variable 'result'
+$result;
+
+o # Clean up
+$fred.Dispose();
+Remove-Variable -Name fred, job, result;
+
+NOTE:
+If fred incurs an error during execution of the ScriptBlock ($sb),
+then variable 'result' will be empty and you should see output in
+the error stream for fred telling you what the error is.
+ie
+PS> $fred.Streams;
+
+Error       : {Cannot find path 'C:\Family\powershell\x.x' because it does not exist.}
+Progress    : {}
+Verbose     : {}
+Debug       : {}
+Warning     : {}
+Information : {}
+or
+$fred.Streams.Error;
+
+We can confirm errors have occurred with the boolean output from:
+$fred.HadErrors
+
+##===========================================
+## New item
+## Working example
+## 29 April 2018
+##===========================================
+This section works!
+An example of using a RunspacePool in which to run the job.
+
+
+o Create a runspace pool
+# TypeName: System.Management.Automation.Runspaces.RunspacePool
+$rpool = [RunspaceFactory]::CreateRunspacePool(1, 5);
+
+o Open the pool
+$rpool.Open()
+
+o Create a PowerShell instance
+# TypeName: System.Management.Automation.PowerShell
+$pshell = [PowerShell]::Create()
+
+o Add a Scriptblock to the PowerShell instance
+# System.Management.Automation.PSCommand
+# $pshell.Commands | fl * # to see what commands we have
+# $fred.Commands.Clear() - if you wish to clear the commands at any time.
+$pshell.AddScript($sb);
+
+o Allocate a RunspacePool to $pshell
+$pshell.RunspacePool = $rpool
+
+o Start the job off
+$job = $pshell.BeginInvoke()
+# TypeName: System.Management.Automation.PowerShellAsyncResult
+$job.IsCompleted;
+
+o Complete the job
+$result = $pshell.EndInvoke($job);
+
+o Have a look at the contents of variable 'result'
+$result;
+
+o Clean up
+$pshell.Dispose();
+$rpool.Close()
+$rpool.Dispose()
+Remove-Variable job, pshell, rpool
+
+
+NOTE:
+If pshell incurs an error during execution of the ScriptBlock ($sb),
+then variable 'result' will be empty and you should see output in
+the error stream for pshell telling you what the error is.
+ie
+PS> $pshell.Streams;
+
+Error       : {Cannot find path 'C:\Family\powershell\x.x' because it does not exist.}
+Progress    : {}
+Verbose     : {}
+Debug       : {}
+Warning     : {}
+Information : {}
+or
+$pshell.Streams.Error;
+
+We can confirm errors have occurred with the boolean output from:
+$pshell.HadErrors
+
+##===========================================
+## New item
+## Working example
+## 09 November 2021
+##===========================================
+This section works!
+Using a single runspace.
+
+Runspaces - you can if you wish use the default runspace that is
+created when you create, for example, $pshell. This would save
+you the bother of having to create a runspace when one is already
+provided.
+
+# Using the InitialSessionState Class.
+# TypeName: System.Management.Automation.Runspaces.InitialSessionState
+$initState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault();
+
+
+o Create a runspace to use
+# TypeName: System.Management.Automation.Runspaces.LocalRunspace
+$rspace = [RunspaceFactory]::CreateRunspace($initState);
+
+# Options for the runspace.
+# At this point we can see the runspace created with the cmdlet
+# Get-Runspace
+$reuse = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread;
+$sta = [System.Threading.ApartmentState]::STA;
+$rspace.ThreadOptions = $reuse;
+$rspace.ApartmentState = $sta;
+
+
+o Give the runspace it's own name (just to see what happens)
+$rspace.Name = 'MYRUNSPACE';
+$rspace.Name; # should return the name we've just given the runspace
+
+o Open the runspace
+$rspace.Open();
+$rspace.RunspaceStateInfo;
+$rspace.RunspaceAvailability;
+
+o Create a PowerShell instance
+# TypeName: System.Management.Automation.PowerShell
+$pshell = [PowerShell]::Create();
+
+o Add a Scriptblock to the PowerShell instance
+# System.Management.Automation.PSCommand
+# $pshell.Commands.Clear() # if you wish to clear the commands at any time.
+$pshell.AddScript($sb);
+$pshell.Commands | Format-List *;
+
+o Allocate the runspace just created to the $pshell variable
+$pshell.Runspace = $rspace;
+# Check what the runspace name shows as (or use Get-Runspace)
+$pshell.Runspace.Name;
+
+o Start the job off
+<#
+or (an alternate way)
+$inputvar = [System.Management.Automation.PSDataCollection[psobject]]::new();
+$outputvar = [System.Management.Automation.PSDataCollection[psobject]]::new();
+$job = $pshell.BeginInvoke($inputvar,$outputvar);
+
+If you do it this way, job output is placed in variable 'outputvar'
+and not variable 'job'. If the job fails, you will at least get
+some output in 'outputvar' depending upon where the job fails.
+#>
+
+$job = $pshell.BeginInvoke(); #no output in 'job' if the job fails
+# Have a look at the job handle
+$job.AsyncWaitHandle;
+# ie
+#Handle SafeWaitHandle
+#------ --------------
+#  5092 Microsoft.Win32.SafeHandles.SafeWaitHandle
+
+# Use this to see when the job completes
+$job.IsCompleted;
+
+o Complete the job
+$result = $pshell.EndInvoke($job);
+
+o Have a look at the contents of variable 'result'
+$result;
+
+o Clean up things
+$pshell.Dispose();
+$rspace.Close();
+$rspace.Dispose();
+$job.AsyncWaitHandle.Close();
+Remove-Variable -Name 'job', 'pshell', 'rspace', 'initState';
+
+
+NOTE:
+If pshell incurs an error during execution of the ScriptBlock ($sb),
+then variable 'result' will be empty and you should see output in
+the error stream for pshell telling you what the error is.
+ie
+PS> $pshell.Streams;
+
+Error       : {Cannot find path 'C:\Family\powershell\x.x' because it does not exist.}
+Progress    : {}
+Verbose     : {}
+Debug       : {}
+Warning     : {}
+Information : {}
+or
+$pshell.Streams.Error;
+
+We can confirm errors have occurred with the boolean output from:
+$pshell.HadErrors
+
+
+# ------------------------------------------------
+# This code is nearly the same as above but uses
+# the local runspace when object $pshell is
+# created and not having to create another one.
+# here
+# ------------------------------------------------
+
+o Using the InitialSessionState Class.
+# TypeName: System.Management.Automation.Runspaces.InitialSessionState
+#
+# Creating an InitialSessionState
+# PowerShell commands run in a runspace. To host PowerShell in your
+# application, you must create a 'System.Management.Automation.Runspaces.Runspace'
+# object. Every runspace has an
+# 'System.Management.Automation.Runspaces.InitialSessionState' object
+# associated with it.
+# https://docs.microsoft.com/en-us/powershell/scripting/developer/hosting/creating-an-initialsessionstate?view=powershell-7
+#
+# Creates the default PowerShell one with default cmdlets, provider etc.
+$initState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault();
+
+
+o Create a PowerShell instance
+# TypeName: System.Management.Automation.PowerShell
+# Constructs an empty PowerShell instance. The parameter used
+# is the 'InitialSessionState' with which to create the runspace.
+# At this point we can see the runspace created with the cmdlet
+# Get-Runspace
+$pshell = [PowerShell]::Create($initState);
+
+# Now the $pshell object is created, we have access to the
+# local runspace. Set some properties.
+# TypeName: System.Management.Automation.Runspaces.LocalRunspace
+
+o Give the runspace it's own name.
+# The 'Get-Runspace' cmdlet gets active runspaces in a PowerShell
+# host process. With the command:
+# Get-Runspace;
+# you should be able to see a runspace with this name.
+$pshell.Runspace.Name = 'MYRUNSPACE';
+
+# Thread options for the runspace.
+$reuse = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread;
+$sta = [System.Threading.ApartmentState]::STA;
+$pshell.Runspace.ThreadOptions = $reuse;
+# I get the error "Exception setting "ApartmentState": "This property
+# cannot be changed after the runspace has been opened." when I try
+# to set the 'ApartmentState'.
+#$pshell.Runspace.ApartmentState = $sta;
+
+# Check the runspace (is open and available).
+# or, using the Get-Runspace cmdlet with the name parameter using
+# the name given above:
+#   Get-Runspace -Name 'MYRUNSPACE';
+$pshell.Runspace;
+
+
+
+o Add a Scriptblock to the PowerShell instance
+# System.Management.Automation.PSCommand
+# $pshell.Commands.Clear() # if you wish to clear the commands at any time.
+#   $pshell.AddScript($sb, $useLocalScope) | Out-Null;
+$useLocalScope = $true;
+$pshell.AddScript('C:\Family\powershell\Compress-File.ps1', $useLocalScope) | Out-Null;
+$pshell.AddScript($sb);
+$pshell.Commands | Format-List *; # See what commands we've given the runspace
+
+
+o Start the job off
+$job = $pshell.BeginInvoke();
+# Have a look at the job handle (if you want to)
+$job.AsyncWaitHandle;
+# ie
+#Handle SafeWaitHandle
+#------ --------------
+#  5092 Microsoft.Win32.SafeHandles.SafeWaitHandle
+
+# Use this to see when the job completes
+$job.IsCompleted;
+# or
+$pshell.InvocationStateInfo;
+
+o Complete the job
+$result = $pshell.EndInvoke($job);
+
+o Have a look at the contents of variable 'result'
+$result;
+
+o See if we have anything written out to the streams.
+$pshell.Streams;
+
+o Any errors?
+$pshell.HadErrors
+
+
+o Clean up
+$pshell.Runspace.Close();
+$pshell.Runspace.Dispose();
+# Now we've executed the Dispose method, the command:
+#   Get-Runspace -Name 'MYRUNSPACE';
+# will no longer return any results.
+
+$pshell.Dispose();
+Remove-Variable -Name 'initState', 'job', 'pshell', 'reuse', 'result', 'useLocalScope';
+
+
+NOTE:
+If pshell incurs an error during execution of the ScriptBlock ($sb),
+then variable 'result' will be empty and you should see output in
+the error stream for pshell telling you what the error is.
+ie
+PS> $pshell.Streams;
+
+Error       : {Cannot find path 'C:\Family\powershell\x.x' because it does not exist.}
+Progress    : {}
+Verbose     : {}
+Debug       : {}
+Warning     : {}
+Information : {}
+or
+$pshell.Streams.Error;
+
+##===========================================
+## New item
+## Hey, Scripting Guy! Blog articles
+## 02 August 2018
+##===========================================
+Learning
+
+This is a four-part series that includes the following posts:
+
+Beginning Use of PowerShell Runspaces: Part 1
+https://blogs.technet.microsoft.com/heyscriptingguy/2015/11/26/beginning-use-of-powershell-runspaces-part-1/
+
+Beginning Use of PowerShell Runspaces: Part 2
+https://blogs.technet.microsoft.com/heyscriptingguy/2015/11/27/beginning-use-of-powershell-runspaces-part-2/
+
+Beginning Use of PowerShell Runspaces: Part 3
+https://blogs.technet.microsoft.com/heyscriptingguy/2015/11/28/beginning-use-of-powershell-runspaces-part-3/
+
+Weekend Scripter: A Look at the PoshRSJob Module
+https://blogs.technet.microsoft.com/heyscriptingguy/2015/11/29/weekend-scripter-a-look-at-the-poshrsjob-module/
+
+##===========================================
+## New item
+## 20 June 2020
+##===========================================
+PowerShell Runspace Debugging: Part 1
+In this blog I will discuss Runspace debugging which is similar to
+debugging a job. Runspace debugging is an advanced activity, but
+is incredibly useful in the right circumstances.
+https://devblogs.microsoft.com/powershell/powershell-runspace-debugging-part-1/
+##===========================================
+## New item
+## This code works.
+## 18 March 2023 15:28:25
+##===========================================
+
+$initState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault();
+  #will these lines of code work?
+$initState.ThreadOptions = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread;
+$initState.ApartmentState = [System.Threading.ApartmentState]::STA;
+  #yes, they do work. Bit long winded though?
+$reuse = [System.Management.Automation.Runspaces.PSThreadOptions]::ReuseThread;
+$sta = [System.Threading.ApartmentState]::STA; #The Thread will create and enter a single-threaded apartment.
+
+
+$rspace = [runspacefactory]::CreateRunspace($initState);
+$rspace.Name = 'MyRunspace';
+$rspace.ThreadOptions = $reuse;
+$rspace.ApartmentState = $sta;
+
+$pshell = [powershell]::Create();
+$pshell.Runspace = $rspace;
+$rspace.Open();
+$pshell.AddScript($sb);
+$AsyncObject = $pshell.BeginInvoke();
+$AsyncObject.IsCompleted;  #Completed yet?
+$Results = $pshell.EndInvoke($AsyncObject);
+$pshell.HadErrors;
+$pshell.Streams;
+$Results;
+
+[string[]]$myvars = @('initState', 'rspace', 'pshell', 'AsyncObject', 'Results');
+
+$pshell.Dispose();
+$rspace.Close();
+$rspace.Dispose();
+Clear-Variable -Name $myvars -PassThru;
