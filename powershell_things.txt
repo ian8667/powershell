@@ -1,0 +1,1189 @@
+##===========================================
+## New item
+## Collection of PowerShell things
+##===========================================
+
+Last updated: 29 March 2023 23:33:49
+
+##===========================================
+## New item
+##===========================================
+
+Switch ($PSCmdlet.ParameterSetName) {
+    "Set1" {
+          Write-Host "switch set 1";
+    }
+    "Set2" {
+          Write-Host "switch set 2";
+    }
+} #end switch
+
+
+##===========================================
+## New item
+## File attributes
+##===========================================
+
+Hide a filename
+Set-ItemProperty -Path 'fred.txt' -Name Attributes `
+     -Value ([System.IO.FileAttributes]::Hidden)
+
+Remove the 'hidden' attribute from a file.
+ls -force |
+    where {$_.Attributes -like '*hidden*'} |
+    foreach {$_.attributes=$_.attributes -band (-bnot [System.IO.FileAttributes]::hidden)}
+or
+Set-ItemProperty -Path .git -Name Attributes -Value ([System.IO.FileAttributes]::Normal) -Force
+
+Get-ChildItem * -Recurse -Force |
+    Where { ($_.Attributes.ToString() -Split ", ") -Contains "Hidden" } |
+    Select FullName
+or
+# get the hidden file, use -force to list the file
+$h = ls hidden.txt -Force
+# unhide file
+$h.Attributes = $h.Attributes -bxor [System.IO.FileAttributes]::Hidden
+
+
+# Unhides a hidden file. This bit of code works.
+$myfile = Get-Item "C:\Family\git_repos\.git" -force
+Write-Host "myfile is now $myfile";
+if ($myfile.attributes -band [system.IO.FileAttributes]::Hidden)
+{
+  Write-Host "The if bit";
+  $myfile.attributes = $myfile.attributes -bxor [system.IO.FileAttributes]::Hidden;
+}
+
+
+Unhides the file preserving other file attributes.
+Set-ItemProperty -Path hidden.txt -Name Attributes `
+       -Value ((Get-ItemProperty -Path hidden.txt).Attributes -bxor [System.IO.FileAttributes]::Hidden)
+
+
+Write-output ([System.IO.File]::GetAttributes("C:\Family\git_repos\hidden.txt"))
+PS> [System.Enum]::GetValues([System.IO.FileAttributes]);
+ie
+[System.Enum]::GetValues([System.IO.FileAttributes]) |
+  ForEach-Object {
+    [PSCustomObject]@{
+        Code = [int]$_
+        Description = $_.ToString()
+    }
+}
+
+See: http://msdn.microsoft.com/en-us/library/system.io.fileattributes.aspx
+
+Attribute - Normal
+The file is a standard file that has no special attributes.
+This attribute is valid only if it is used alone.
+
+Source: http://richardspowershellblog.wordpress.com/2009/05/30/hidden-files/
+
+
+BitWise Operators
+Files and [System.IO.FileAttributes] enumeration.
+A useful article on the subject of file attributes and
+how to manipulate them.
+See: http://powerschill.com/uncategorized/bitwise-operators/
+
+
+(I'd consider the following syntax slightly easier for turning an attribute off:
+$File.Attributes = $File.Attributes -band `
+     (-bnot [System.IO.FileAttributes]::System ) any good???)
+
+
+File Attributes helper functions
+http://scriptolog.blogspot.co.uk/2007/10/file-attributes-helper-functions.html
+
+##===========================================
+## New item
+##===========================================
+
+# Using a function called a quote list.
+function ql{$args};
+$servers = ql server1 server2 server3 server4 server5 server6;
+Write-Output $servers;
+
+##===========================================
+## New item
+## 01/09/2013 01:53:56
+## Password things and converting back to plain
+## language.
+## Don't think I need to load the assembly.
+##===========================================
+#[System.Reflection.Assembly]::LoadWithPartialName("mscorlib.dll");
+
+Write-Host "Technique one";
+$passw = Read-Host "Enter password(1)" -AsSecureString
+$plain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
+         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($passw));
+Write-Host "password is now $plain";
+#$newUser.psbase.Invoke("SetPassword",$temporaryCredential);
+
+# -----
+
+Write-Host "Technique two";
+$securepass = Read-Host "Enter password(2)" -AsSecureString
+$bstr=[System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securepass);
+$pass=[System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+[System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+Write-Host "password is now $pass";
+
+# -----
+
+$password = Read-Host 'Enter password' -asSecureString
+
+$tempCredential = New-Object System.Management.Automation.PsCredential "None",$password
+$password = $tempCredential.GetNetworkCredential().Password
+Write-Host "password is now $password";
+
+See also:
+1.
+Working with Passwords, Secure Strings and Credentials in Windows PowerShell
+http://social.technet.microsoft.com/wiki/contents/articles/4546.working-with-passwords-secure-strings-and-credentials-in-windows-powershell.aspx
+
+2.
+powershell Tip - Storing and Using Password Credentials
+http://blogs.technet.com/b/robcost/archive/2008/05/01/powershell-tip-storing-and-using-password-credentials.aspx
+
+3.
+Decrypt PowerShell Secure String Password
+http://blogs.technet.com/b/heyscriptingguy/archive/2013/03/26/decrypt-powershell-secure-string-password.aspx
+
+4.
+#PSTip Storing of credentials
+http://www.powershellmagazine.com/2012/10/30/pstip-storing-of-credentials/
+
+##===========================================
+## New item
+## PowerShell and Admin (elevated mode)
+##===========================================
+
+This could be used if I have to ensure Powershell is being
+run from a particular account.
+
+if ( -not ([Security.Principal.WindowsPrincipal] `
+   [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole( `
+   [Security.Principal.WindowsBuiltInRole] "Administrator") ) {
+      Throw "Must run PowerShell as ADMINISTRATOR to perform these actions"
+}
+
+See also
+Testing for Admin Privileges in PowerShell
+Source: http://www.jonathanmedd.net/2014/01/testing-for-admin-privileges-in-powershell.html
+
+
+function Test-IsAdmin {
+
+  ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+}
+
+if (!(Test-IsAdmin)) {
+     throw "Please run this script with admin priviliges"
+}
+else {
+    Write-Host "Got admin"
+}
+
+# -----
+<#
+Requires admin?
+Code used to find out.
+
+Start-Process pwsh -ArgumentList $PSCommandPath -Verb RunAs
+
+In PowerShell 4.0 or newer, it is even easier to check if
+your script is running with the administrator privileges.
+To find out, use the –RunAsAdministrator directive.
+#requires -RunAsAdministrator
+
+#>
+
+write-host 'hello world';
+$user = [Security.Principal.WindowsIdentity]::GetCurrent();
+$AdminRole = [System.Security.Principal.WindowsBuiltInRole]::Administrator;
+$Principal = New-Object -TypeName System.Security.Principal.WindowsPrincipal -ArgumentList $user;
+$fred = $Principal.IsInRole($AdminRole);
+$fred;
+
+# Check to see if we are currently running as an administrator
+if ($myWindowsPrincipal.IsInRole($adminRole)) {
+    # We are running as an administrator, so change the title and background colour to indicate this
+    $Host.UI.RawUI.WindowTitle = $myInvocation.MyCommand.Definition + "(Elevated)";
+    $Host.UI.RawUI.BackgroundColor = "DarkBlue";
+    Clear-Host;
+}
+
+
+$sb = {
+  write-host 'hello world';
+  $user = [Security.Principal.WindowsIdentity]::GetCurrent();
+  $AdminRole = [System.Security.Principal.WindowsBuiltInRole]::Administrator;
+  $Principal = New-Object -TypeName System.Security.Principal.WindowsPrincipal -ArgumentList $user;
+  $fred = $Principal.IsInRole($AdminRole);
+  $fred;
+}
+
+##===========================================
+## New item
+## User defined classes.
+## 03 April 2018
+## Keywords: myclass
+##===========================================
+
+https://xainey.github.io/2016/powershell-classes-and-concepts/
+
+Add-Type -Language CSharp @"
+public class Record {
+    public System.DateTime TimeStamp;
+    public string Server;
+    public int Minutes;
+}
+"@;
+$MyRecord = New-Object Record;
+$MyRecord.Server = "myserver";
+$MyRecord.Timestamp = Get-Date;
+$MyRecord.Minutes = 15;
+
+#PowerShell 5.0 class
+class Tree {
+    # Properties
+    [String] $Species
+    [double] $Height
+
+    # Constructor
+    Tree([String] $NameIn, [double] $HeightIn) {
+        $this.Species = $NameIn;
+        $this.Height = $HeightIn;
+    }
+
+    # Methods
+    [double] Grow ([double]$inches)
+    {
+        $this.Height += $inches
+        $this.grow_times++
+        return $this.Height
+    }
+
+    # Hidden properties
+    hidden [int] $grow_times = 0
+} #end of class Tree
+
+$fred=[Tree]::new('Oak', 4.2);
+Write-Output $fred;
+
+
+Using Class (PowerShell v5 or higher)
+https://social.technet.microsoft.com/wiki/contents/articles/7804.powershell-creating-custom-objects.aspx
+Class CustomObject{
+    [String] $Name;
+    CustomObject([String] $NameIn) {
+        $this.Name = $NameIn;
+    }
+
+    [String]JumbleName() {
+        $a = $null
+        [char[]]$this.Name| Sort-Object {Get-Random} | ForEach-Object { $a = $PSItem + $a}
+        return $a
+    }
+}
+
+$x = [CustomObject]::new("aStringValue")
+$x.JumbleName()
+
+https://xainey.github.io/2016/powershell-classes-and-concepts/
+
+or
+
+#custom object validation
+class MyContact
+{
+    # Optionally, add attributes to prevent invalid values
+    [ValidateNotNullOrEmpty()][String]$First;
+    [ValidateNotNullOrEmpty()][String]$Last;
+    [ValidateNotNullOrEmpty()][String]$Phone;
+}
+$fred = [MyContact]@{
+   First = "Joel";
+   Last = "Bennett";
+   Phone = "2011";
+}
+
+or
+
+Enum Size {
+    Small = 0
+    Medium = 1
+    Large = 2
+}
+
+class ConstructionMaterial {
+    [String]$Color
+    [String]$Shape
+    [Size]$Size
+    [Int16]$Location
+}
+
+# -----
+
+Enum WineSweetness {
+  VeryDry = 0
+  Dry = 1
+  Moderate = 2
+  Sweet = 3
+  VerySweet = 4
+}
+$fred = [WineSweetness]::Dry.ToString();
+$fred -as [int];  # should return a value of 1.
+
+[System.Enum]::GetValues([WineSweetness]) |
+  ForEach-Object {
+    [PSCustomObject]@{
+        Code = [int]$_
+        Description = $_.ToString()
+    }
+}
+
+switch($fred) {
+  'VeryDry' {Write-Output "VeryDry wine"; break}
+  'Dry' {Write-Output "Dry wine"; break}
+  'Moderate' {Write-Output "Moderate wine"; break}
+  'Sweet' {Write-Output "Sweet wine"; break}
+  'VerySweet' {Write-Output "VerySweet wine"; break}
+}
+
+Source: https://www.sapien.com/blog/2015/01/05/enumerators-in-windows-powershell-5-0/
+https://info.sapien.com/index.php/scripting/scripting-tips-tricks
+# -----
+
+See also (about help)
+About Classes
+Describes how you can use classes to create your own custom types.
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_classes?view=powershell-6
+
+About Enum
+The enum statement is used to declare an enumeration. An enumeration
+is a distinct type that consists of a set of named labels called the
+enumerator list.
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_enum?view=powershell-6
+
+
+How to declare a static member in a Powershell 5 class?
+PowerShell 5 added a static keyword for this:
+static [String] $Bar = 'static member'
+
+Class Foo {
+    static [String] $Bar = 'this is a static member'
+}
+
+PS> [Foo]::Bar
+produces:
+this is a static member
+
+See also
+PowerShell classes - Part 1: Objects
+https://4sysops.com/archives/powershell-classes-part-1-objects/
+
+PowerShell classes - Part 2: Properties
+https://4sysops.com/archives/powershell-classes-part-2-properties/
+
+PowerShell classes - Part 3: Methods
+https://4sysops.com/archives/powershell-classes-part-3-methods/
+
+PowerShell Classes - Part 4: Constructors
+https://4sysops.com/archives/powershell-classes-part-4-constructors/
+
+Introduction To PowerShell Classes
+https://overpoweredshell.com/Introduction-to-PowerShell-Classes/
+
+Creating [class] Objects in Windows PowerShell
+https://info.sapien.com/index.php/scripting/scripting-classes/creating-objects-in-windows-powershell
+
+PowerShell Classes with readonly properties
+A short story about how to create and use them.
+https://ocram85.com/2017-07-19-ReadOnly-Class-Properties/
+and
+https://gist.github.com/OCram85/d673764614438493afaa5cd413999436
+# -----
+# Validating the strings
+class ValidatedName
+{
+    [ValidatePattern('^[a-z]')]
+    [ValidateLength(3, 15)]
+    [string]$Value
+
+    ValidatedName()
+    {
+        Write-Host 'here1';
+    }
+    ValidatedName([string]$String)
+    {
+        Write-Host 'here2';
+        $this.Value = $String
+    }
+}
+
+Class MyClass
+{
+    [void] MyMethod ([ValidatedName]$Name)
+    {
+       return
+    }
+}
+
+$MyObject = [MyClass]::new()
+$MyObject.MyMethod('2fred')
+
+# -----
+class Tree {
+
+    [String]$Species;
+    [Int32]$Height;
+    [Boolean]$Deciduous = $True;
+
+    Tree () {} # default constructor
+    Tree ([String]$Species, [Int32]$Height)
+    {
+        $this.Species = $Species;
+        $this.Height = $Height;
+    }
+
+    [Int32] Grow ([int32]$Amount)
+    {
+        $this.Height += $Amount;
+
+        return $this.Height;
+    }
+} #end of class
+
+$fred = [Tree]::new('Oak', 12);
+$fred;
+$myTree = New-Object -TypeName Tree -ArgumentList 'Maple', 7;
+$myTree;
+# or
+# To create an object with a hash table, use the following syntax:
+$t = [Tree]@{Species='Birch'; Height=19}
+$t;
+
+
+
+See also:
+Creating Objects in Windows PowerShell
+SAPIEN Information Center
+https://info.sapien.com/index.php/scripting/scripting-classes/creating-objects-in-windows-powershell
+https://www.sapien.com/blog/2015/10/26/creating-objects-in-windows-powershell/
+# -----
+
+New language features in PowerShell 5.0
+Class keyword
+Source: https://docs.microsoft.com/en-us/powershell/wmf/5.0/class_newtype
+
+To extend a class, use the syntax: Class Child : Parent.
+
+##===========================================
+## New item
+## 19 July 2015
+##===========================================
+
+You Know PowerShell is an Object-Oriented Language, Right?
+https://powertoe.wordpress.com/2014/04/26/you-know-powershell-is-an-object-oriented-language-right/
+
+This post will do a few things
+
+Show you how to do object-oriented programming with PowerShell using a traditional approach.
+Show you the alternative (still object-based) so you can see why it’s generally used.
+
+A nice article on the subject of PowerShell and OOP.
+
+# -----
+Use a class to carry out validation.
+
+#
+#region ***** class ValidatePathExistsAttribute *****
+class ValidatePathExistsAttribute : System.Management.Automation.ValidateArgumentsAttribute
+{
+  # the value to be checked surfaces in $path and must be of
+  # type [object] and is the argument value to validate
+  [Void]Validate([Object]$path, [System.Management.Automation.EngineIntrinsics]$engineIntrinsics)
+  {
+      # if anything is wrong with the value, throw an exception
+      if ([String]::IsNullOrWhiteSpace($path))
+      {
+        Throw [System.ArgumentNullException]::new()
+      }
+
+      if (-not (Test-Path -Path $path))
+      {
+        Throw [System.IO.FileNotFoundException]::new()
+      }
+
+      # if no exception was thrown, the value is accepted
+  }
+}
+#endregion ***** class ValidatePathExistsAttribute *****
+
+[ValidatePathExists()][String]$Path = "c:\windows";
+$Path = "c:\test123";
+Write-Output 'end of test';
+
+##===========================================
+## New item
+## Excel
+## 02 August 2015
+##===========================================
+Here is how you tell the .NET Framework to quit Excel (or Word) peacefully:
+
+$rc = [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel);
+Start-Sleep -Seconds 2;
+
+#Get-Process -Name excel
+'Excel processes: {0}' -f @(Get-Process excel -ea 0).Count
+
+
+$excel_file_path = 'C:ChangeLog.xlsx'
+## Instantiate the COM object
+$Excel = New-Object -ComObject Excel.Application
+$ExcelWorkBook = $Excel.Workbooks.Open($excel_file_path)
+$ExcelWorkSheet = $Excel.WorkSheets.item("sheet1")
+$ExcelWorkSheet.activate()
+## Find the first row where the first 7 columns are empty
+$row = ($ExcelWorkSheet.UsedRange.Rows | ? { ($_.Value2 | ? {$_ -eq $null}).Count -eq 7 } | select -first 1).Row
+$ExcelWorkSheet.Cells.Item($row,1) = 'COLUMN 1 Text'
+$ExcelWorkSheet.Cells.Item($row,2) = 'COLUMN 2 Text'
+$ExcelWorkSheet.Cells.Item($row,3) = 'COLUMN 3 Text'
+$ExcelWorkSheet.Cells.Item($row,4) = 'COLUMN 4 Text'
+$ExcelWorkSheet.Cells.Item($row,5) = 'COLUMN 5 Text'
+
+$ExcelWorkBook.Save()
+$ExcelWorkBook.Close()
+$Excel.Quit()
+$rc = [System.Runtime.Interopservices.Marshal]::ReleaseComObject($Excel);
+Stop-Process -Name EXCEL -Force
+
+
+# http://community.idera.com/powershell/powertips/b/tips/posts/saving-values-to-excel-sheet
+# Reading Excel Cells
+$excel = New-Object -ComObject Excel.Application
+# open Excel file
+$workbook = $excel.Workbooks.Open("c:\test\excelfile.xlsx")
+
+# uncomment next line to make Excel visible
+#$excel.Visible = $true
+
+$sheet = $workbook.ActiveSheet
+$column = 1
+$row = 1
+$info = $sheet.cells.Item($column, $row).Text
+$excel.Quit()
+
+
+"Cell A1 contained '$info'""
+
+# -----
+
+# Writing Values to Excel Sheet
+$excel = New-Object -ComObject Excel.Application
+# open Excel file
+$workbook = $excel.Workbooks.Open("c:\test\excelfile.xlsx")
+
+# uncomment next line to make Excel visible
+#$excel.Visible = $true
+
+$sheet = $workbook.ActiveSheet
+$column = 1
+$row = 1
+# change content of Excel cell
+$sheet.cells.Item($column,$row) = Get-Random
+# save changes
+$workbook.Save()
+$excel.Quit()
+
+##===========================================
+## New item
+## Approved Verbs
+##===========================================
+
+Approved Verbs for Windows PowerShell Commands.
+https://msdn.microsoft.com/en-us/library/ms714428(v=vs.85).aspx
+A good list to look at.
+
+##===========================================
+## New item
+## PowerShell variable properties: Description, Visibility, Options, Attributes
+## 17 September 2017
+## Keywords: integer range variable validate bound
+##===========================================
+https://4sysops.com/archives/powershell-variable-properties-description-visibility-options-attributes/
+(WELL WORTH A READ!)
+
+Variable attributes
+
+Variable attributes allow you to restrict the value of a variable.
+In a way, this enables you to create your own variable types. For
+example, you can restrict the range of an integer variable (ie the
+variable to have a range of, say, 10 - 22) or limit the length of
+a string. The purpose is to make your script more reliable. This
+feature also allows you to validate user inputs. Of course, you can
+achieve the same results by validating the contents of a variable
+in your script. HOWEVER, IF YOU STORE THE RESTRICTIONS IN THE
+VARIABLE'S ATTRIBUTES PROPERTY, YOU ENSURE THAT ITS VALUE WILL
+ALWAYS MEET YOUR REQUIREMENTS.
+
+Example:
+[Int32]$fred = Read-Host "Enter a number in the range 10-20"
+$Attr = New-Object System.Management.Automation.ValidateRangeAttribute `
+             -ArgumentList 10,20
+(Get-Variable fred).Attributes.Add($Attr)
+
+System.Management.Automation Namespace
+https://docs.microsoft.com/en-us/dotnet/api/system.management.automation?view=pscore-6.2.0
+
+(Get-Variable fred).Attributes - has type:
+TypeName: System.Management.Automation.PSVariableAttributeCollection
+this type has an 'Add' method which is why we can ''.Add($Attribute)'
+to the variable.
+
+To remove the attribute:
+(Get-Variable fred).Attributes.Remove($Attr)
+
+
+PS> $Attr
+
+MinRange MaxRange TypeId
+-------- -------- ------
+      10       20 System.Management.Automation.ValidateRangeAttribute
+
+Namespace:   System.Management.Automation
+ValidateRangeAttribute Class
+https://4sysops.com/archives/powershell-variable-properties-description-visibility-options-attributes/
+
+or
+
+[Int32][ValidateRange(0,10)]$fred = 5;
+
+Write-Host "fred(1) is now $($fred)";
+
+$fred++;
+Write-Host "fred(2) is now $($fred)";
+
+# Throws the error:
+# The variable cannot be validated because the value 104 is not
+# a valid value for the fred variable.
+$fred = 104;
+
+See also:
+System.Configuration.IntegerValidator
+https://docs.microsoft.com/en-us/dotnet/api/system.configuration.integervalidator?view=netframework-4.8
+
+Adding ValidateRange to a Variable
+https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/adding-validaterange-to-a-variable?CommentId=07e5ab9b-0f3c-4091-8533-43f6a1e63cd6
+
+# Validate number range
+About Functions Advanced Parameters
+Explains how to add parameters to advanced functions.
+https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-6
+
+12. Attributes (and how to validate parameters and variables)
+An attribute object associates predefined system information with a target element, which can be a param block or a parameter (§8.10). Each attribute object has an attribute type.
+https://learn.microsoft.com/en-us/powershell/scripting/lang-spec/chapter-12?view=powershell-7.3
+
+See also: System.Math.Clamp Method
+public static int Clamp (int value, int min, int max);
+
+#------------------------------------------------
+# Additional information on the subject of
+# function/variable parameter attribution declarations
+#------------------------------------------------
+
+[ValidateSet('small','medium','large')]
+[String]$fred = 'small';
+
+[ValidateDrive('c','d')]
+[String]$fred = 'c';
+
+[ValidateRange(0,52)]
+[int]$fred = 1
+Positive - $PSItem -gt 0
+NonNegative - $PSItem -ge 0
+Negative - $PSItem -lt 0
+NonPositive - $PSItem -le 0
+[ValidateRange('Positive')]
+
+
+#In contrast to the [ValidateSet()] attribute, the new
+#[ArgumentCompletions()] attribute does not restrict the user
+#input to the listed values. The new attribute just provides
+#the suggestions you define but does not restrict user input
+#in any way.
+[ArgumentCompletions('small','medium','large')]
+$fred = 'small';
+https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/adding-argument-completion-part-2
+see also
+Argument Completion Attributes
+https://powershell.one/powershell-internals/attributes/auto-completion
+and
+Dynamic Tab Completion with PowerShell ArgumentCompleters
+https://adamtheautomator.com/powershell-tab-completion/
+and
+Building Dynamic Parameters and Powershell Parameter Validation
+https://adamtheautomator.com/powershell-parameter-validation/
+
+about_Functions_Argument_Completion
+Argument completion is a feature of PowerShell that provide hints,
+enables discovery, and speeds up input entry of argument values.
+https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_argument_completion?view=powershell-7.2
+
+Argument Completion Attributes
+https://powershell.one/powershell-internals/attributes/auto-completion
+
+https://powershell.one/powershell-internals/attributes/risk-mitigation
+
+Understanding Attributes
+This code snippet dumps all attributes defined by PowerShell ...
+https://powershell.one/powershell-internals/attributes/primer
+
+google for attribute powershell parameter.
+
+about_Functions_Advanced_Parameters
+Explains how to add parameters to advanced functions.
+A very good article on the subject of validating advanced
+parameters. In particular, it show the use of
+[ValidateRange(0,10)] and [ValidateRange("Positive")] for
+example. It show how to use 'ValidateRangeKind Enum'
+type and its members of:
+Negative, NonNegative, NonPositive, Positive
+See the UTL at https://learn.microsoft.com/en-us/dotnet/api/system.management.automation.validaterangekind?view=powershellsdk-7.2.0
+for details of the ValidateRangeKind Enum.
+
+For notes on[ValidateRange("Negative")] and [ValidateRange(0,10)]:
+https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_advanced_parameters?view=powershell-7.2
+
+ValidateRangeKind Enum
+Predefined range kind to use with ValidateRangeAttribute.
+https://learn.microsoft.com/en-us/dotnet/api/system.management.automation.validaterangekind?view=powershellsdk-7.0.0
+
+Validating Parameter Input
+PowerShell can validate the arguments passed to cmdlet parameters in several ways.
+https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/validating-parameter-input?view=powershell-7.3
+
+12. Attributes (and how to validate parameters and variables)
+An attribute object associates predefined system information with a target element, which can be a param block or a parameter (§8.10). Each attribute object has an attribute type.
+https://learn.microsoft.com/en-us/powershell/scripting/lang-spec/chapter-12?view=powershell-7.3
+
+PowerShell: Advanced Function Parameter Attributes
+Reference for dealing with parameter attributes
+https://social.technet.microsoft.com/wiki/contents/articles/15994.powershell-advanced-function-parameter-attributes.aspx#ValidateScript
+
+ValidateCount Attribute Declaration
+(and other function/variable parameter attribution declarations)
+https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/validatecount-attribute-declaration?view=powershell-7.3
+
+
+PowerShell Documentation - Official product documentation for PowerShell
+Very useful official documentation portal for PowerShell covering various
+topics such as,
+o Getting started (overview)
+o How-to guide (sample scripts)
+o Reference (PowerShell module browser)
+o and more ...
+Well worth a read!
+https://learn.microsoft.com/en-us/powershell/
+
+##===========================================
+## New item
+## 02 October 2017
+##===========================================
+
+Trap {
+# Handle the error
+$err = $_.Exception
+write-host $err.Message
+while( $err.InnerException ) {
+   $err = $err.InnerException
+   write-host $err.Message
+   };
+# End the script.
+break
+}
+
+##===========================================
+## New item
+##===========================================
+I use clixml. The OS handles the encryption so it's pretty much seamless.
+It's encrypted based on both the user who created the clixml file and the
+computer it was created on so you can't access it as a different user or
+from another computer. This means it's not portable, but it's pretty darned
+secure. You just have to be sure you create it using the account that will
+be running your automated processes.
+# -----
+
+PS > $cred=Get-Credential;
+PS > Export-Clixml -Encoding ASCII -NoClobber -Path 'mycred.xml' -InputObject $cred;
+PS > $cred.GetNetworkCredential().password;
+PS > ls | Sort-Object -Property LastWriteTime;
+PS > $cred = Import-Clixml -Path mycred.xml
+PS > $cred.GetNetworkCredential().username
+PS > $cred.GetNetworkCredential().password
+
+Namespace:   System.Management.Automation.PSCredential Class
+Namespace:   System.Security.SecureString Class
+
+Keywords: Powershell credentials export import clixml
+
+##===========================================
+## New item
+##===========================================
+Tiny URLs like “http://bit.ly/e0Mw9w” are short and convenient to use,
+however they often mask the true origin as well.
+
+PowerShell can uncover tiny (short) URLs by finding their true target:
+
+$url = "http://bit.ly/e0Mw9w"
+
+$request = [System.Net.WebRequest]::Create($url)
+$request.AllowAutoRedirect=$false
+$response=$request.GetResponse()
+$trueUrl = $response.GetResponseHeader("Location")
+"$url -> $trueUrl"
+
+##===========================================
+## New item
+##===========================================
+
+runspace namespace vs psjob
+See text file: RunSpace_thing.txt
+
+##===========================================
+## New item
+## 26 May 2018
+##===========================================
+
+Default date format like yyyy-mm-dd in Powershell?
+Source: https://stackoverflow.com/questions/22826185/setup-default-date-format-like-yyyy-mm-dd-in-powershell?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+
+File dates and 'yyyy-mm-dd' format.
+A date in PowerShell is a DateTime object. If you want a date
+string in a particular format, just use the built-in string
+formatting.
+
+$currentThread = [System.Threading.Thread]::CurrentThread
+$culture = [CultureInfo]::InvariantCulture.Clone()
+$culture.DateTimeFormat.ShortDatePattern = 'yyyy-MM-dd'
+$currentThread.CurrentCulture = $culture
+$currentThread.CurrentUICulture = $culture
+
+In case you'll find problem in loading assembly for CultureInfo
+(I had this issue on Windows 2008 Server), change line 2 in this way
+
+$currentThread = [System.Threading.Thread]::CurrentThread
+$culture = $CurrentThread.CurrentCulture.Clone()
+$culture.DateTimeFormat.ShortDatePattern = 'dd-MM-yyyy'
+$currentThread.CurrentCulture = $culture
+$currentThread.CurrentUICulture = $culture
+
+for always usage you can add in your profile.ps1
+$culture = Get-Culture
+$culture.DateTimeFormat.ShortDatePattern = 'yyyy-MM-dd'
+Set-Culture $culture
+
+or
+
+$path = 'C:\Family\powershell';
+$targetDate = '2018-04-09';
+
+Get-ChildItem -Path $path -File |
+    Where-Object {$_.LastWriteTime.ToString("yyyy-MM-dd") -eq $targetDate}
+
+Write-Host 'All done now';
+# -----
+Using culture info.
+$christmasEve = Get-Date -Date '2018-12-24'
+$culture = [CultureInfo]'en-us'
+$christmasEve.ToString('"Christmas Eve in" yyyy "will be on" dddd.', $culture)
+
+##===========================================
+## New item
+## 15 September 2018
+##===========================================
+
+o Adding MemberType AliasProperty
+# "Ssize" is the new alias.
+$fred='hello';
+$fred = Add-Member -PassThru -InputObject $fred -MemberType AliasProperty -Name 'Ssize' -Value Length;
+
+Name             MemberType            Definition
+----             ----------            ----------
+Ssize            AliasProperty         Ssize = Length
+
+# -----
+Creating a Tuple with some meaningful names
+Remove-Variable fred;
+$fred = [System.Tuple]::Create('Fred','Bloggs');
+$fred = Add-Member -PassThru -InputObject $fred -MemberType AliasProperty -Name 'Firstname' -Value Item1;
+$fred = Add-Member -PassThru -InputObject $fred -MemberType AliasProperty -Name 'Lastname' -Value Item2;
+Get-Member -InputObject $fred -MemberType AliasProperty;
+
+
+o Adding MemberType NoteProperty
+$fred='hello';
+$fred = Add-Member -MemberType NoteProperty -Name 'Description' -Value 'This is a nice note' -InputObject $fred -PassThru;
+$fred = Add-Member -InputObject $fred -NotePropertyName 'Desc2' -NotePropertyValue 'Another note' -PassThru;
+Get-Member -InputObject $fred -MemberType NoteProperty;
+
+Name             MemberType            Definition
+----             ----------            ----------
+Description      NoteProperty          string Description=This is a nice note
+
+or
+$np = New-Object 'System.Management.Automation.PSNoteProperty' -ArgumentList 'Hello', 'hi there';
+$fred.psobject.Members.Add($np);
+
+
+o Adding MemberType ScriptMethod
+$fred=12;
+$sb = {
+    # Do some multiplication
+    param ([UInt16]$x)
+    $num = $this;
+    Write-Output "Variable is currently $($num)";
+    $result = $num * $x;
+    Write-Output "Result will be $($result)";
+    return $result;
+};
+$fred = Add-Member -InputObject $fred -MemberType ScriptMethod -Name 'Multiply' -Value $sb -PassThru;
+
+$fred='hello';
+$sb = {
+    # Repeat the word the variable contains
+    param ([UInt16]$x)
+    $s = $this;
+    Write-Output "Variable is currently $($s)";
+    $result = $s * $x;
+    Write-Output "Result will be $($result)";
+    return $result;
+};
+$fred = Add-Member -InputObject $fred -MemberType ScriptMethod -Name 'RepeatWords' -Value $sb -PassThru;
+$fred | Get-Member;
+
+What I've found is that when we change the value of 'fred', we seem to
+loose the ScriptMethod as defined. In other words, it's as if we hadn't
+defined any ScriptMethod at all. When the we change the value of 'fred'
+back to the the value when we assigned the ScriptMethod, the
+ScriptMethod comes back again.
+
+I've no idea why this happens.
+
+##===========================================
+## New item
+## 13 January 2019
+## ForEach and Where magic methods blog post (PowerShell Magazine)
+##===========================================
+
+ForEach and Where are two frequently used concepts that have been available
+in PowerShell since version 1 came out in 2006.
+
+This article discusses two other ways of using 'ForEach' and 'Where'
+with collections which may be faster for the code to use.
+Source: https://www.powershellmagazine.com/2014/10/22/foreach-and-where-magic-methods/
+
+##===========================================
+## New item
+## 17 February 2019
+## Reading text files and StringBuilder object.
+##===========================================
+<#
+Example of reading a text file using a StringBuilder rather than
+a String to receive the data. This way, I'm hoping to avoid
+the immutable string issue of reusing the string object many,
+many times (and creating another string object many, many
+times?
+#>
+$ff='C:\Family\powershell\ian.ian';
+$ascii = New-Object -TypeName 'System.Text.ASCIIEncoding';
+#Different way of creating an object
+$ascii = [System.Activator]::CreateInstance([System.Text.ASCIIEncoding]);
+
+$reader = New-Object -TypeName 'System.IO.StreamReader' -ArgumentList $ff, $ascii;
+$sb = New-Object -TypeName 'System.Text.StringBuilder' -ArgumentList 100;
+
+do {
+    $sb.Append($reader.ReadLine()) | Out-Null;
+    Write-Output $sb.ToString();
+    $sb.Clear() | Out-Null;
+    #Write-Output ("end of stream marker = {0}" -f $reader.EndOfStream);
+} until ($reader.EndOfStream)
+
+
+# clean-up
+$reader.Close();
+$reader.Dispose();
+
+##===========================================
+## New item
+## Speeding Up the PowerShell Pipeline (performance)
+## 17 July 2019
+##===========================================
+
+Speeding Up the PowerShell Pipeline (performance)
+
+PowerShell scripts can grow very slow when you (a) need to process a lot
+of items and (b) you are using the PowerShell pipeline. Let’s today find
+out why that is, and what you can do about it.
+
+# get large data sets
+PS> $files = Get-ChildItem -Path 'c:\gash' -File -Recurse -ErrorAction SilentlyContinue
+PS> $files.Count
+
+ForEach-Object is really just an anonymous script block with a process block, so next, try this:
+
+Measure-Command {
+   $largeFiles = $Files | & {
+       begin {}
+       process {
+           if ($_.Length -gt 1MB) { $_ }
+       }
+       end {}
+   } #end all blocks
+} #end Measure-Command
+$largeFiles.Count
+
+
+ie, Get-Service | & { begin { $c = 0 } process { $c++ } end { $c }}
+
+
+When you instead use anonymous script blocks with a process block inside
+but with no parameters, you bypass all of the parameter binding and can
+speed up PowerShell pipeline operations to a degree that makes a difference
+even in the wild.
+
+Source: https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/speeding-up-the-powershell-pipeline
+
+and
+
+Increasing Pipeline Speed
+
+The PowerShell pipeline tends to be slow when it is processing a lot of
+elements. This can take a lot of time:
+PS> $result = 1..15000 |
+    ForEach-Object {
+        "Line $_"
+    } #end ForEach-Object loop
+
+A much faster approach replaces ForeEach-Object with an anonymous script
+block and is up to 200x faster:
+
+PS> $result = 1..15000 |
+    & { process {
+        "Line $_"
+    } #end process block
+} #end ScriptBlock
+
+Source: https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/increasing-pipeline-speed
+
+ls -file | & {
+  Begin {Write-Output 'this is the start';}
+  Process { Write-Output $_.name;}
+  End {Write-Output 'and this is the end';}
+} #end ScriptBlock
+
+##===========================================
+## New item
+## Web site is unavailable?
+## 25 August 2019
+##===========================================
+
+When a web site is unavailable, often the question is whether it's
+you, or whether the web site is generally down for everyone else,
+too. PowerShell can ask a web service to check web site
+availability for you. Here is a simple wrapper function:
+
+function Test-Url
+{
+  param
+  (
+    [Parameter(Mandatory,ValueFromPipeline)]
+    [string]
+    $Url
+  )
+
+  Add-Type -AssemblyName System.Web
+
+  $check = "https://isitdown.site/api/v3/"
+  $encoded = [System.Web.HttpUtility]::UrlEncode($url)
+  $callUrl = "$check$encoded"
+
+  Invoke-RestMethod -Uri $callUrl |
+    Select-Object -Property Host, IsItDown, Response_Code
+}
+
+It calls a RESTful API and submits the URL to check via URL arguments.
+That's why the URL to test needs to be URL-encoded. Next, the code
+calls Invoke-RestMethod and received the test result as an object.
+
+Source: https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/test-web-site-availability
+
+# -----
+sunrise, sunset
+& {
+  $lat = 12.626428;
+  $long = -4.346529;
+  $Daylight = (Invoke-RestMethod "https://api.sunrise-sunset.org/json?lat=$lat&lng=$long&formatted=0").results;
+  $Sunrise  = ($Daylight.Sunrise | Get-Date -Format "HH:mm");
+  $Sunset   = ($Daylight.Sunset | Get-Date -Format "HH:mm");
+
+  Write-Output "Sunrise: $Sunrise";
+  Write-Output "Sunset: $Sunset";
+}
+
+# -----
+Powershell releases,
+https://aka.ms/PowerShell-Release?tag=v7.3.1
+# -----
+Collecting information about computers
+This is an article which shows the use of 'Get-CimInstance'
+to obtain various information from the computer.
+https://learn.microsoft.com/en-us/powershell/scripting/samples/collecting-information-about-computers?view=powershell-7.3
+
+##===========================================
+## New item
+## 27 March 2023
+## Allow HashTable to reference itself (works!).
+##===========================================
+
+Ways to implement this idea.
+$ConfigData = @{
+  inputfile = ($inputfile = 'c:/test/inputfile.txt')
+  outputfile = $inputfile + '-pdf'
+}
+or
+$ConfigData = @{
+  inputfile = 'c:/test/inputfile.txt'
+}
+$ConfigData.outputfile = $ConfigData.inputfile + '-pdf';
+
+##===========================================
+## New item
+## 29 March 2023
+## Finding job variables again when you've lost track of it
+##===========================================
+Finding the PowerShell AsyncResult on PowerShell Objects After
+Using BeginInvoke
+
+The trick lies in using [Reflection.BindingFlags] to look into
+the PowerShell object for the invokeAsyncResult field and pulling
+the object out so you can use it later on with EndInvoke().
+
+This article shows how to recover the relevant AsyncResult
+variable when you've track (or lost) of it.
+
+A very good in-depth article on using Reflection.BindingFlags in
+order to do this.
+
+System.Reflection.BindingFlags Enum
+https://learn-powershell.net/2015/09/21/finding-the-powershellasyncresult-on-powershell-object-after-using-begininvoke/
+
+##===========================================
+## New item
+## <date>
+## <short description>
+##===========================================
