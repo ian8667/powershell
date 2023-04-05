@@ -113,7 +113,7 @@ All done now!
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2023-03-07T17:45:47
+Last updated : 2023-04-05T15:24:47
 Keywords     : contract end of week jd julian dst
 
 .LINK
@@ -132,6 +132,10 @@ http://msdn.microsoft.com/en-us/library/windows/desktop/dd878348(v=vs.85).aspx
 
 Julian Date (JD) Calculator and Calendars
 http://www.aavso.org/jd-calculator
+
+Julian Date Converter
+Converts between Calendar Dates and Julian Dates
+https://aa.usno.navy.mil/data/JulianDate
 
 Switch parameters:
 System.Management.Automation.SwitchParameter
