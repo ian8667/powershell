@@ -97,7 +97,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Block-File.ps1
 Author       : Ian Molloy
-Last updated : 2023-03-06T17:47:02
+Last updated : 2023-05-17T19:10:26
 
 For a carriage return and a new line, use `r`n.
 Special Characters
@@ -305,7 +305,7 @@ Param (
    [parameter(Position=0,
               Mandatory=$true)]
    [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
-   [String]
+   [System.IO.FileInfo]
    $BlockFile
 ) #end param
 
@@ -315,9 +315,9 @@ Process {
 
   Write-Verbose -Message "Setting Zone.Identifier for file $BlockFile";
 
-
-  $ReadOnlyStatus = (Get-Item $BlockFile).IsReadOnly
-  (Get-Item $BlockFile).IsReadOnly = $false;
+  $ReadOnlyStatus = $BlockFile.IsReadOnly;
+  Set-Variable -Name 'ReadOnlyStatus' -Option ReadOnly;
+  $BlockFile.IsReadOnly = $false;
 
   # Remove the 'Zone.Identifier' stream if it exists. Not all
   # files have an Alternate Data Stream of course, so the
@@ -339,14 +339,17 @@ Process {
 
   [System.Linq.Enumerable]::Repeat("", 2); #blanklines
 
+  $zoneId = -join "[ZoneTransfer]", "ZoneId=3";
+  #Set-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value $zoneId;
   Set-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value '[ZoneTransfer]';
   Add-Content -Path $BlockFile -Stream 'Zone.Identifier' -Value 'ZoneId=3';
 
-  #Set the read only property back to it's original value
-  (Get-Item $BlockFile).IsReadOnly = $ReadOnlyStatus;
+  #Set the read only property of the file back to it's original value
+  #(Get-Item $BlockFile).IsReadOnly = $ReadOnlyStatus;
+  $BlockFile.IsReadOnly = $ReadOnlyStatus;
 
   #List all streams on the file just modified
-  Write-Output "Streams now on file [$BlockFile]";
+  Write-Output ("Streams now on file [{0}]" -f $BlockFile.Name);
   Get-Item -Path $BlockFile -Stream * | Format-Table Stream,Length;
 
 } #end process block
@@ -390,6 +393,7 @@ intended.
 
    if ($MyInvocation.OffsetInLine -ne 0) {
        #I think the script was run from the command line
+       #and not a background job
        $script = $MyInvocation.MyCommand.Name;
        $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
        Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
@@ -401,10 +405,11 @@ intended.
 if ($Path -is [String]) {
     Write-Verbose 'The main parameter is a string';
     $MyFile = Resolve-Path -Path $Path;
+    $MyFile = Get-Item $MyFile;
 
 } elseif ($Path -is [System.IO.FileInfo]) {
     Write-Verbose 'The main parameter is FileInfo';
-    $MyFile = $Path.FullName;
+    $MyFile = $Path;
 
 } else {
     #No value has been supplied
@@ -412,6 +417,8 @@ if ($Path -is [String]) {
     $MyFile = Get-Filename -Title 'File to block';
 }
 
+[System.Linq.Enumerable]::Repeat("", 2); #blanklines
+Write-Output ('Looking at file [{0}]' -f $MyFile);
 Start-MainRoutine -BlockFile $MyFile;
 
 Write-Output '';
