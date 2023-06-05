@@ -1,0 +1,61 @@
+Discoverability - Getting help from PowerShell
+
+Learn how to use the help system within PowerShell extremely
+well. This allows one to find the necessary commands when
+needed and how to use those commands once you've found them.
+
+I've heard Jeffrey Snover, the inventor of PowerShell, tell
+a similar story a number of times.
+
+Mastering the help system is the key to being successful
+with PowerShell.
+
+Cmdlets of interest:
+o Get-Command
+o Get-Help
+o Get-Member
+
+'Desktop' paths
+C:\Users\Public\Desktop
+C:\Users\<username>\Desktop
+
+
+Last updated: 23 May 2023
+#------------------------------------------------
+
+#Find objects containing the word 'content'. ie, 'Clear-Content'.
+help -Name 'content';
+
+#Show help information for a cmdlet in a popup dialog box window.
+help -Name 'get-item' -ShowWindow;
+
+#List full details for a given parameter for a given cmdlet.
+#ie, parameter 'stream'.
+help -Name 'Get-Item' -Parameter stream;
+
+#List full details for all parameters for a given cmdlet.
+help -Name 'Get-Item' -Parameter *
+
+# -----
+
+#List the parameter names for a given cmdlet.
+(Get-Command -Name 'Get-Item').Parameters;
+
+#List cmdlets that have the parameter 'stream' (for example).
+Get-Command -ParameterName 'stream';
+
+#List the parameter names, aliases and parameter type for a given cmdlet.
+(Get-Command 'Stop-Computer').Parameters.Values |
+Select-Object Name, Aliases, ParameterType;
+
+#------------------------------------------------
+
+Hints and tips
+
+Get-PSReadLineKeyHandler -Bound -Unbound - list keyborard mappings
+Set-PSReadLineOption -PredictionViewStyle InlineView/ListView
+F2 - Switch between the inline and list prediction views.
+F8 - Finds a command. Type one or more characters then press F8. Press F8 again the next instance.
+#<string>Tab - Search the history for *<string>* and returns the most recent match. If you press Tab repeatedly, it cycles through the matching items in your history.
+Ctrl+HOME and Ctrl+END to remove everything to the left or right of the cursor
+Ctrl+DEL and Ctrl+BACKSPACE to delete whole word blocks at a time
