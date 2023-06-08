@@ -43,7 +43,7 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Get-MsertExe.ps1
 Author       : Ian Molloy
-Last updated : 2023-02-14T18:45:06
+Last updated : 2023-06-08T19:11:16
 Keywords     : msert scan malware
 
 $Event
@@ -87,6 +87,14 @@ is populated only within the Action block of an event
 registration command. The value of this variable can also
 be found in the Sender property of the PSEventArgs object
 that Get-Event returns.
+
+
+System.Management.Automation.Job Class
+Represents a command running in background. A job object can internally contain many child job objects.
+
+
+System.Management.Automation.JobState Enum
+Enumeration for background job status values. Indicates the status of the result object.
 
 .LINK
 
