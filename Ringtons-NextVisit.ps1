@@ -32,12 +32,13 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Ringtons-NextVisit.ps1
 Author       : Ian Molloy
-Last updated : 2023-01-20T09:35:07
+Last updated : 2023-06-22T18:09:13
 
 Ringtons Ltd, Algernon Road, Newcastle upon Tyne, NE6 2YN
 Tel: 0800 052 2440
 Email: tea@ringtons.co.uk
 
+The earliest date I have on a receipt is 23 December 2020.
 
 TimeOnly and DateOnly Struct (Namespace: System).
 
