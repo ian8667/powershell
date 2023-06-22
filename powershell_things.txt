@@ -3,7 +3,7 @@
 ## Collection of PowerShell things
 ##===========================================
 
-Last updated: 29 March 2023 23:33:49
+Last updated: 15 June 2023 23:09:02
 
 ##===========================================
 ## New item
@@ -1184,6 +1184,104 @@ https://learn-powershell.net/2015/09/21/finding-the-powershellasyncresult-on-pow
 
 ##===========================================
 ## New item
-## <date>
-## <short description>
+## 15 June 2023
+## Cmdlets used to work with Microsoft Windows Defender
 ##===========================================
+Microsoft Defender cmdlets
+(Start-MpScan/Defender)
+
+$job = Start-MpScan -ScanType FullScan  -AsJob;
+$job = Start-MpScan -ScanType QuickScan  -AsJob;
+$job = Start-MpScan -ScanType CustomScan -ScanPath 'C:\gash\sb002.txt' -AsJob;
+or
+$job = Start-MpScan -ScanType CustomScan -ScanPath 'C:\gash' -AsJob;
+$job = Start-MpWDOScan -AsJob; ##Starts a Windows Defender offline scan.
+Start-MpWDOScan - You can use the Start-MpWDOScan cmdlet to perform
+an offline scan with Windows Defender. After executing this command,
+your operating system will automatically reboot. Windows Defender
+will start in a special boot environment and scan your device for
+threats before your Windows boots.
+
+Data types:
+Variable $job is of type:
+TypeName: System.Management.Automation.PSRemotingJob
+System.Management.Automation.Job Class
+Represents a command running in background. A job object can internally contain many child job objects.
+
+System.Management.Automation.JobState Enum
+Enumeration for background job status values. Indicates the status of the result object.
+
+
+Get-MpThreat
+Get-MpThreatDetection
+Get-MpThreatCatalog -lot of output
+Get-Command -Module 'Defender';
+
+
+Microsoft Defender Offline Scan log files are stored as
+MPLog-YYYYMMDD-HHMMSS.log file located in the directory
+C:\Windows\Microsoft Antimalware\Support folder ##Microsoft Protection Log, or MPLog
+
+Scan results
+eventvwr.msc (event viewer)
+Applications and Services Logs -> Microsoft -> Windows -> Windows Defender -> Operational
+Microsoft-Windows-Windows Defender/Operational
+C:\ProgramData\Microsoft\Windows Defender\Support ?
+Shouldn't have any exclusions in:
+Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Defender\Exclusions\TemporaryPaths
+
+
+Review event logs and error codes to troubleshoot issues with Microsoft Defender Antivirus
+https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/troubleshoot-microsoft-defender-antivirus?view=o365-worldwide
+
+Important Windows Event IDs: Which Events You Should Monitor and Why
+A good review of things to look for
+https://www.beyondtrust.com/blog/entry/windows-server-events-monitor
+
+6 windows event log IDs to monitor now
+https://resources.infosecinstitute.com/topic/6-windows-event-log-ids-to-monitor-now/
+
+Get-MpComputerStatus | Select-Object *LastUpdated,*SignatureAge;
+The “Scan completed” message has never worked consistently. This thread describes how you can be sure that nothing was detected when the message is missing at the end of the scan, and also how to check the history of scans and detections in Event Viewer to verify that the scan actually completed without an error and that nothing was detected:
+http://answers.microsoft.com/en-us/protect/forum/protect_defender-protect_start/defender-reports-quick-scan-after-full-scan-has/1c70b960-87ae-4d38-8255-674dff91de24
+You can either just inspect the log in the time frame of the scan, or reconstruct the complete history of these events by filtering the entire log. Right-click on the Start button and choose Event Viewer. Then navigate to Applications and Services Logs > Microsoft > Windows > Windows Defender > Operational:
+1000 – Scan started
+1001 – Scan completed
+1002 – Scan stopped (canceled)
+1005 – Scan terminated due to error
+1116 – Malware detection
+1117 – Malware remediation
+1119 – Remediation error (not found)
+Source: https://answers.microsoft.com/en-us/windows/forum/all/how-to-see-the-results-of-latest-windows-defender/5adb0f94-6f46-4f19-95cc-dfcce048c2ad
+Information like this beyond what's available in the Event Viewer is apparently not available, being contained in encrypted files in "C:\ProgramData\Microsoft\Windows Defender\Scans\History\Results\Quick" and "C:\ProgramData\Microsoft\Windows Defender\Scans\History\Results\Resource".
+
+The Get-WinEvent cmdlet gets events from event logs, including
+classic logs, such as the System and Application logs.
+about_Eventlogs
+event log: Microsoft-Windows-Windows Defender/Operational
+Creating Get-WinEvent queries with FilterHashtable
+https://learn.microsoft.com/en-us/powershell/scripting/samples/creating-get-winevent-queries-with-filterhashtable?view=powershell-7.3
+
+MpCmdRun.exe (C:\ProgramData\Microsoft\Windows Defender\Platform\4.18.23050.3-0)
+Use this tool to automate and troubleshoot Microsoft Antimalware Service
+Not sure how this is any different to Start-MpScan.
+
+
+Get-Service -Name 'Windefend', 'SecurityHealthService', 'wscsvc' |
+Select-Object -Property Name, DisplayName, Status;
+
+Get-CimInstance -ClassName MSFT_MpComputerStatus -Namespace root/microsoft/windows/defender -Property *;
+
+Service 'Windefend'
+BinaryPathName - "C:\ProgramData\Microsoft\Windows Defender\Platform\4.18.23050.3-0\MsMpEng.exe"
+DisplayName - Microsoft Defender Antivirus Service
+Service 'SecurityHealthService'
+BinaryPathName - C:\WINDOWS\system32\SecurityHealthService.exe
+DisplayName - Windows Security Service
+Service 'wscsvc'
+BinaryPathName - C:\WINDOWS\System32\svchost.exe -k LocalServiceNetworkRestricted -p
+DisplayName - Security Center
+
+Learning:
+Why Are Windows Defender AV Logs So Important And How To Monitor Them With Azure Sentinel?
+https://m365internals.com/2021/07/05/why-are-windows-defender-av-logs-so-important-and-how-to-monitor-them-with-azure-sentinel/
