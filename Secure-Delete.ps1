@@ -12,11 +12,11 @@ obtained from the static method 'GetBytes' of the
 System.Security.Cryptography.RandomNumberGenerator class.
 
 After the file has been overwritten, it's then deleted using the
-PowerShell cmdlet 'Remove-Item'. 
+PowerShell cmdlet 'Remove-Item'.
 
 I have heard it mentioned that due to technological advances,
 one overwrite pass is often enough, reducing the time and energy
-needed for effective data sanitization. Nevertheless, I’ve
+needed for effective data sanitization. Nevertheless, I've
 decided to stick with multiple overwrites of the file with
 random data just to make sure.
 
@@ -35,21 +35,22 @@ The file which will be overwritten and then deleted
 ./Secure-Delete.ps1
 
 As no parameter has been supplied, an internal function will
-invoke the 'System.Windows.Forms.OpenFileDialog' class which
-prompts the user to select a file to shred and delete.
+be invoked to prompt the user to select a file to shred and
+delete.
 
 .EXAMPLE
 
 ./Secure-Delete.ps1 'C:\Gash\speak.ps1'
 
-The string containing the path to the file is passed as a
-positional parameter.
+An absolute path to the file that will be shredded and deleted.
+The string containing the path is passed as a positional parameter.
 
 .EXAMPLE
 
 ./Secure-Delete.ps1 -Path 'C:\Gash\speak.ps1'
 
-Using a named parameter to pass the path of the file concerned.
+Using a named parameter to pass the path of the file that will
+be shredded and deleted.
 
 .EXAMPLE
 
@@ -79,17 +80,17 @@ $file = Get-Item 'myfile.ps1'
 
 .INPUTS
 
-None, no .NET Framework types of objects are used as input.
+Optional: System.IO.FileInfo | System.String | <no user input>
 
 .OUTPUTS
 
-None, no .NET Framework types of objects are output from this script.
+None. No .NET Framework types of objects are output from this script.
 
 .NOTES
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2023-07-13T16:56:53
+Last updated : 2023-08-14T16:04:10
 Keywords     : yes no yesno secure shred delete random
 
 See also
@@ -137,8 +138,10 @@ ErrorRecord Class
 Namespace: System.Management.Automation
 https://docs.microsoft.com/en-us/dotnet/api/system.management.automation.errorrecord?view=powershellsdk-7.0.0
 
+
 RandomNumberGenerator Class
 https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator?view=net-6.0
+
 
 RNGCryptoServiceProvider Class
 Implements a cryptographic Random Number Generator (RNG) using the
@@ -148,8 +151,23 @@ From the documentation:
 use one of the RandomNumberGenerator static methods instead."
 https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.rngcryptoserviceprovider?view=netframework-4.7.2
 
+
+File and Stream I/O
+A very interesting  Microsoft article on the subject of files
+and stream I/O.
+File and stream I/O (input/output) refers to the transfer of data
+either to or from a storage medium. In .NET, the System.IO
+namespaces contain types that enable reading and writing, both
+synchronously and asynchronously, on data streams and files.
+These namespaces also contain types that perform compression and
+decompression on files, and types that enable communication
+through pipes and serial ports.
+https://learn.microsoft.com/en-us/dotnet/standard/io/
+
+
 7 Effective Algorithms to Remove Files and Folders Permanently
 https://www.stellarinfo.com/article/7-algorithms-to-wipe-files-folders-permanently.php
+
 
 The management of modern storage devices is addressed by using
 a scheme called Logical Block Addressing (LBA). It's the
@@ -159,15 +177,12 @@ computers is MBR (master boot record). This scheme sets a limit
 of 32 for the number of bits that are available to represent the
 number of logical sectors.
 
-#>
 
-<#
-Shall I use this idea for small files?
-java
-int buffersize = (1024 * 8);
-if (buffersize > (int) channel.size()) {
-  buffersize = (int) channel.size();
-}
+File IO improvements in .NET 6
+A Microsoft article on the improvements made to the FileStream
+class. This article is of relevance to this program and well
+worth a read.
+https://devblogs.microsoft.com/dotnet/file-io-improvements-in-dotnet-6/
 
 #>
 
@@ -190,7 +205,11 @@ param($FilePath)
 Get the input file stream based upon the file passed as
 a parameter
 #>
-   $buffersize = (1024 * 8);
+   Set-Variable -Name 'buffersize' -Value (1024 * 8) -Option Constant;
+
+   #Specifies whether to use asynchronous I/O or synchronous I/O.
+   Set-Variable -Name 'useAsync' -Value $true -Option Constant;
+
    $myargs = @(
        #Constructor arguments
        $FilePath.FullName #path to the file in question
@@ -198,6 +217,7 @@ a parameter
        [System.IO.FileAccess]::Write #access - FileAccess
        [System.IO.FileShare]::None #share - FileShare
        $buffersize
+       $useAsync
    )
    $parameters = @{
        #General parameters
@@ -293,6 +313,7 @@ Param(
       # user has selected a file.
       $myok = [System.Windows.Forms.DialogResult]::OK;
       Set-Variable -Name 'myok' -Option ReadOnly;
+
       [String]$retFilename = '';
 
       $ofd.CheckFileExists = $true;
@@ -385,7 +406,7 @@ Param(
     [parameter(Mandatory=$true,
                HelpMessage='Confirm file deletion')]
     [ValidateNotNullOrEmpty()]
-    [String]$FileName
+    [System.IO.FileInfo]$FileName
 ) #end param
 
       begin {
@@ -398,7 +419,7 @@ Param(
         $message = @"
 Confirm
 Are you sure you want to perform this action?
-Performing the operation remove file on target $($FileName).
+Performing the operation remove file on target $($FileName.FullName).
 This action cannot be undone! Please make sure
 "@ #end of 'message' variable
         Set-Variable -Name 'cDescription', 'caption', 'message' -Option ReadOnly;
@@ -493,26 +514,38 @@ Param(
 
     begin {
 
+      $sw = [System.Diagnostics.Stopwatch]::new();
+      Set-Variable -Name 'sw' -Option ReadOnly;
+      $sw.Start();
+
       $DeleteFile.Refresh();
 
       [Byte]$PassCounter = 0;
       Set-Variable -Name 'BufferSize' -Value (1024 * 8) -Option Constant;
 
-      $ByteBuffer = [System.Byte[]]::new($BufferSize);
+      # Clears buffers for this stream and causes any buffered data
+      # to be written to the file, and also clears all intermediate
+      # file buffers when using the 'Flush (bool flushToDisk)' method
+      # with a boolean value of true.
+      Set-Variable -Name 'flushToDisk' -Value $true -Option Constant;
 
       # Ensure the file is not read only before we attempt to
       # overwrite it.
       $DeleteFile.IsReadOnly = $false;
 
-      $deleteStream = $Get_FileStream.Invoke($DeleteFile);
-
-      $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create();
-      Set-Variable -Name 'rng' -Option ReadOnly;
+      $ByteBuffer = [System.Byte[]]::new($BufferSize);
 
       # Get the length in bytes of the stream we want to shred
       # and then delete
       [Long]$FileLength = $DeleteFile.Length;
       Set-Variable -Name 'FileLength' -Option ReadOnly;
+
+      $deleteStream = $Get_FileStream.Invoke($DeleteFile);
+      Write-Output "FileStream was opened asynchronously: $($deleteStream.IsAsync)";
+
+      $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create();
+      Set-Variable -Name 'rng' -Option ReadOnly;
+
       Write-Output ("Length of file to be overwritten: {0:N0} bytes" -f $FileLength);
       Write-Output ("Using a buffer size of: {0:N0} bytes" -f $BufferSize);
 
@@ -523,7 +556,7 @@ Param(
       [Long]$RemainingBytes = 0L;
 
       # Reminds us how many bytes should be written for each
-      # execution of the 'FileStream.Write' Method. From this, we
+      # execution of the 'FileStream.WriteAsync' Method. From this, we
       # can check that the correct number of bytes have been written.
       [Long]$ExpectedBytes = 0L;
 
@@ -532,6 +565,12 @@ Param(
         NewPos = 0L
       }
 
+      # Indicates the task completed execution successfully.
+      $ranOK = [System.Threading.Tasks.TaskStatus]::RanToCompletion;
+      Set-Variable -Name 'ranOK' -Option ReadOnly;
+
+      [System.Linq.Enumerable]::Repeat("", 2); #blanklines
+      Write-Output 'This may take a while depending upon the file size. Please be patient...';
     } #end 'begin' block
 
     process {
@@ -571,8 +610,8 @@ Param(
                       break; }
                   default { Write-Verbose 'option default';
                             $ByteBuffer = $rng::GetBytes($BufferSize);
-                      break; }
-                  } #end switch
+                            break; }
+                } #end switch
 
                 Write-Verbose -Message 'Random data refreshed. First four bytes...';
                 $VerboseMsg = ($ByteBuffer[0..3] |
@@ -582,19 +621,38 @@ Param(
                 if ($RemainingBytes -gt $BufferSize) {
                     # Write a full data buffer worth of data to the stream
 
-                    $deleteStream.Write($ByteBuffer, 0, $BufferSize);
+                    $myTask = $deleteStream.WriteAsync($ByteBuffer, 0, $BufferSize);
                     $BytesWritten += $ByteBuffer.LongLength;
                     $ExpectedBytes = $BufferSize;
                 } else {
                     # Write a partial data buffer to the stream because
                     # this is all we have left to write
 
-                    $deleteStream.Write($ByteBuffer, 0, $RemainingBytes);
+                    $myTask = $deleteStream.WriteAsync($ByteBuffer, 0, $RemainingBytes);
                     $BytesWritten += $RemainingBytes;
                     $ExpectedBytes = $RemainingBytes;
                 }
 
-                $deleteStream.Flush();
+                # Wait here until the task finishes.
+                # A call to the task Wait method blocks
+                # the calling thread until the single
+                # class instance has completed execution.
+                $myTask.Wait();
+                if ($myTask.Status -ne $ranOK) {
+                   # throw an error
+                   $splat = @{
+                       # Splat data for use with Write-Error cmdlet.
+                       Category = [System.Management.Automation.ErrorCategory]::InvalidResult;
+                       CategoryActivity = 'Executing method <filestream>.WriteAsync';
+                       CategoryReason = 'Unexpected result from WriteAsync Task';
+                       Message = 'Unexpected TaskStatus from WriteAsync Task';
+                   }
+                   Write-Error @splat;
+
+                } #end if statement
+
+                $deleteStream.Flush($flushToDisk);
+                Start-Sleep -Milliseconds 600;
                 $FilePosition.NewPos = $deleteStream.Position;
 
                 # Check the number of bytes is what we expected to write.
@@ -635,7 +693,6 @@ Param(
        Write-Error $_.Exception.Message;
 
      } finally {
-       $deleteStream.Flush();
        $deleteStream.Close();
        $deleteStream.Dispose();
        $rng.Dispose();
@@ -647,16 +704,22 @@ Param(
     end {
        # Now we've overwritten the file with random bytes,
        # we can delete it
-       Remove-Item -Path $DeleteFile -Force;
+       Start-Sleep -Seconds 1;
+       Remove-Item -Path $DeleteFile;
 
-       # Confirm to the user whether the file has been deleted as intended
+       # Confirm whether the file has been deleted as intended
        if (Test-Path -Path $DeleteFile -PathType 'Leaf') {
            Write-Warning -Message "Shredded file [$($DeleteFile)] not deleted";
        } else {
+           [System.Linq.Enumerable]::Repeat('', 2); #blanklines
            Write-Output "Shredded file [$($DeleteFile)] deleted as intended";
+           $sw.Stop();
+           Write-Output 'Elapsed time:'
+           $sw.Elapsed | Format-Table -Property Hours, Minutes, Seconds -AutoSize;
+
        }
 
-      Remove-Variable -Name 'ByteBuffer' -Force;
+       Remove-Variable -Name 'ByteBuffer' -Force;
     } #end 'end' block
 }
 #endregion ***** End of function Delete-File *****
@@ -686,8 +749,6 @@ Invoke-Command -ScriptBlock {
 }
 
 
-#Obtain an object of type ‘System.IO.FileInfo’ which represents
-#the file to be eventually shredded and then deleted. Variable
 #'MyFile' will be of type System.IO.FileInfo
 if ($Path -is [String]) {
     Write-Verbose 'The main parameter is a string';
@@ -727,21 +788,22 @@ if ($IsRubbishFile.Invoke($MyFile)) {
 Write-Verbose -Message "File selected for shred/delete is |$MyFile|";
 if (Confirm-Delete -FileName $MyFile) {
 
-$randomFilename = [System.Io.Path]::GetRandomFileName();
-$shredFilename = Join-Path -Path $MyFile.DirectoryName -ChildPath $randomFilename;
-Set-Variable -Name 'shredFilename' -Option ReadOnly;
 
 # As part of the obfuscation process, rename the file in
 # question with a random file name obtained from the
 # method [System.Io.Path]::GetRandomFileName.
-$msg = @"
+$randomFilename = [System.Io.Path]::GetRandomFileName();
+$shredFilename = Join-Path -Path $MyFile.DirectoryName -ChildPath $randomFilename;
+Set-Variable -Name 'shredFilename' -Option ReadOnly;
+
+$message = @"
 
 Renaming original file:
 [$($MyFile)]
 to:
 [$($shredFilename)]
 "@
-Write-Output $msg;
+Write-Output $message;
 Rename-Item -Path $MyFile -NewName $shredFilename;
 
    Delete-File -DeleteFile $shredFilename;
@@ -751,8 +813,7 @@ Rename-Item -Path $MyFile -NewName $shredFilename;
     Write-Warning -Message "File $($MyFile) not deleted at user request";
 
 }
-[System.Linq.Enumerable]::Repeat("", 2); #blanklines
-Write-Output 'Script complete';
+Write-Output 'All done now';
 ##=============================================
 ## END OF SCRIPT: Secure-Delete.ps1
 ##=============================================
