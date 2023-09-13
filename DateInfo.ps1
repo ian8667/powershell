@@ -113,7 +113,7 @@ All done now!
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2023-04-05T15:24:47
+Last updated : 2023-09-13T20:43:33
 Keywords     : contract end of week jd julian dst
 
 .LINK
@@ -202,7 +202,7 @@ Begin {
   # should be, for example, the Saturday of the end of the
   # first week on the contract. This date should be earlier
   # than the end date.
-  $startDate = Get-Date -Year 2022 -Month 10 -Day 08;
+  $startDate = Get-Date -Year 2023 -Month 9 -Day 9;
 
   # The end date is determined to be the current date, whatever
   # today is (i.e. whenever the script is run). Our output will
@@ -222,11 +222,11 @@ Begin {
     throw "Start date used [$($startDate.ToString('dd MMMM yyyy'))] must be a Saturday";
   }
 
-  $iso8601Date = "yyyy-MM-dd";
+  $iso8601Date = 'yyyy-MM-dd';
   Set-Variable -Name 'blockSize', 'startDate', 'endDate', 'iso8601Date' -Option ReadOnly;
 
-  Write-Output "Contract weekending information";
-  Write-Output "";
+  Write-Output 'Contract weekending information';
+  Write-Output '';
 }
 
 Process {
@@ -240,7 +240,7 @@ Process {
 
     # See whether we're due to insert a blank line in our output
     if (($weekCounter % $blockSize) -eq 0) {
-       Write-Output "";
+       Write-Output '';
     }
     $tempDate = $tempDate.AddDays(7.0);
 
@@ -254,7 +254,7 @@ End {
   Write-Output ('*' * 30);
 
   Write-Output ('Weeks listed: {0}' -f $weekCounter.ToString());
-  Write-Output ("The first weekending date used: {0}" -f $startDate.ToString("dddd, dd MMMM yyyy"));
+  Write-Output ("The first weekending date used: {0}" -f $startDate.ToString('dddd, dd MMMM yyyy'));
 
 }
 
@@ -493,7 +493,7 @@ if ($WeekEndingDates.IsPresent) {
   $WeekEnd = Get-WeekendingDate;
   $msg = "The next week ending coming up after today is: {0}";
   Write-Output '';
-  Write-Output ($msg -f $WeekEnd.ToString("dddd, dd MMMM yyyy"));
+  Write-Output ($msg -f $WeekEnd.ToString('dddd, dd MMMM yyyy'));
 }
 
 Write-Output "All done now!";
