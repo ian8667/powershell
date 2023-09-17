@@ -90,7 +90,7 @@ None. No .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2023-08-14T16:04:10
+Last updated : 2023-09-17T18:43:18
 Keywords     : yes no yesno secure shred delete random
 
 See also
@@ -186,6 +186,13 @@ https://devblogs.microsoft.com/dotnet/file-io-improvements-in-dotnet-6/
 
 #>
 
+<#
+new work (24 August 2023)
+need to think on how I can effect performance improvements as
+the script runs very slowly on files a couple of megabytes
+in size.
+#>
+
 [CmdletBinding()]
 Param (
    [parameter(Position=0,
@@ -210,6 +217,8 @@ a parameter
    #Specifies whether to use asynchronous I/O or synchronous I/O.
    Set-Variable -Name 'useAsync' -Value $true -Option Constant;
 
+   $optionFlags = [System.IO.FileOptions]::Asynchronous + [System.IO.FileOptions]::WriteThrough;
+
    $myargs = @(
        #Constructor arguments
        $FilePath.FullName #path to the file in question
@@ -217,7 +226,7 @@ a parameter
        [System.IO.FileAccess]::Write #access - FileAccess
        [System.IO.FileShare]::None #share - FileShare
        $buffersize
-       $useAsync
+       $optionFlags
    )
    $parameters = @{
        #General parameters
@@ -259,6 +268,7 @@ if ($f.Length -eq 0) {
 #If we get here, we're returning the default value
 #of false indicating this is not a rubbish file.
 return $retval;
+
 } #returns true or false
 
 #-----------------------------------------------------
@@ -459,7 +469,7 @@ This action cannot be undone! Please make sure
           0 {$retval = $true; break}  # Response yes
           1 {$retval = $false; break} # Response no
           2 {$retval = $false; break} # Response exit
-          default {$retval = $false; break} # Default response to no
+          default {$retval = $false; break} # Default the response to no
        }
 
         return $retval;
@@ -521,6 +531,7 @@ Param(
       $DeleteFile.Refresh();
 
       [Byte]$PassCounter = 0;
+
       Set-Variable -Name 'BufferSize' -Value (1024 * 8) -Option Constant;
 
       # Clears buffers for this stream and causes any buffered data
@@ -565,6 +576,12 @@ Param(
         NewPos = 0L
       }
 
+      $loopIndex = [PSCustomObject]@{
+        Min = 1
+        Max = 7
+      }
+      Set-Variable -Name 'loopIndex' -Option ReadOnly;
+
       # Indicates the task completed execution successfully.
       $ranOK = [System.Threading.Tasks.TaskStatus]::RanToCompletion;
       Set-Variable -Name 'ranOK' -Option ReadOnly;
@@ -577,7 +594,7 @@ Param(
      try {
         # Outer loop which determines how many times the file is
         # overwritten.
-        foreach ($num in 1..7) {
+        foreach ($num in $loopIndex.Min..$loopIndex.Max) {
 
             # Set the current position of the stream to the beginning
             # of the stream before overwriting the file. Otherwise,
@@ -585,36 +602,44 @@ Param(
             # don't want to do.
             $deleteStream.Position = 0;
             $PassCounter++;
-            Write-Output ("`nFile overwrite pass #{0}" -f $PassCounter);
+            Write-Output ("`nFile overwrite pass #{0}/{1}" -f $PassCounter,$loopIndex.Max);
+
+            $ByteBuffer.Clear()
+
+            # Assign the content of 'ByteBuffer' for loop pass 1
+            # (one) and loop pass 2 (two). The contents of 'ByteBuffer'
+            # don't change for the first two loop passes once assigned,
+            # so that's why we're assigning values at this point. The
+            # whole file will be overwritten with either zeros or ones.
+            # Loop pass #1: 'ByteBuffer' filled with zeros (0)
+            # Loop pass #2: 'ByteBuffer' filled with ones (1)
+            if ($PassCounter -eq 1) {
+              [byte]$fillValue = 0;
+            } elseif ($PassCounter -eq 2) {
+              [byte]$fillValue = 1;
+            }
+            $ByteBuffer = for ($m = 0; $m -lt $BufferSize; $m++) { $fillValue }
+
 
             # Inner loop to write, buffer by buffer, to the output stream
             # and thus overwrite the file concerned.
             while ($BytesWritten -lt $FileLength) {
                 #
                 $RemainingBytes = $FileLength - $BytesWritten;
-                $ByteBuffer.Clear();
 
                 $FilePosition.OldPos = $deleteStream.Position;
 
-                # Determine the content of 'ByteBuffer' for each loop pass.
-                # Pass #1: 'ByteBuffer' filled with zeros (0)
-                # Pass #2: 'ByteBuffer' filled with ones (1)
-                # Pass #3..n: 'ByteBuffer' filled with random bytes from class
+                # On loop pass three and greater, 'ByteBuffer' is
+                # filled with random bytes from class
                 # System.Security.Cryptography.RandomNumberGenerator
-                Switch ( $PassCounter ) {
-                  1 { Write-Verbose 'option 1';
-                      $ByteBuffer = for ($m = 0; $m -lt $BufferSize; $m++) { 0 }
-                      break; }
-                  2 { Write-Verbose 'option 2';
-                      $ByteBuffer = for ($m = 0; $m -lt $BufferSize; $m++) { 1 }
-                      break; }
-                  default { Write-Verbose 'option default';
-                            $ByteBuffer = $rng::GetBytes($BufferSize);
-                            break; }
-                } #end switch
+                if ($PassCounter -ge 3) {
+                  $ByteBuffer.Clear();
+                  $ByteBuffer = $rng::GetBytes($BufferSize);
+                }
 
-                Write-Verbose -Message 'Random data refreshed. First four bytes...';
-                $VerboseMsg = ($ByteBuffer[0..3] |
+
+                Write-Verbose -Message 'Random data refreshed. First eight bytes...';
+                $VerboseMsg = ($ByteBuffer[0..7] |
                     ForEach-Object {Write-Output ("{0:X2}" -f $_)}) -join ' ';
                 Write-Verbose -Message $VerboseMsg;
 
@@ -751,11 +776,11 @@ Invoke-Command -ScriptBlock {
 
 #'MyFile' will be of type System.IO.FileInfo
 if ($Path -is [String]) {
-    Write-Verbose 'The main parameter is a string';
+    Write-Verbose 'The main parameter is of type string';
     $MyFile = Get-Item (Resolve-Path -Path $Path);
 
 } elseif ($Path -is [System.IO.FileInfo]) {
-    Write-Verbose 'The main parameter is FileInfo';
+    Write-Verbose 'The main parameter is of type FileInfo';
     $MyFile = $Path;
 
 } else {
@@ -774,7 +799,7 @@ if ($IsRubbishFile.Invoke($MyFile)) {
       Message = 'File not found or empty file'
       Category = 'InvalidResult'
       ErrorId = 'ERR-0001'
-      CategoryActivity = 'Checking input file'
+      CategoryActivity = "Checking input file [$($MyFile)]"
       CategoryTargetName = "File: $MyFile"
       CategoryTargetType = 'File'
       RecommendedAction = 'Ensure input file exists and is not empty'
