@@ -90,7 +90,7 @@ None. No .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2023-09-17T18:43:18
+Last updated : 2023-09-21T21:53:57
 Keywords     : yes no yesno secure shred delete random
 
 See also
@@ -191,6 +191,30 @@ new work (24 August 2023)
 need to think on how I can effect performance improvements as
 the script runs very slowly on files a couple of megabytes
 in size.
+
+foreach ($num in 1..10) {write-host '.' -NoNewline}
+
+Write-Host $(Get-Date -Format 'dd-MMM-yyyy HH:mm:ss');
+Get-Date -DisplayHint time
+
+Custom date and time format strings
+https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings?view=netframework-4.8
+
+function Log-Message
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$true, Position=0)]
+        [string]$LogMessage
+    )
+
+    Write-Output ("{0} - {1}" -f (Get-Date), $LogMessage)
+}
+
+
+$tyme = ('[{0:HH:mm:ss}]' -f (Get-Date))
+
 #>
 
 [CmdletBinding()]
@@ -602,7 +626,12 @@ Param(
             # don't want to do.
             $deleteStream.Position = 0;
             $PassCounter++;
-            Write-Output ("`nFile overwrite pass #{0}/{1}" -f $PassCounter,$loopIndex.Max);
+           [System.Linq.Enumerable]::Repeat("", 2); #blanklines
+           $tyme = '[{0:HH:mm:ss}]' -f (Get-Date)
+           Write-Output ("{0} File overwrite pass #{1} / {2}" -f $tyme,$PassCounter,$loopIndex.Max);
+           if ($PassCounter -eq $loopIndex.Max) {
+             Write-Output 'Final pass';
+           }
 
             $ByteBuffer.Clear()
 
@@ -625,6 +654,12 @@ Param(
             # and thus overwrite the file concerned.
             while ($BytesWritten -lt $FileLength) {
                 #
+                # Writes to the console to reassure the
+                # user that the script is still running
+                # as intended. This is especially
+                # important when overwriting large files
+                # as the process can take a long time.
+                Write-Host '.' -NoNewline;
                 $RemainingBytes = $FileLength - $BytesWritten;
 
                 $FilePosition.OldPos = $deleteStream.Position;
@@ -731,6 +766,7 @@ Param(
        # we can delete it
        Start-Sleep -Seconds 1;
        Remove-Item -Path $DeleteFile;
+       $sw.Stop();
 
        # Confirm whether the file has been deleted as intended
        if (Test-Path -Path $DeleteFile -PathType 'Leaf') {
@@ -738,7 +774,6 @@ Param(
        } else {
            [System.Linq.Enumerable]::Repeat('', 2); #blanklines
            Write-Output "Shredded file [$($DeleteFile)] deleted as intended";
-           $sw.Stop();
            Write-Output 'Elapsed time:'
            $sw.Elapsed | Format-Table -Property Hours, Minutes, Seconds -AutoSize;
 
@@ -774,7 +809,8 @@ Invoke-Command -ScriptBlock {
 }
 
 
-#'MyFile' will be of type System.IO.FileInfo
+#'MyFile' will be of type 'System.IO.FileInfo' when we exit
+#this if/elseif/else block.
 if ($Path -is [String]) {
     Write-Verbose 'The main parameter is of type string';
     $MyFile = Get-Item (Resolve-Path -Path $Path);
