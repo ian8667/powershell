@@ -3,7 +3,7 @@
 ## Collection of PowerShell things
 ##===========================================
 
-Last updated: 21 August 2023 20:02:03
+Last updated: 22 October 2023
 
 ##===========================================
 ## New item
@@ -22,18 +22,33 @@ Switch ($PSCmdlet.ParameterSetName) {
 ##===========================================
 ## New item
 ## File attributes
+## System.IO.FileAttributes Enum and files
 ##===========================================
+[System.IO.FileAttributes]::Hidden
+[System.IO.FileAttributes]::Normal
+[System.IO.FileAttributes]::ReadOnly
 
-Hide a filename
+# 'switches' an attribute on or off
+$file.Attributes = $file.Attributes -bxor [System.IO.FileAttributes]::ReadOnly;
+
+
+[system.convert]::ToString(5,2);
+
+#Hide a filename
 Set-ItemProperty -Path 'fred.txt' -Name Attributes `
-     -Value ([System.IO.FileAttributes]::Hidden)
+     -Value ([System.IO.FileAttributes]::Hidden);
+or
+$file.Attributes += 'Hidden';
+$file.Attributes.HasFlag([System.IO.FileAttributes]::ReadOnly); #Returns true or false
 
-Remove the 'hidden' attribute from a file.
-ls -force |
+#Remove the 'hidden' attribute from a file.
+ls -file -force |
     where {$_.Attributes -like '*hidden*'} |
     foreach {$_.attributes=$_.attributes -band (-bnot [System.IO.FileAttributes]::hidden)}
 or
-Set-ItemProperty -Path .git -Name Attributes -Value ([System.IO.FileAttributes]::Normal) -Force
+Set-ItemProperty -Path $file -Name Attributes -Value ([System.IO.FileAttributes]::Normal) -Force
+or
+$file.Attributes -= 'Hidden';
 
 Get-ChildItem * -Recurse -Force |
     Where { ($_.Attributes.ToString() -Split ", ") -Contains "Hidden" } |
@@ -46,7 +61,7 @@ $h.Attributes = $h.Attributes -bxor [System.IO.FileAttributes]::Hidden
 
 
 # Unhides a hidden file. This bit of code works.
-$myfile = Get-Item "C:\Family\git_repos\.git" -force
+$myfile = Get-Item "C:\test\testdir\myfile.txt" -force
 Write-Host "myfile is now $myfile";
 if ($myfile.attributes -band [system.IO.FileAttributes]::Hidden)
 {
@@ -69,6 +84,12 @@ ie
         Code = [int]$_
         Description = $_.ToString()
     }
+}
+
+or
+[System.IO.FileAttributes].GetEnumNames() |
+ForEach-Object {
+  "{0,-20} {1}" -f $_, [int]([System.IO.FileAttributes]::$_);
 }
 
 See: http://msdn.microsoft.com/en-us/library/system.io.fileattributes.aspx
@@ -95,6 +116,32 @@ $File.Attributes = $File.Attributes -band `
 File Attributes helper functions
 http://scriptolog.blogspot.co.uk/2007/10/file-attributes-helper-functions.html
 
+Fun with PowerShell Enum Flags
+
+This article focuses on the use of enums as flags. While it is not
+something I use frequently, enum flags can be extremely useful when
+an item can have multiple states simultaneously. Our club member
+(example) status is one such example, another is file attributes. A
+file could have both the hidden and compressed attributes.
+
+[System.Flags()] enum MemberStatus
+{
+  #Indicate that an enumeration type declares bit fields, apply the Flags attribute.
+  Paid = 1
+  President = 2
+  VicePresident = 4
+  Secretary = 8
+  Treasurer = 16
+  Webmaster = 32
+}
+$fred = [MemberStatus]::Secretary;
+$fred.HasFlag([MemberStatus]::Paid);
+$fred = [MemberStatus]::Webmaster + [MemberStatus]::Secretary + [MemberStatus]::Paid;
+(System.Enum)
+Source: https://arcanecode.com/2021/12/06/fun-with-powershell-enum-flags/
+
+# Determine if a file has the read-only bit set.
+(Get-ItemProperty 'nothidden.txt').Attributes -band [System.IO.FileAttributes]::ReadOnly;
 
 ##===========================================
 ## New item
@@ -181,8 +228,7 @@ function Test-IsAdmin {
 
 if (!(Test-IsAdmin)) {
      throw "Please run this script with admin priviliges"
-}
-else {
+} else {
     Write-Host "Got admin"
 }
 
@@ -345,14 +391,14 @@ $fred -as [int];  # should return a value of 1.
     }
 }
 
-[Flags]
-public enum MyEnum
+[System.Flags()]
+enum MyEnum
 {
-    None   = 0,
-    First  = 1 << 0,
-    Second = 1 << 1,
-    Third  = 1 << 2,
-    Fourth = 1 << 3
+    None   = 0  # 0
+    First  = 1 -shl 0  # 1
+    Second = 1 -shl 1  # 2
+    Third  = 1 -shl 2  # 4
+    Fourth = 1 -shl 3  # 8
 }
 [MyEnum].GetEnumNames() | ForEach-Object {
   "{0,-10} {1}" -f $_,[int]([MyEnum]::$_)
@@ -551,7 +597,7 @@ $rc = [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel);
 Start-Sleep -Seconds 2;
 
 #Get-Process -Name excel
-'Excel processes: {0}' -f @(Get-Process excel -ea 0).Count
+'Excel processes: {0}' -f @(Get-Process -Name excel -ea 0).Count
 
 
 $excel_file_path = 'C:ChangeLog.xlsx'
@@ -1302,7 +1348,46 @@ For document, see MSFT_MpComputerStatus class
 
 ##===========================================
 ## New item
-## <date>
-## <comments>
+## 22 October 2023
+## Count number of ...
 ##===========================================
+
+... lines in a text file
+# Opens a text file, reads all lines of the file, and then closes the file.
+# Returns: Int32
+[System.Linq.Enumerable]::Count([System.IO.File]::ReadAllLines($file));
+
+# Returns: Int64
+[System.Linq.Enumerable]::LongCount([System.IO.File]::ReadAllLines($file));
+
+cat $file | Measure-Object;
+
+# try this as well?
+# StreamReader defaults to UTF-8 encoding unless specified otherwise
+$reader = New-Object System.IO.StreamReader($file)
+$counter = 0
+while ($reader.ReadLine() -ne $null) {
+    $counter++
+}
+$reader.Close()
+$reader.Dispose()
+$counter; #see what the value of counter is
+
+... files in a directory
+# Files in a directory
+# Counts hidden files as well
+@([System.IO.Directory]::EnumerateFiles($mydir)).Count;
+
+# Count the number of directories in a directory tree
+Get-ChildItem -Recurse -Directory | Measure-Object | ForEach-Object {$_.Count}
+or
+(Get-ChildItem -Directory -Recurse | Measure-Object).Count;
+
+# Count the number of files in a directory tree
+# per directory
+Get-ChildItem -Recurse -Directory |
+ Select-Object Name, @{
+ Name='FileCount';
+ Expression={(Get-ChildItem $_ -File | Measure-Object).Count }
+}
 
