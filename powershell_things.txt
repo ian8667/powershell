@@ -3,7 +3,7 @@
 ## Collection of PowerShell things
 ##===========================================
 
-Last updated: 22 October 2023
+Last updated: 27 December 2023
 
 ##===========================================
 ## New item
@@ -31,8 +31,10 @@ Switch ($PSCmdlet.ParameterSetName) {
 # 'switches' an attribute on or off
 $file.Attributes = $file.Attributes -bxor [System.IO.FileAttributes]::ReadOnly;
 
-
-[system.convert]::ToString(5,2);
+# Convert number to binary
+[Int32]$Value = 127;
+[Int32]$Base = 2; #must be 2, 8, 10, or 16.
+[System.Convert]::ToString($Value,$Base).PadLeft(8,'0');
 
 #Hide a filename
 Set-ItemProperty -Path 'fred.txt' -Name Attributes `
@@ -542,7 +544,7 @@ To extend a class, use the syntax: Class Child : Parent.
 
 ##===========================================
 ## New item
-## 19 July 2015
+## 23 December 2023
 ##===========================================
 
 You Know PowerShell is an Object-Oriented Language, Right?
@@ -555,10 +557,24 @@ Show you the alternative (still object-based) so you can see why it’s generally 
 
 A nice article on the subject of PowerShell and OOP.
 
+See also:
+https://powershell.one/powershell-internals/attributes/validation
 # -----
-Use a class to carry out validation.
+Use a class to carry out validation. (validate validation class)
+ValidateArgumentsAttribute Class
+Serves as the base class for Validate attributes that validate
+parameter arguments.
+https://learn.microsoft.com/en-us/dotnet/api/system.management.automation.validateargumentsattribute?view=powershellsdk-7.4.0
 
+https://powershellexplained.com/2017-02-19-Powershell-custom-attribute-validator-transform/
+https://powershellexplained.com/2017-02-20-Powershell-creating-parameter-validators-and-transforms/
 #
+Parameters:
+Object - Argument value to validate.
+EngineIntrinsics - The engine APIs for the context under which the
+prerequisite is being evaluated.
+
+
 #region ***** class ValidatePathExistsAttribute *****
 class ValidatePathExistsAttribute : System.Management.Automation.ValidateArgumentsAttribute
 {
@@ -585,6 +601,13 @@ class ValidatePathExistsAttribute : System.Management.Automation.ValidateArgumen
 [ValidatePathExists()][String]$Path = "c:\windows";
 $Path = "c:\test123";
 Write-Output 'end of test';
+
+o The name of your new class is the name of the attribute.
+However, it is good practice to suffix your class name with
+Attribute. If you do, the attribute name ignores the suffix.
+o The method Validate() must implement the arguments shown
+in the example. Do not try and change the data type from
+[Object] to anything else.
 
 ##===========================================
 ## New item
@@ -855,7 +878,8 @@ https://learn.microsoft.com/en-us/powershell/
 
 ##===========================================
 ## New item
-## 02 October 2017
+## Exceptions
+## 29 December 2023
 ##===========================================
 
 Trap {
@@ -869,6 +893,12 @@ while( $err.InnerException ) {
 # End the script.
 break
 }
+
+Exceptions
+Everything you wanted to know about exceptions
+A nice article on the subject of exceptions and try/catch/finally
+blocks.
+https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions?view=powershell-7.4
 
 ##===========================================
 ## New item
@@ -961,7 +991,8 @@ $christmasEve.ToString('"Christmas Eve in" yyyy "will be on" dddd.', $culture)
 
 ##===========================================
 ## New item
-## 15 September 2018
+## Using the Add-member cmdlet
+## 26 December 2023
 ##===========================================
 
 o Adding MemberType AliasProperty
@@ -977,9 +1008,23 @@ Ssize            AliasProperty         Ssize = Length
 Creating a Tuple with some meaningful names
 Remove-Variable fred;
 $fred = [System.Tuple]::Create('Fred','Bloggs');
+
 $fred = Add-Member -PassThru -InputObject $fred -MemberType AliasProperty -Name 'Firstname' -Value Item1;
 $fred = Add-Member -PassThru -InputObject $fred -MemberType AliasProperty -Name 'Lastname' -Value Item2;
+
+or
+$a = New-Object -TypeName 'Tuple[string,string,int]'('Fred','Bloggs',42);
+
 Get-Member -InputObject $fred -MemberType AliasProperty;
+
+$list = New-Object 'Collections.Generic.List[Tuple[int,string]]'
+$list.Add([Tuple]::Create(1, "John Doe"))
+$list.Add([Tuple]::Create(2, "Rick Carlisle"))
+
+$list | ForEach-Object {
+    Write-Host "Employee $($_.Item1) is $($_.Item2)"
+}
+
 
 
 o Adding MemberType NoteProperty
@@ -1348,7 +1393,7 @@ For document, see MSFT_MpComputerStatus class
 
 ##===========================================
 ## New item
-## 22 October 2023
+## 23 October 2023
 ## Count number of ...
 ##===========================================
 
@@ -1386,8 +1431,11 @@ or
 # Count the number of files in a directory tree
 # per directory
 Get-ChildItem -Recurse -Directory |
- Select-Object Name, @{
- Name='FileCount';
- Expression={(Get-ChildItem $_ -File | Measure-Object).Count }
-}
-
+ Select-Object @{
+   Name = 'Directory'
+   Expression = {$_.Name}
+ },
+ @{
+   Name = 'FileCount'
+   Expression = {(Get-ChildItem $_ -File | Measure-Object).Count }
+} #end of statement
