@@ -9,7 +9,7 @@ Compiles a Java program. The CLASSPATH used is a CONSTANT declared
 in the 'Variable/constant declarations' section. This may have to
 be updated depending upon the program being compiled.
 
-.PARAMETER JavaFilename
+.PARAMETER Path
 
 (optional) the Java program to compile in the format of
 <programname>.java. If a parameter is not supplied, an internal
@@ -36,7 +36,7 @@ doesn't exist.
 
 .EXAMPLE
 
-./compile.ps1 -JavaFilename myfile.java
+./compile.ps1 -Path 'myfile.java'
 
 Using a named parameter to supply the Java program
 to compile.
@@ -57,23 +57,23 @@ compile, Java errors are shown in the usual way.
 
 File Name    : compile.ps1
 Author       : Ian Molloy
-Last updated : 2023-03-27T19:31:03
+Last updated : 2023-12-27T18:15:40
 
 
 .LINK
 
-JDK 20 Documentation home
-https://docs.oracle.com/en/java/javase/20/index.html
+JDK 21 Documentation
+https://docs.oracle.com/en/java/javase/21/
 
-Java SE Version 20 API docs
-https://docs.oracle.com/en/java/javase/20/docs/api/index.html
+Java SE Version 21 API docs
+https://docs.oracle.com/en/java/javase/21/docs/api/index.html
 
 JSR 394: Java SE 19: Annex 3
 Final Release Specification
 JLS & JVMS
 https://cr.openjdk.java.net/~iris/se/19/latestSpec/java-se-19-annex-3.html
 
-The Java Tutorials`
+The Java Tutorials
 https://docs.oracle.com/javase/tutorial/
 
 The Destination for Java Developers
@@ -91,10 +91,10 @@ https://dev.java/learn/
 [CmdletBinding()]
 Param(
    [parameter(Position=0,
-              Mandatory=$false)]
-   [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
-   [String]
-   $JavaFilename
+              Mandatory=$false,
+              HelpMessage='Java file to compile')]
+   [Object]
+   $Path
 ) #end param
 
 #----------------------------------------------------------
@@ -137,7 +137,7 @@ Begin {
   Add-Type -AssemblyName "System.Windows.Forms";
   # Displays a standard dialog box that prompts the user
   # to open (select) a file.
-  [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName System.Windows.Forms.OpenFileDialog;
+  [System.Windows.Forms.OpenFileDialog]$ofd = New-Object -TypeName 'System.Windows.Forms.OpenFileDialog';
 
   # The dialog box return value is OK (usually sent
   # from a button labeled OK). This indicates the
@@ -191,6 +191,7 @@ End {
 # Main routine starts here
 #----------------------------------------------------------
 Set-StrictMode -Version Latest;
+$ErrorActionPreference = 'Stop';
 
 Invoke-Command -ScriptBlock {
 
@@ -205,17 +206,37 @@ Invoke-Command -ScriptBlock {
 
 }
 
+#'MyFile' will be of type 'System.IO.FileInfo' when we exit
+#this if/elseif/else block and represents the Java file to
+#compile.
+if ($Path -is [String]) {
+    Write-Verbose 'The main parameter is of type string';
+    $MyFile = Get-Item (Resolve-Path -Path $Path);
+
+} elseif ($Path -is [System.IO.FileInfo]) {
+    Write-Verbose 'The main parameter is of type FileInfo';
+    $MyFile = $Path;
+
+} else {
+    #No value has been supplied. Invoke an internal function
+    #to get the filename to shred
+    Write-Verbose 'Nothing passed in';
+    $m = Get-Filename -Title 'Java file to compile';
+    $MyFile = Get-Item $m;
+}
+Set-Variable -Name 'MyFile' -Option ReadOnly;
+Write-Output "Program name supplied is $MyFile";
+
+
 #region ***** Variable/constant declarations *****
 Write-Verbose -Message "Declaring variables and constants";
 
 #Set the Java CLASSPATH
 New-Variable -Name "CPATH" -Option Constant -Value "C:\Family\Ian;C:\Program Files\Java\iText_v724\*";
-#'Java_Top' is the root directory of the currently
-#installed Java SDK
-New-Variable -Name "JAVA_TOP" -Option Constant -Value 'C:\Program Files\Java\jdk-20';
+#'Java_Top' is the root directory of the currently installed Java SDK
+New-Variable -Name "JAVA_TOP" -Option Constant -Value 'C:\Program Files\Java\jdk-21';
 New-Variable -Name "JAVAEXE" -Option Constant -Value "$JAVA_TOP\bin\javac.exe";
 Write-Verbose -Message "Java CLASSPATH used is:`n$CPATH";
-[String]$ProgramName = "";
 [String]$aLine = ('=' * 45);
 Set-Variable -Name 'aLine' -Option ReadOnly;
 
@@ -229,30 +250,16 @@ if (-not (Test-Path -Path $JAVA_TOP -PathType 'Container')) {
     throw [System.IO.DirectoryNotFoundException] "JAVA_TOP $JAVA_TOP not found";
 }
 
-if ($PSBoundParameters.ContainsKey('JavaFilename')) {
-   # A Java filename has been supplied. Use it.
-   $ProgramName = $JavaFilename;
-   Write-Output "Program name supplied is $ProgramName";
-} else {
-   # Java file to compile has not been supplied. Get the
-   # filename via internal function Get-Filename.
-   $ProgramName = Get-Filename "Get Java file to compile";
-}
-Set-Variable -Name ProgramName -Option ReadOnly;
-
-[System.Linq.Enumerable]::Repeat("", 2); #blanklines
-Write-Output $aLine;
-
 $dd = Get-Date -Format "dddd, dd MMMM yyyy HH:mm:ss";
-Write-Output "Compiling program $ProgramName on $dd";
-Write-Output "";
+Write-Output "Compiling program $MyFile on $dd";
+Write-Output '';
 
 #javac.exe compiler options
 $options = @("-Xlint:all",
              "-Xmaxerrs", "10",
              "-Xmaxwarns", "10",
              "-Xdiags:verbose");
-$what = @("-classpath","$CPATH", "$ProgramName");
+$what = @("-classpath","$CPATH", "$MyFile");
 $cmdArgs = @($options, $what);
 Set-Variable -Name 'cmdArgs' -Option ReadOnly;
 
@@ -260,11 +267,12 @@ try {
 
   & $JAVAEXE @cmdArgs;
   $rc = $LastExitCode;
+
 } catch {
   Write-Error -Message "Java compile failed";
 }
 
-Write-Output "`nFile $ProgramName compiled";
+Write-Output "`nFile [$MyFile] compiled";
 
 if ($rc -eq 0) {
    Write-Output "Exit code = $rc";
