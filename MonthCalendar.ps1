@@ -29,7 +29,7 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : MonthCalendar.ps1
 Author       : Ian Molloy
-Last updated : 2024-02-19T15:35:07
+Last updated : 2024-03-27T13:47:29
 
 
 Button.Click Event
@@ -147,6 +147,7 @@ $button1_OnClick=
     $monthCalendar1.Dispose();
     $form1.Close();
     $form1.Dispose();
+    Write-Host 'Exiting application';
 
     return;
 }
