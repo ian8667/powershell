@@ -90,7 +90,7 @@ None. No .NET Framework types of objects are output from this script.
 
 File Name    : Secure-Delete.ps1
 Author       : Ian Molloy
-Last updated : 2023-09-21T21:53:57
+Last updated : 2023-09-25T21:31:16
 Keywords     : yes no yesno secure shred delete random
 
 See also
@@ -187,33 +187,27 @@ https://devblogs.microsoft.com/dotnet/file-io-improvements-in-dotnet-6/
 #>
 
 <#
-new work (24 August 2023)
-need to think on how I can effect performance improvements as
-the script runs very slowly on files a couple of megabytes
-in size.
-
-foreach ($num in 1..10) {write-host '.' -NoNewline}
-
-Write-Host $(Get-Date -Format 'dd-MMM-yyyy HH:mm:ss');
-Get-Date -DisplayHint time
-
-Custom date and time format strings
-https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings?view=netframework-4.8
-
-function Log-Message
-{
-    [CmdletBinding()]
-    Param
-    (
-        [Parameter(Mandatory=$true, Position=0)]
-        [string]$LogMessage
-    )
-
-    Write-Output ("{0} - {1}" -f (Get-Date), $LogMessage)
-}
+think about hidden files and how I deal with them
 
 
-$tyme = ('[{0:HH:mm:ss}]' -f (Get-Date))
+$file = Get-Item 'hidden.txt' -Force
+$file.Attributes = $file.Attributes -band -bnot [System.IO.FileAttributes]::Hidden
+(Get-ItemProperty -Path $file).attributes = [System.IO.FileAttributes]::Hidden
+[System.IO.FileAttributes]::Hidden
+[System.IO.FileAttributes]::Normal
+
+#>
+
+<#
+snag?
+PS 22:27:46==> $rng::GetBytes(4);
+Method invocation failed because [System.Security.Cryptography.RNGCryptoServiceProvider] does not
+contain a method named 'GetBytes'.
+At line:1 char:1
++ $rng::GetBytes(4);
++ ~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : InvalidOperation: (:) [], RuntimeException
+    + FullyQualifiedErrorId : MethodNotFound
 
 #>
 
@@ -352,6 +346,7 @@ Param(
 
       $ofd.CheckFileExists = $true;
       $ofd.CheckPathExists = $true;
+      $ofd.ShowHiddenFiles = $true;
       $ofd.ShowHelp = $false;
       $ofd.Filter = 'Text files (*.txt)|*.txt|All files (*.*)|*.*';
       $ofd.FilterIndex = 1;
@@ -453,7 +448,7 @@ Param(
         $message = @"
 Confirm
 Are you sure you want to perform this action?
-Performing the operation remove file on target $($FileName.FullName).
+Performing the operation remove file on target: [$($FileName.FullName)]
 This action cannot be undone! Please make sure
 "@ #end of 'message' variable
         Set-Variable -Name 'cDescription', 'caption', 'message' -Option ReadOnly;
@@ -753,6 +748,7 @@ Param(
        Write-Error $_.Exception.Message;
 
      } finally {
+       $deleteStream.Flush($flushToDisk);
        $deleteStream.Close();
        $deleteStream.Dispose();
        $rng.Dispose();
