@@ -1,57 +1,73 @@
 <#
-If you must ensure that your entire code block is executed in
-one, embed it into curly brackets and execute this script
-block with the '&' operator.
-& {
-"Starting!"
-$a = Read-Host -Prompt 'Enter something'
-"Entered: $a"
-"Completed"
-}
+.SYNOPSIS
 
-https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/keeping-your-modules-up-to-date
+Shows whether any newer module versions are available
 
-https://blogs.oracle.com/connect/post/nasa-deep-space-network?source=:em:nw:mt::::RC_WWMK200429P00044C0109:NSL400244549&elq_mid=228207&sh=182613141215151202312825271316&cmid=WWMK200429P00044C0109
+.DESCRIPTION
 
-"terminal.integrated.shellIntegration.enabled": true
+Looks at currently installed module version numbers and whether
+there are any newer versions are available for updating. The
+program will indicate which modules need updating
 
-TypeName: Microsoft.PowerShell.Commands.PSRepositoryItemInfo
+.EXAMPLE
 
-; -----
-$lat = 53.626428;
-$long = -2.346529;
-$Daylight = (Invoke-RestMethod "https://api.sunrise-sunset.org/json?lat=53.626428&lng=-2.346529&formatted=0").results;
-$Sunrise  = ($Daylight.Sunrise | Get-Date -Format "HH:mm");
-$Sunset   = ($Daylight.Sunset | Get-Date -Format "HH:mm");
+./Get-ModuleInfo.ps1
 
-Met office
-sunrise: 0605
-sunset: 2016
+No parameters are required
 
-https://www.google.co.uk/maps/@
-53.4901394
--2.23842
+.INPUTS
 
-Get-Date -Format yyyy/MM/dd
-HH-mm-ss
-25/08/2022 06:04:20
+None, no .NET Framework types of objects are used as input.
 
-Get-Date -Format 'dd/MM/yyyy HH:mm:ss'
-$datemask = 'dd/MM/yyyy HH:mm:ss';
-$d1 = [DateTime]::ParseExact("25/08/2022 06:04:20", $datemask, $null);
-$d2 = [DateTime]::ParseExact('25/08/2022 20:17:45', $datemask, $null);
+.OUTPUTS
 
-;----------------------------------------------------------
-File Name    : test001.ps1
+No .NET Framework types of objects are output from this script.
+
+.NOTES
+
+File Name    : Get-ModuleInfo.ps1
 Author       : Ian Molloy
-Last updated : 2022-10-29T00:14:53
+Last updated : 2024-04-17T00:38:23
+Keywords     : module version numbers
 
-#>
+.LINK
 
-<#
-New work:
-o add advanced comments to the header of the file
-o finish off and upload to github
+Keeping Your Modules Up-To-Date
+https://stackoverflow.com/questions/58040991/
+
+
+Yes, it is possible to determine if a Windows computer has any outstanding or failed updates using Microsoft PowerShell. Here is a concise answer:
+
+You can use the `Get-WindowsUpdate` cmdlet from the `PSWindowsUpdate` module to retrieve a list of all available updates, including those that have not yet been installed. To get the list of updates that are not yet installed, you can use the `-IsInstalled $false` parameter:
+
+```powershell
+Get-WindowsUpdate -IsInstalled $false
+```
+
+This will return a list of all updates that are available but have not been installed on the system. You can further filter the results to only show important or security updates by adding the `-Mandatory $true` parameter:
+
+```powershell
+Get-WindowsUpdate -IsInstalled $false -Mandatory $true
+```
+
+To check for any failed updates, you can use the `Get-WindowsUpdateLog` cmdlet, which will show you the history of Windows Update activity, including any failed updates:
+
+```powershell
+Get-WindowsUpdateLog
+```
+
+This will provide a detailed log of all Windows Update activity, including any errors or failures that have occurred.
+
+By using these PowerShell cmdlets, you can easily determine if a Windows computer has any outstanding or failed updates, and take the necessary actions to address them. [1][2][3][4]
+
+Citations:
+[1] https://www.reddit.com/r/PowerShell/comments/fu8zu6/get_list_of_windows_updates_that_have_yet_to_be/
+[2] https://www.action1.com/check-missing-windows-updates-script/
+[3] https://gist.github.com/Grimthorr/44727ea8cf5d3df11cf7
+[4] https://superuser.com/questions/1107692/list-pending-windows-updates-from-command-line
+[5] https://community.spiceworks.com/t/server-2016-v1607-stopped-getting-windows-updates-from-wsus/746679
+
+Perplexity. ( 17 April 2024 ). Information from a conversation with Perplexity. perplexity.ai. https://www.perplexity.ai/
 #>
 
 [CmdletBinding()]
