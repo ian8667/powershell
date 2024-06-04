@@ -43,8 +43,8 @@ None, no .NET Framework types of objects are output from this script.
 
 File Name    : Get-MsertExe.ps1
 Author       : Ian Molloy
-Last updated : 2023-06-08T19:11:16
-Keywords     : msert scan malware
+Last updated : 2024-06-04T17:49:34
+Keywords     : msert scan malware event handling
 
 $Event
 System.Management.Automation.PSEventArgs Class
@@ -96,6 +96,10 @@ Represents a command running in background. A job object can internally contain 
 System.Management.Automation.JobState Enum
 Enumeration for background job status values. Indicates the status of the result object.
 
+
+Microsoft Safety Scanner log file location:
+C:\Windows\Debug\msert.log.
+
 .LINK
 
 Microsoft Safety Scanner
@@ -106,6 +110,9 @@ https://www.winhelponline.com/blog/scan-using-malicious-software-removal-tool-ms
 
 Remove specific prevalent malware with Windows Malicious Software Removal Tool
 https://support.microsoft.com/en-us/help/890830/remove-specific-prevalent-malware-with-windows-malicious-software-remo
+
+How to troubleshoot an error when you run the Microsoft Safety Scanner
+https://support.microsoft.com/en-us/topic/how-to-troubleshoot-an-error-when-you-run-the-microsoft-safety-scanner-6cd5faa1-f7b4-afd2-85c7-9bed02860f1c
 
 Downloading Windows Malicious Software Removal Tool 64-bit
 https://www.microsoft.com/en-us/download/confirmation.aspx?id=9905
@@ -263,6 +270,7 @@ function Get-MsertFile {
 ##=============================================
 Set-StrictMode -Version Latest;
 $ErrorActionPreference = "Stop";
+#Requires -RunAsAdministrator
 
 Invoke-Command -ScriptBlock {
 
@@ -278,12 +286,13 @@ Invoke-Command -ScriptBlock {
 }
 
 [System.Linq.Enumerable]::Repeat("", 2); #blanklines
-# URL of the resource to download (source file).
+# Forms part of local filename when the distant file is downloaded.
 $Filename = 'msert.exe';
+# URL of the resource to download (source file).
 $inputFile = "http://definitionupdates.microsoft.com/download/definitionupdates/safetyscanner/amd64/$Filename";
 
 # The name of the file to be placed on the local computer.
-# i.e., the destination of the file which is downloaded.
+# i.e., the destination of the file when downloaded.
 $outputFile = Join-Path -Path $Env:Temp -ChildPath $Filename;
 
 $msg = @"
