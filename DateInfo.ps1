@@ -58,62 +58,67 @@ will be a Sunday. I can't explain why some contracts are like this.
 
 .EXAMPLE
 
-PS> .\DateInfo.ps1
+PS> .\DateInfo.ps1 -WeekEndingDates
 
 Date related information
-Today is Wednesday, 30 November 2022 16:04:42
+Today is Monday, 30 September 2024 14:08:22
 Running script DateInfo.ps1 in directory C:\Family\powershell
 
 
-Current ISO 8601 date/time is 2022-11-30T16:04:42
+Current ISO 8601 date/time is 2024-09-30T14:08:22
 
 DayNumber WeekNumber JulianDate LeapYear IsDST
 --------- ---------- ---------- -------- -----
-334       48         2459913.5     False False
+274       40         2460583.5      True  True
 
-All done now!
-
-.EXAMPLE
-
-PS> ./DateInfo.ps1 -WeekEndingDates
-
-Date related information
-Today is Wednesday, 30 November 2022 18:32:50
-Running script DateInfo.ps1 in directory C:\Family\powershell
-
-
-Current ISO 8601 date/time is 2022-11-30T18:32:50
-
-DayNumber WeekNumber JulianDate LeapYear IsDST
---------- ---------- ---------- -------- -----
-334       48         2459913.5     False False
+British Summer Time (BST)
+Current local time is offset from GMT by 1 hours
 
 Contract weekending information
 
-Week 1, ending on 2022-10-08
-Week 2, ending on 2022-10-15
-Week 3, ending on 2022-10-22
-Week 4, ending on 2022-10-29
-Week 5, ending on 2022-11-05
+Week 1, ending on 2024-08-03
+Week 2, ending on 2024-08-10
+Week 3, ending on 2024-08-17
+Week 4, ending on 2024-08-24
+Week 5, ending on 2024-08-31
 
-Week 6, ending on 2022-11-12
-Week 7, ending on 2022-11-19
-Week 8, ending on 2022-11-26
-
+Week 6, ending on 2024-09-07
+Week 7, ending on 2024-09-14
+Week 8, ending on 2024-09-21
+Week 9, ending on 2024-09-28
 
 
 ******************************
-Weeks listed: 8
-The first weekending date used: Saturday, 08 October 2022
+Weeks listed: 9
+The first weekending date used: Saturday, 03 August 2024
 
-The next week ending coming up after today is: Saturday, 03 December 2022
+The next week ending coming up after today is: Saturday, 05 October 2024
+
+All done now!
+
+PS> .\DateInfo.ps1
+
+Date related information
+Today is Monday, 30 September 2024 14:08:22
+Running script DateInfo.ps1 in directory C:\Family\powershell
+
+
+Current ISO 8601 date/time is 2024-09-30T14:08:22
+
+DayNumber WeekNumber JulianDate LeapYear IsDST
+--------- ---------- ---------- -------- -----
+274       40         2460583.5      True  True
+
+British Summer Time (BST)
+Current local time is offset from GMT by 1 hours
+
 All done now!
 
 .NOTES
 
 File Name    : DateInfo.ps1
 Author       : Ian Molloy
-Last updated : 2023-09-13T20:43:33
+Last updated : 2024-09-30T13:46:11
 Keywords     : contract end of week jd julian dst
 
 .LINK
@@ -171,6 +176,97 @@ Param(
 # Start of functions
 #-------------------------------------------------
 
+#region ***** function Get-timeZoneMessage *****
+function Get-timeZoneMessage {
+[CmdletBinding()]
+[OutputType([string])]
+param()
+
+    begin {
+        $timeZone = Get-TimeZone # System.TimeZoneInfo class
+        [ValidateSet('British Summer Time (BST)','Greenwich Mean Time (GMT)')]
+        [string]$timezoneIdMessage = 'British Summer Time (BST)'
+    }
+
+    process {
+
+        $timezoneIdMessage = if ($timeZone.Id -eq 'GMT Standard Time' -and $timeZone.IsDaylightSavingTime((Get-Date))) {
+            'British Summer Time (BST)'
+        } else {
+            'Greenwich Mean Time (GMT)'
+        }
+
+    }
+
+    end {
+        return $timezoneIdMessage
+    }
+}
+#endregion ***** end of function Get-timeZoneMessage *****
+
+#----------------------------------------------------------
+
+#region ***** function Get-OffsetHours *****
+function Get-OffsetHours {
+    <#
+    .SYNOPSIS
+    Calculates the current local offset in hours from GMT.
+
+    .DESCRIPTION
+    This function determines the current offset in hours between the local time zone
+    and Greenwich Mean Time (GMT). It accounts for daylight saving time changes.
+
+    .OUTPUTS
+    System.Int32
+    Returns an integer representing the hour offset from GMT.
+
+    .EXAMPLE
+    $offset = Get-OffsetHours
+    Returns the current hour offset from GMT and stores it in the $offset variable.
+
+    .NOTES
+    Last Updated: 05 September 2024
+
+    With help from perplexity.ai
+
+    .LINK
+    Perplexity. (05 September 2024). Information from a conversation with Perplexity. perplexity.ai. https://www.perplexity.ai/
+
+    #>
+
+    [CmdletBinding()]
+    [OutputType([int])]
+    param()
+
+    begin {
+        # Get the current date and time
+        $today = Get-Date
+
+        # Define the GMT time zone
+        $ukTimeZone = [TimeZoneInfo]::FindSystemTimeZoneById('GMT Standard Time')
+
+        # Initialize the offset variable
+        # Adjust range to accommodate all possible time zones
+        [ValidateRange(-12, 14)]
+        [int]$currentOffset = 0
+
+        # Calculate the current offset from GMT
+        $currentOffset = $ukTimeZone.GetUtcOffset($today).Hours
+    }
+
+    process {
+        # No processing needed in this function
+    }
+
+    end {
+        # Return the calculated offset
+        return $currentOffset
+    }
+}
+#endregion ***** end of function Get-OffsetHours *****
+
+#----------------------------------------------------------
+
 #region ***** function Show-WeekendingDates *****
 ##=============================================
 ## Function: Show-WeekendingDates
@@ -202,7 +298,7 @@ Begin {
   # should be, for example, the Saturday of the end of the
   # first week on the contract. This date should be earlier
   # than the end date.
-  $startDate = Get-Date -Year 2023 -Month 9 -Day 9;
+  $startDate = Get-Date -Year 2024 -Month 8 -Day 3;
 
   # The end date is determined to be the current date, whatever
   # today is (i.e. whenever the script is run). Our output will
@@ -225,6 +321,7 @@ Begin {
   $iso8601Date = 'yyyy-MM-dd';
   Set-Variable -Name 'blockSize', 'startDate', 'endDate', 'iso8601Date' -Option ReadOnly;
 
+  Write-Output '';
   Write-Output 'Contract weekending information';
   Write-Output '';
 }
@@ -381,6 +478,9 @@ Begin {
   $rule = [System.Globalization.CalendarWeekRule]::FirstFullWeek;
   $dayofweek = [System.DayOfWeek]::Monday;
   $weekNum = $greg.GetWeekOfYear($myDate, $rule, $dayofweek);
+  [int]$currentOffset = Get-OffsetHours
+  $tzMessage = Get-timeZoneMessage
+
 }
 
 Process {
@@ -389,11 +489,11 @@ Process {
   $Culture = [System.Globalization.CultureInfo]::CurrentCulture;
 
   $hash = [ordered]@{
-        DayNumber   = $myDate.DayOfYear.ToString("000");
-        WeekNumber  = $weekNum.ToString();
-        JulianDate  = [String]$jd;
-        LeapYear    = [System.DateTime]::IsLeapYear($myDate.Year);
-        IsDST       = $myDate.IsDaylightSavingTime();
+      DayNumber   = $myDate.DayOfYear.ToString("000");
+      WeekNumber  = $weekNum.ToString();
+      JulianDate  = [String]$jd;
+      LeapYear    = [System.DateTime]::IsLeapYear($myDate.Year);
+      IsDST       = $myDate.IsDaylightSavingTime();
   }
   $DayWeek = New-Object -TypeName PSObject -Property $hash;
 
@@ -404,6 +504,8 @@ End {
   Write-Output ("Current ISO 8601 date/time is {0:s}" -f $myDate);
 
   Write-Output $DayWeek | Format-Table *;
+  Write-Output $tzMessage;
+  Write-Output ('Current local time is offset from GMT by {0} hours' -f $currentOffset)
   Write-Verbose -Message "function Show-DateInformation done";
 
 }
@@ -460,6 +562,8 @@ End {
 } #end function Get-WeekendingDate
 #endregion ***** end of function Get-WeekendingDate *****
 
+#----------------------------------------------------------
+
 #-------------------------------------------------
 # End of functions
 #-------------------------------------------------
@@ -496,6 +600,7 @@ if ($WeekEndingDates.IsPresent) {
   Write-Output ($msg -f $WeekEnd.ToString('dddd, dd MMMM yyyy'));
 }
 
+Write-Output "";
 Write-Output "All done now!";
 Write-Output "";
 ##=============================================
