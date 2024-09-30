@@ -96,6 +96,8 @@ The next week ending coming up after today is: Saturday, 05 October 2024
 
 All done now!
 
+.EXAMPLE
+
 PS> .\DateInfo.ps1
 
 Date related information
