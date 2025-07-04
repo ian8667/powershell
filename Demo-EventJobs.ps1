@@ -29,8 +29,8 @@ No .NET Framework types of objects are output from this script.
 
 File Name    : Demo-EventJobs.ps1
 Author       : Ian Molloy
-Last updated : 2022-10-11T15:20:27
-Keywords     : event handling background job
+Last updated : 2025-07-04T23:28:20
+Keywords     : event handling background job state
 
 
 Event handling automatic variables found in the action
@@ -134,6 +134,23 @@ Manage Event Subscriptions with PowerShell
 Summary: Bruce Payette shows how to manage event subscriptions
 with Windows PowerShell.
 https://devblogs.microsoft.com/scripting/manage-event-subscriptions-with-powershell/
+
+Complete list of job states.
+PS> [System.Enum]::GetValues([System.Management.Automation.JobState]) |
+    ForEach-Object { $_.ToString() } |
+    Sort-Object
+
+AtBreakpoint
+Blocked
+Completed
+Disconnected
+Failed
+NotStarted
+Running
+Stopped
+Stopping
+Suspended
+Suspending
 
 #>
 
