@@ -1,827 +1,319 @@
 <#
 .SYNOPSIS
 
-Copies a file and inserts the current date/time partway through
-the name of the copied file.
+Date-copies a file with a timestamp and verifies its integrity.
 
 .DESCRIPTION
 
-By copying a file and inserting the current date/time (timestamp)
-partway through the name of the copied file, a 'backup copy' is made
-of the original file. This means we can make amendments to the
-original file and have a backup copy should we have the need to
-revert to it. The date and time show when the file was copied and by
-having a time component, we can make more than one copy of a file
-per day.
-
-The file that is copied will not be changed or modified in any way.
-
-File 'fred.txt', for example, will be copied to a file named with a
-format of 'fred_2018-04-22T14-52-26.txt'. The file, when copied, can
-be set to ReadOnly if required.
-
-The date/time component used is:
-
-<filename>_YYYY-MM-DDTHH-MM-SS.<filename extension>
+Allows the user to either supply a filename manually or be prompted to select one interactively. The script validates the file, appends a timestamp to its name, copies it, optionally sets it to read-only, and confirms the copy using an MD5 hash comparison. It also lists the original and copied files in the directory.
 
 .PARAMETER Path
 
-The file of which a copy will be made
+The full path of the file to be copied. Mandatory in manual mode.
+
+.PARAMETER AutoSelect
+
+If specified, prompts the user to select the file interactively.
 
 .PARAMETER ReadOnly
 
-An enumeration switch parameter indicating whether to set the copy
-of the file to read only when the copy operation is complete.
+Sets the copied file as read-only if specified.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1
+.\DateCopy-File.ps1
 
-A filename to copy has not been supplied so an internal function
-will be invoked to obtain the file to copy.
+If no parameters are passed to the function, it utilizes an internal function to select the file.
 
-.EXAMPLE
-
-PS> ./DateCopy-File.ps1 'myfile.txt'
-
-The filename supplied will be copied with the name format of
-myfile_YYYY-MM-DDTHH-MM-SS.txt.
+This example demonstrates how the function behaves when it is called without any parameters. Instead of requiring external input, it automatically uses an internal function to handle file selection.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1 -Path 'myfile.txt'
+.\DateCopy-File.ps1 -Path "C:\Test\myfile.txt"
 
-The filename supplied will be copied to a file with the name format
-of myfile_YYYY-MM-DDTHH-MM-SS.txt.
-
-.EXAMPLE
-
-PS> ./DateCopy-File.ps1 -ReadOnly
-
-A filename to copy has not been supplied so an internal function will
-be invoked to obtain the file to copy. The file, when copied, will be
-set to ReadOnly upon completion.
+This command specifies the path to a file that the script will copy with a timestamp appended to the filename. The -Path parameter must point to a file, not a directory.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1 'myfile.txt' -ReadOnly
+.\DateCopy-File.ps1 -ReadOnly
 
-The filename supplied will be copied to a file with the name format
-of myfile_YYYY-MM-DDTHH-MM-SS.txt and set to ReadOnly upon completion.
-
-.EXAMPLE
-
-PS> ./DateCopy-File.ps1 -Path 'myfile.txt' -ReadOnly
-
-The filename supplied will be copied to a file with the name format
-of 'myfile_YYYY-MM-DDTHH-MM-SS.txt' and set to ReadOnly upon
-completion of the copy.
+Since the file path is not supplied, this command uses an internal function to prompt the user to select a file. Upon completion, the date-copied file will be set to read-only.
 
 .EXAMPLE
 
-PS> ./DateCopy-File.ps1 $file
+.\DateCopy-File.ps1 -Path "C:\Test\myfile.txt" -ReadOnly
 
-The path to the file to copy is passed as a positional
-parameter via the contents of variable 'file'. The
-filename supplied will be copied to a file, for example,
-with the name format of 'myfile_YYYY-MM-DDTHH-MM-SS.txt'.
-Variable 'file' can be of type string or a
-System.IO.FileInfo object. Variable 'file' can be
-assigned as follows:
-
-PS> $file = 'C:\Gash\myfile.ps1'
-or
-PS> $file = Get-Item 'myfile.ps1'
-
-.EXAMPLE
-
-PS> ./DateCopy-File.ps1 $file -ReadOnly
-
-The path to the file to copy is passed as a positional
-parameter via the contents of variable 'file'. The
-filename supplied will be copied to a file, for example,
-with the name format of 'myfile_YYYY-MM-DDTHH-MM-SS.txt'.
-Variable 'file' can be of type string or a
-System.IO.FileInfo object. Variable 'file' can be
-assigned as follows:
-
-PS> $file = 'C:\Gash\myfile.ps1';
-or
-PS> $file = Get-Item 'myfile.ps1';
-
-The file will be set to ReadOnly upon completion of the
-copy.
-
-.EXAMPLE
-
-PS> ./DateCopy-File.ps1 -Path $file -ReadOnly
-
-The path to the file to copy is passed as a named
-parameter via the contents of variable 'file'. The
-filename supplied will be copied to a file, for example,
-with the name format of 'myfile_YYYY-MM-DDTHH-MM-SS.txt'.
-Variable 'file' can be of type string or a
-System.IO.FileInfo object. Variable 'file' can be
-assigned as follows:
-
-PS> $file = 'C:\Gash\myfile.ps1';
-or
-PS> $file = Get-Item 'myfile.ps1';
-
-The file will be set to ReadOnly upon completion of the
-copy.
-
-.INPUTS
-
-None, no .NET Framework types of objects are used as input.
-
-.OUTPUTS
-
-No .NET Framework types of objects are output from this script.
+This example demonstrates how to use the DateCopy-File.ps1 script to create a date-stamped copy of a file and set it to read-only. If no parameters are provided, the script will prompt you to select a file interactively.
 
 .NOTES
 
 File Name    : DateCopy-File.ps1
 Author       : Ian Molloy
-Last updated : 2022-11-29T18:23:01
-Keywords     : pscustomobject pstypename
-
-This program contains examples of using delegates.
-
-.LINK
-
-Date and time format - ISO 8601
-https://www.iso.org/iso-8601-date-and-time-format.html
-
-ISO 8601 Data elements and interchange formats
-https://en.wikipedia.org/wiki/ISO_8601
-
-Namespace: System.IO.Path Class
-https://msdn.microsoft.com/en-us/library/system.io.path(v=vs.110).aspx
-
-Microsoft.PowerShell.Management
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/?view=powershell-5.1
-
-MD5 message-digest algorithm
-https://en.wikipedia.org/wiki/MD5
-
-The MD5 Message-Digest Algorithm
-https://www.ietf.org/rfc/rfc1321.txt
-
-Custom objects and PSTypeName
-https://powershellstation.com/2016/05/22/custom-objects-and-pstypename/
-
-Everything you wanted to know about PSCustomObject
-(PSTypeName for custom object types)
-https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-pscustomobject?view=powershell-7.2
-
-How to find these files again:
-$file = 'C:\Gash\mygash_2020-10-01T22-47-03.pdf';
-$reg = '(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})';
-Get-ChildItem -File | Where-Object -Property 'name' -Match -Value $reg;
-$file -match $reg
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_regular_expressions?view=powershell-7.2
+Last updated : 2025-07-04T22:24:04
+Keywords     : datecopy copilot
 
 #>
 
-[CmdletBinding()]
-Param(
-   [parameter(Position=0,
-              Mandatory=$false,
-              HelpMessage='File to be date copied')]
-   [ValidateScript({Test-Path $_ -PathType 'Leaf'})]
-   [Object]
-   $Path,
+[CmdletBinding(DefaultParameterSetName = 'Interactive')]
+param (
+    [Parameter(Mandatory = $true, ParameterSetName = 'Manual', Position = 0)]
+    [string]$Path,
 
-   [parameter(Position=1,
-              Mandatory=$false,
-              HelpMessage='Whether to set copied file to readonly')]
-   [Switch]
-   $ReadOnly
-) #end param
+    [Parameter(ParameterSetName = 'Interactive')]
+    [switch]$AutoSelect,
 
-#----------------------------------------------------------
-# Start of delegates
-#----------------------------------------------------------
-$ErrorsFound = [Predicate[System.Collections.Generic.List[Byte]]]{
-<#
-The object passed in contains a list of positions within the
-filename string which are invalid. If the number of elements
-contained in the List is zero (the collection is empty),
-ie, there are no errors.
+    [switch]$ReadOnly
+)
 
-Return true if there are errors; otherwise, false.
-#>
-param($x) $x.Count -gt 0;
-}
-Set-Variable -Name 'ErrorsFound' -Option ReadOnly;
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
-#----------------------------------------------------------
+#region Helper Functions
 
-$invalids = [Func[System.Collections.Generic.List[Byte]]]{
-<#
-Create a collection and store a list of invalid characters
-that should not appear in a filename.
-
-Method GetInvalidFileNameChars is used to build a collection
-containing the characters that are not allowed in file names.
-
-Func<TResult> Delegate
-Encapsulates a method that has no parameters and returns a
-value of the type specified by the TResult parameter.
-https://docs.microsoft.com/en-us/dotnet/api/system.func-1?view=net-5.0
-#>
-    $invalidChars = [System.Collections.Generic.List[Byte]]::new();
-    $invalidChars.Capacity = 60;
-    $invalidChars.Add(91); #decimal value - Left square bracket [
-    $invalidChars.Add(93); #decimal value - Right square bracket ]
-    $invalidChars.Add(35); #decimal value - Hash symbol #
-    $invalidChars.Add(59); #decimal value - Semicolon ;
-    $invalidChars.Add(64); #decimal value - At symbol @
-    [System.IO.Path]::GetInvalidFileNameChars() |
-    ForEach-Object {
-        $invalidChars.Add($PSItem);
-    }
-    $invalidChars.TrimExcess();
-
-    # Return the object created
-    $invalidChars;
-}
-Set-Variable -Name 'invalids' -Option ReadOnly;
-
-#----------------------------------------------------------
-# End of delegates
-#----------------------------------------------------------
-
-#----------------------------------------------------------
-# Start of functions
-#----------------------------------------------------------
-
-#region ***** function Show-ErrorPositions *****
-function Show-ErrorPositions {
-    [CmdletBinding()]
-    param (
-        [parameter(Mandatory=$true,
-                   HelpMessage="Show where the errors are in the filename")]
-        [ValidateNotNullOrEmpty()]
-        [System.Collections.Generic.List[Byte]]$ErrorPositions,
-
-        [parameter(Mandatory=$true,
-                   HelpMessage="Filename length")]
-        [ValidateScript({$_ -gt 0})]
-        [Int32]$FilenameLen
-    ) #end param
-
-    begin {
-        $k = ' ' * $FilenameLen;
-        $sb = [System.Text.StringBuilder]::new();
-        $sb.Capacity = $FilenameLen;
-        $sb.Append($k) | Out-Null;
-        #Write-Output "sb(1) is now: $($sb.ToString())";
-
-    }
-
-    process {
-        foreach ($item in $ErrorPositions) {
-            $sb[($item - 1)] = '^';
-        }
-
-    }
-
-    end {
-        #Write-Output "k is now: $k";
-        #Write-Output "sb(2) is now: $($sb.ToString())";
-        return $sb.ToString();
-    }
-}
-#endregion ***** end of function Show-ErrorPositions *****
-
-#----------------------------------------------------------
-
-#region ***** function Show_Files *****
-function Show_Files {
+#region Prompt-ForFilename
+function Prompt-ForFilename {
 <#
 .SYNOPSIS
-
-Lists the file which has just been copied and other copies made
-
-.DESCRIPTION
-
-Lists the file which has just been copied and all other date
-copies made of it as created by this script (if any).
-
-The way this program is designed to work, any copies of a file
-will be in the same directory. So, for example, if file
-'myfile.txt' in directory 'C:\Gash' is 'date copied' by this
-script, then all subsequent files created will also be found
-in directory 'C:\Gash'. Any such files in other directories
-will not be listed.
-
-.PARAMETER InputFilename
-
-A string parameter containing the filename of the file
-just copied.
-
-.OUTPUTS
-
-Sample output assuming file 'ggash.pdf' in directory 'C:\Gash'
-was copied:
-
-
-    Directory: C:\Gash
-
-Mode                 LastWriteTime         Length Name
-----                 -------------         ------ ----
--a---          25/02/2022    23:08          49249 ggash.pdf
--a---          28/02/2022    22:01          49249 ggash_2022-02-28T22-01-36.pdf
--a---          28/02/2022    22:01          49249 ggash_2022-02-28T22-01-56.pdf
--a---          03/03/2022    17:58          49249 ggash_2022-03-03T17-58-21.pdf
--a---          03/03/2022    18:26          49249 ggash_2022-03-03T18-26-34.pdf
--a---          03/03/2022    18:27          49249 ggash_2022-03-03T18-27-58.pdf
-
-#>
-
-[CmdletBinding()]
-param(
-    [parameter(Position=0,
-               Mandatory=$true,
-               HelpMessage="The filename(s) to display")]
-    [ValidateNotNullOrEmpty()]
-    [String]$InputFilename
-) #end param
-
-    begin {
-      # Regular expression for the (date/time) string
-      # _YYYY-MM-DDTHH-MM-SS
-      $DateCopyRegex = '_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}';
-      Set-Variable -Name 'DateCopyRegex' -Option ReadOnly;
-
-      # Original filename without any modifications to it.
-      $OrigFile = $InputFilename;
-      # I've done this so the code doesn't get confused with the
-      # regular expression part of the filename.
-      $OrigFile = $OrigFile.Replace('\', '\\');
-      Set-Variable -Name 'OrigFile' -Option ReadOnly;
-
-      # Get the parent path (base path) from the input filename.
-      # This is where all of the files we'll be dealing with are
-      # located.
-      #
-      # See the following article on the subject of parent
-      # paths:
-      # How to get the Parent's parent directory in Powershell?
-      # https://stackoverflow.com/questions/9725521/how-to-get-the-parents-parent-directory-in-powershell
-      $BasePath = Split-Path $OrigFile -Parent;
-      Set-Variable -Name 'BasePath' -Option ReadOnly;
-
-      if ([System.IO.Path]::HasExtension($OrigFile)) {
-        $pos = $OrigFile.LastIndexOf('.');
-        $FileRegex = $OrigFile.Insert($pos, $DateCopyRegex);
-      } else {
-        # This file doesn't have a file extension
-        $FileRegex = [System.String]::Concat($OrigFile, $DateCopyRegex);
-      }
-
-    }
-
-    process {
-      # I'm using the predicate
-      # ($_.Name -eq (Split-Path -Path $OrigFile -Leaf)) so that I
-      # match the name 'myfile.txt' for example, and not 'myfile.txt.bak'
-      Get-ChildItem -File -Path $BasePath |
-        Where-Object {($_.Name -eq (Split-Path -Path $OrigFile -Leaf)) -or ($_.FullName -match $FileRegex)} |
-        Sort-Object -Property LastWriteTime;
-
-    }
-
-    end {}
-
-} #end of the function
-#endregion ***** end of function Show_Files *****
-
-#----------------------------------------------------------
-
-#region ***** Function Get-OldFilename *****
-function Get-OldFilename {
-<#
-.SYNOPSIS
-
-Gets the name of a file to date copy
+Prompts the user to select a file from a dialog.
 
 .DESCRIPTION
-
-Uses the OpenFileDialog class to obtain a filename to
-copy. This file will not be modified or changed in any
-way
+Displays a file open dialog allowing the user to choose an existing file.
+Throws an error if the user cancels.
 
 .PARAMETER Boxtitle
+The title text shown at the top of the file dialog.
 
-Used to set the file OpenFileDialog box title.
-
-.LINK
-
-OpenFileDialog Class.
-https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?view=netcore-3.1
+.OUTPUTS
+[string] The selected file's full path.
 #>
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$Boxtitle
+    )
 
-[CmdletBinding()]
-[OutputType([System.String])]
-Param(
-   [parameter(Position=0,
-              Mandatory=$true,
-              HelpMessage="ShowDialog box title")]
-   [ValidateNotNullOrEmpty()]
-   [String]$Boxtitle
-) #end param
+    Add-Type -AssemblyName "System.Windows.Forms"
+    $ofd = [System.Windows.Forms.OpenFileDialog]::new()
+    $ofd.Title = $Boxtitle
+    $ofd.InitialDirectory = "C:\Family\powershell"
+    $ofd.Filter = 'Text files (*.txt)|*.txt|PowerShell files (*.ps1)|*.ps1|All files (*.*)|*.*'
+    $ofd.Multiselect = $false
 
-Begin {
-  Write-Verbose -Message "Invoking function to obtain the to file to copy";
+    if ($ofd.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) {
+        throw "No file chosen or selected"
+    }
 
-  Add-Type -AssemblyName "System.Windows.Forms";
-  [System.Windows.Forms.OpenFileDialog]$ofd = [System.Windows.Forms.OpenFileDialog]::new();
-
-  $myok = [System.Windows.Forms.DialogResult]::OK;
-  [String]$retFilename = "";
-
-  $ofd.AddExtension = $false;
-  $ofd.CheckFileExists = $true;
-  $ofd.CheckPathExists = $true;
-  $ofd.DefaultExt = ".txt";
-  $ofd.Filter = 'Text files (*.txt)|*.txt|PowerShell files (*.ps1)|*.ps1|All files (*.*)|*.*';
-  $ofd.InitialDirectory = "C:\Family\powershell";
-  $ofd.Multiselect = $false;
-  $ofd.Title = $Boxtitle; # sets the file dialog box title
-  $ofd.ShowHelp = $false;
-  $ofd.RestoreDirectory = $false;
-  Set-Variable -Name 'myok', 'ofd' -Option ReadOnly;
-
+    return $ofd.FileName
 }
+#endregion
 
-Process {
-  if ($ofd.ShowDialog() -eq $myok) {
-     $retFilename = $ofd.FileName;
-  } else {
-     Throw "No file chosen or selected";
-  }
-}
+#------------------------------------------------
 
-End {
-  $ofd.Dispose();
-  return $retFilename;
-}
-}
-#endregion ***** End of function Get-OldFilename *****
-
-#----------------------------------------------------------
-
-#region ***** Function Compare-Files *****
-function Compare-Files {
+#region Validate-Filename
+function Validate-Filename {
 <#
 .SYNOPSIS
-
-Computes the hash value of two files
+Validates that the file path exists and is safe to use.
 
 .DESCRIPTION
+Performs a series of checks on the filename:
+- Ensures there are no invalid characters.
+- Confirms the file exists.
+- Allows empty files.
 
-Uses the 'Get-FileHash' cmdlet to compute the MD5 hash value
-of the original and copied file. The hashes of two sets of
-data from the files concerned should match if the
-corresponding data also matches. This will verify that the
-contents of the copied file has not been changed and thus
-the copy was successful.
+.PARAMETER Path
+The full file path to validate.
 
-Returns true if the hash values are the same; false otherwise
+.OUTPUTS
+[bool] Returns $true if valid. Throws if invalid.
 
-.PARAMETER DataFile
+    if ((Get-Item -LiteralPath $Path).Length -eq 0) {
+        throw "File '$Path' is empty and not permitted for this operation."
+    }
 
-A PSCustomObject object containing the original and copied
-filenames.
-
-.LINK
-
-Get-FileHash
-https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-filehash?view=powershell-7.1
-
-System.Security.Cryptography.MD5CryptoServiceProvider Class
-https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.md5cryptoserviceprovider?view=net-5.0
-
-Microsoft.PowerShell.Commands.FileHashInfo Class
-https://docs.microsoft.com/en-us/dotnet/api/microsoft.powershell.commands.filehashinfo?view=powershellsdk-7.0.0
-
-java.security.MessageDigest Class
 #>
+    param (
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
 
-[CmdletBinding()]
-[OutputType([System.Boolean])]
-Param(
-   [parameter(Position=0,
-              Mandatory=$true,
-              HelpMessage="Data files to hash compare")]
-   [ValidateNotNullOrEmpty()]
-   [PSTypeName('OldNew')]$DataFile
-) #end param
+    $name = Split-Path -Path $Path -Leaf
 
-[Boolean]$retval = $false;
-$splat = @{
-    Path = @($DataFile.OldFilename, $DataFile.NewFilename)
-    Algorithm = 'MD5'
+    # Check for trailing dots or spaces
+    if ($name -match '[\. ]$') {
+        throw "Filename '$name' has a trailing dot or space, which is not permitted."
+    }
+
+    $invalidChars = [System.IO.Path]::GetInvalidFileNameChars()
+    if ($name.IndexOfAny($invalidChars) -ne -1) {
+        throw "Filename '$name' contains invalid characters."
+    }
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "File '$Path' does not exist."
+    }
+
+    return $true
 }
-$fHash = Get-FileHash @splat;
-if ($fHash[0].Hash -eq $fHash[1].Hash) {
-  $retval = $true;
-}
+#endregion
 
-return $retval;
-}
-#endregion ***** End of function Compare-Files *****
+#------------------------------------------------
 
-#----------------------------------------------------------
-
-#region ***** Function Get-NewFilename *****
-function Get-NewFilename {
+#region Generate-DateFilename
+function Generate-DateFilename {
 <#
 .SYNOPSIS
-
-Constructs a new filename
+Creates a timestamped version of the original filename.
 
 .DESCRIPTION
-
-Constructs a new filename from the filename passed as a
-parameter. The copied file will have this new filename
-when when the copy is complete
-
-Returns a filename in the format of, for example,
-myfile_2020-12-22T19-42-58.txt
+Appends a timestamp to the base name of the original file.
+Preserves the original directory and file extension.
 
 .PARAMETER OldFilename
+The original file's full path.
 
-Filename from which to construct a new filename
-
+.OUTPUTS
+[string] The new file path with timestamp.
 #>
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$OldFilename
+    )
 
-[CmdletBinding()]
-[OutputType([System.String])]
-Param(
-   [parameter(Position=0,
-              Mandatory=$true,
-              HelpMessage="The filename to rename")]
-   [ValidateNotNullOrEmpty()]
-   [String]$OldFilename
-) #end param
+    $timestamp = (Get-Date).ToString('_yyyy-MM-ddTHH-mm-ss')
+    $directory = [System.IO.Path]::GetDirectoryName($OldFilename)
+    $base = [System.IO.Path]::GetFileNameWithoutExtension($OldFilename)
+    $ext = [System.IO.Path]::GetExtension($OldFilename)
 
-Begin {
-  # Date format used to help rename the file from the original
-  # filename provided.
-  $mask = '_yyyy-MM-ddTHH-mm-ss';
-  $timestamp = (Get-Date).ToString($mask);
-  Set-Variable -Name 'mask', 'timestamp' -Option ReadOnly;
+    if (-not $ext) {
+        Write-Verbose "No file extension detected in '$OldFilename'"
+    }
 
-  # Get the absolute path without the filename or extension
-  $f1 = [System.io.Path]::GetDirectoryName($OldFilename);
-
-  # Get the filename itself without the path or extension
-  $f2 = [System.io.Path]::GetFileNameWithoutExtension($OldFilename);
-
-  # Get the extension (including the period "."), or empty
-  # if variable 'OldFilename' does not contain an extension.
-  $f3 = [System.io.Path]::GetExtension($OldFilename);
-
-  # Character used to separate directory levels in a path. Returns
-  # a backslash on an MS Windows operating system
-  $slash = [System.io.Path]::DirectorySeparatorChar;
-  Set-Variable -Name 'f1', 'f2', 'f3', 'slash' -Option ReadOnly;
-
-  $newFilename = ("{0}{1}{2}{3}" -f $f1, $slash, $f2, $timestamp);
-
-  if (-not ([System.String]::IsNullOrEmpty($f3))) {
-      # The original filename has a file extension. Insert
-      # it back into our new filename which now contains
-      # the date and time of the file copy
-      $newFilename = ("$($newFilename){0}" -f $f3);
-  }
-
+    return Join-Path -Path $directory -ChildPath ("$base$timestamp$ext")
 }
+#endregion
 
-Process {}
+#------------------------------------------------
 
-End {
-  # Return the object created
-  return $newFilename;
-}
-
-}
-#endregion ***** End of function Get-NewFilename *****
-
-#----------------------------------------------------------
-
-#region ***** function Check-Filename *****
-function Check-Filename {
+#region Compare-Hash
+function Compare-Hash {
 <#
 .SYNOPSIS
-
-Check the filename for invalid characters
+Compares MD5 hash values of two files.
 
 .DESCRIPTION
+Generates MD5 hashes for two files and returns true if they match, false otherwise.
 
-Checks the filename supplied for any invalid characters
-and throws a terminating error if errors found. Prior
-to throwing a terminating error, the filename and where
-the errors are in the filename will be written to the
-console so the user will be aware of where the problem
-characters are in the filename
+.PARAMETER Original
+Path to the original file.
 
-.PARAMETER CheckFile
+.PARAMETER Copy
+Path to the copied file.
 
-The filename to check
-
-.LINK
-
-OpenFileDialog Class.
-https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog?view=netcore-3.1
+.OUTPUTS
+[bool] Returns true if file contents are identical.
 #>
+    param (
+        [Parameter(Mandatory=$true)][string]$Original,
+        [Parameter(Mandatory=$true)][string]$Copy
+    )
 
-    [CmdletBinding()]
-    param(
-        [parameter(Mandatory=$true,
-                   HelpMessage="Check filename for invalid characters")]
-        [ValidateNotNullOrEmpty()]
-        [String]$CheckFile
-    ) #end param
+    $hashes = Get-FileHash -Path @($Original, $Copy) -Algorithm MD5
+    return ($hashes[0].Hash -eq $hashes[1].Hash)
+}
+#endregion
 
-    begin {
-          $invalidChars = $invalids.Invoke();
+#------------------------------------------------
 
-          #We only need to check the filename, not the pathname so
-          #hence the reason for using the Split-Path cmdlet to
-          #obtain the leaf part of the path.
-          #$filename = 'C:\Gash\gashfile.txt';
-          $fname = Split-Path -Path $CheckFile -Leaf;
+#region List-DateCopies
+function List-DateCopies {
+<#
+.SYNOPSIS
+Lists the original file and its timestamped copies.
 
-          [Byte]$PosCounter = 0;
-          #Contains the character position(s) within the filename that
-          #are in error
-          $ErrorPos = [System.Collections.Generic.List[Byte]]::new();
-          $ErrorPos.Capacity = 30;
+.DESCRIPTION
+Searches the file's directory for any files with a name pattern matching the timestamped version.
 
-          $encoder = [System.Text.UTF8Encoding]::new();
-          Set-Variable -Name 'fname', 'encoder' -Option ReadOnly;
-          #Write-Output ('Looking at filename: {0} ({1} characters)' -f $fname, $fname.Length);
-    } #end begin block
+.PARAMETER InputFilename
+The full path to the original file.
 
-    process {
-          #Iterate over each character in the filename in order
-          #to examine or process each character to ensure it's
-          #not an invalid character. If it is an invalid character,
-          #make a note of it's position.
-          $encoder.GetBytes($fname) | ForEach-Object {
-              $data = $PSItem;
-              $PosCounter++;
-              if ($invalidChars.Contains($data)) {
-                  $ErrorPos.Add($PosCounter);
-              }
-          } #end of ForEach-Object loop
+.OUTPUTS
+[List[FileInfo]] A sorted list of related files.
+#>
+    param (
+        [Parameter(Mandatory)]
+        [string]$InputFilename
+    )
 
-          if ($ErrorsFound.Invoke($ErrorPos)) {
-              Write-Output '';
-              Write-Output ('We have a filename problem, ({0} errors)' -f $ErrorPos.Count);
-              $m = Show-ErrorPositions -ErrorPositions $ErrorPos -FilenameLen $fname.Length;
-              Write-Output $fname;
-              Write-Output $m;
+    $dir = Split-Path $InputFilename -Parent
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($InputFilename)
+    $ext = [System.IO.Path]::GetExtension($InputFilename)
+    $pattern = "$name(_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})?$ext"
 
-              throw "Invalid characters found in filename $($fname)";
-          }
-
-    } #end process block
-
-    end {}
+    Get-ChildItem -Path $dir -File |
+        Where-Object {
+            $_.Name -match "^$pattern$"
+        } |
+        Sort-Object -Property LastWriteTime
 
 }
-#endregion ***** end of function Check-Filename *****
+#endregion
 
-#----------------------------------------------------------
-# End of functions
-#----------------------------------------------------------
+#endregion Helper Functions
+
+#------------------------------------------------
+
+#region Main-Routine
+function Main-Routine {
+<#
+.SYNOPSIS
+Main entry point for the date-copying workflow.
+
+.DESCRIPTION
+Handles input mode selection, validation, filename generation, copying, verification, and final listing.
+
+.NOTES
+Automatically selects interactive or manual mode based on the active parameter set.
+#>
+    Write-Output "`nDate and copy of file"
+    Write-Output "Today is $(Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss')"
+    Write-Output "Running script $($MyInvocation.MyCommand.Name) in directory $(Split-Path -Parent $MyInvocation.MyCommand.Definition)"
+
+    $source = if ($PSCmdlet.ParameterSetName -eq 'Manual') {
+        Resolve-Path -Path $Path | Select-Object -ExpandProperty Path
+    } else {
+        Prompt-ForFilename -Boxtitle 'Select file to copy'
+    }
+
+    Validate-Filename -Path $source
+
+    Start-Sleep -Seconds 2
+    $destination = Generate-DateFilename -OldFilename $source
+
+    Copy-Item -Path $source -Destination $destination -Force
+
+    if (-not (Compare-Hash -Original $source -Copy $destination)) {
+        throw "Hash mismatch! Copy may be corrupt."
+    }
+
+    # Update metadata
+    Set-ItemProperty -Path $destination -Name IsReadOnly -Value $false
+    Set-ItemProperty -Path $destination -Name LastWriteTime -Value (Get-Date)
+
+    if ($ReadOnly) {
+        Set-ItemProperty -Path $destination -Name IsReadOnly -Value $true
+    }
+
+    Write-Output "`nFile copied to: $destination"
+    List-DateCopies -InputFilename $source
+}
+#endregion
 
 ##=============================================
 ## SCRIPT BODY
 ## Main routine starts here
 ##=============================================
-Set-StrictMode -Version Latest;
-$ErrorActionPreference = "Stop";
 
-Invoke-Command -ScriptBlock {
-
-   Write-Output '';
-   Write-Output 'Date and copy of file';
-   $dateMask = Get-Date -Format 'dddd, dd MMMM yyyy HH:mm:ss';
-   Write-Output ('Today is {0}' -f $dateMask);
-
-   $script = $MyInvocation.MyCommand.Name;
-   $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition;
-   Write-Output ('Running script {0} in directory {1}' -f $script,$scriptPath);
-
-}
-
-
-#Extract the filename to copy from the parameter
-if ($Path -is [String]) {
-  Write-Verbose 'The main parameter is a string';
-  $OldFilename = Resolve-Path -Path $Path;
-
-} elseif ($Path -is [System.IO.FileInfo]) {
-  Write-Verbose 'The main parameter is FileInfo';
-  $OldFilename = $Path.FullName;
-
-} else {
-  #No value has been supplied
-  Write-Verbose 'Not sure what the type of the main parameter is';
-  $OldFilename = Get-OldFilename -Boxtitle 'File to copy';
-}
-Set-Variable -Name 'OldFilename' -Option ReadOnly;
-
-
-# With a small sleep delay at the start of the program,
-# it helps ensure we can never have two timestamps the
-# same because we have at least two seconds delay between
-# each run of the program.
-Start-Sleep -Seconds 2.0;
-
-
-# Check the input filename doesn't contain any invalid characters
-# which may cause problems. If so, terminate the program
-Check-Filename -CheckFile $OldFilename;
-
-# Get the new filename name which is derived from the old
-# (original) filename from which we are copying.
-$NewFilename = Get-NewFilename -OldFilename $OldFilename;
-Set-Variable -Name 'NewFilename' -Option ReadOnly;
-
-[System.Linq.Enumerable]::Repeat("", 2); #blanklines
-Write-Output ("File we want to copy: {0}" -f $OldFilename);
-Write-Output ("New name of copied file = {0}" -f $NewFilename);
-Copy-Item -Path $OldFilename -Destination $NewFilename;
-
-if (Test-Path -Path $NewFilename) {
-  # Ensure the file copy was successful by computing the (MD5) hash
-  # value of the two files concerned.
-
-  $OldNewName = [PSCustomObject]@{
-    #I was using this data structure in a previous version
-    #of the program and decided to leave it in as function
-    #'Compare-Files' uses and processes this data structure.
-    #Of course, I could have changed things but I'm leaving
-    #this as it is.
-    PSTypeName = 'OldNew';
-
-    # The file to be copied. ie myfile.txt
-    OldFilename = $OldFilename;
-
-    # The copied file containing the timestamp, ie
-    # myfile_2020-12-22T18-48-20.txt
-    NewFilename = $NewFilename;
-  }
-  Set-Variable -Name 'OldNewName' -Option ReadOnly;
-
-  $compareOK = Compare-Files -DataFile $OldNewName;
-  if ($compareOK) {
-    Write-Output 'Hash compare of the two files successful';
-  } else {
-    throw 'Hash values for the two files are not the same. Please check';
-  }
-
-  # Set the value of the 'LastWriteTime' property of the file just
-  # copied to the current date/time rather than keep the value of
-  # the file it was copied from. If we didn't do this, both the
-  # original file and the file we've copied will have the same
-  # 'LastWriteTime' property. The original file has the earlier
-  # 'LastWriteTime' property. By doing this, it makes it easier
-  # for me to find the file in any output if I execute the
-  # command, for example:
-  # PS> Get-ChildItem -File | Sort-Object -Property LastWriteTime;
-
-  # Ensure the attribute 'IsReadOnly' is set to false to avoid the error:
-  # Access to the path <filename> is denied
-  Set-ItemProperty -Path $NewFilename -Name 'IsReadOnly' -Value $false;
-  Set-ItemProperty -Path $NewFilename -Name 'LastWriteTime' -Value (Get-Date);
-
-  if ($PSBoundParameters.ContainsKey('ReadOnly')) {
-     # Set the value of the 'IsReadOnly' property of the file just copied
-     # to true making it read only.
-     Set-ItemProperty -Path $NewFilename -Name 'IsReadOnly' -Value $True;
-  }
-
-  #List the old (orig) and new filename objects.
-  #I agree this is a convoluted way of listing the files used, but
-  #this serves as a reminder of how to iterate over a PowerShell
-  #'PSCustomObject' object.
-  #$m = $OldNewName.psobject.Members |
-  #       Where-Object -Property 'MemberType' -like -Value 'NoteProperty';
-  #foreach ($item in $m) {Get-ChildItem -Path $item.value -File}
-  Show_Files -InputFilename $OldNewName.OldFilename;
-
-} else {
-  Write-Error -Message "Can't seem to find new file $($NewFilename)";
-} #end if Test-Path
+Main-Routine
 
 ##=============================================
 ## END OF SCRIPT: DateCopy-File.ps1
