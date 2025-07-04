@@ -1,4 +1,4 @@
 powershell
 ==========
-Collection of individual (non related) PowerShell scripts which can be run independently of each other.
+This repository contains a collection of independent PowerShell scripts that can be executed separately from one another.
 
